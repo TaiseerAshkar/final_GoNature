@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import java.net.URL?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="gui.RegisterController"
+      styleClass="screen-bg"
+      spacing="0"
+      prefWidth="520" prefHeight="700">
+
+    <stylesheets>
+        <URL value="@gonature.css"/>
+    </stylesheets>
+
+    <!-- Header bar -->
+    <HBox styleClass="header-bar" alignment="CENTER_LEFT" spacing="12">
+        <Label text="🌿 GoNature" styleClass="header-logo"/>
+        <Label text="—  Create Account" styleClass="header-subtitle"/>
+    </HBox>
+
+    <!-- Scrollable form body -->
+    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" styleClass="scroll-pane">
+        <VBox spacing="16" style="-fx-padding: 24 28;">
+
+            <!-- Personal information card -->
+            <VBox spacing="12" styleClass="card">
+
+                <Label text="Personal Information" styleClass="card-title"/>
+                <Separator/>
+
+                <GridPane hgap="14" vgap="10">
+                    <Label text="ID Number *" styleClass="field-label"
+                           GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                    <TextField fx:id="txtIdNumber" promptText="5–15 digit government ID"
+                               GridPane.columnIndex="1" GridPane.rowIndex="0" prefWidth="280"/>
+
+                    <Label text="First Name *" styleClass="field-label"
+                           GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                    <TextField fx:id="txtFirstName" promptText="First name"
+                               GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+
+                    <Label text="Last Name *" styleClass="field-label"
+                           GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+                    <TextField fx:id="txtLastName" promptText="Last name"
+                               GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+
+                    <Label text="Email *" styleClass="field-label"
+                           GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+                    <TextField fx:id="txtEmail" promptText="your@email.com"
+                               GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+
+                    <Label text="Phone Number *" styleClass="field-label"
+                           GridPane.columnIndex="0" GridPane.rowIndex="4"/>
+                    <TextField fx:id="txtPhone" promptText="9–15 digits"
+                               GridPane.columnIndex="1" GridPane.rowIndex="4"/>
+                </GridPane>
+            </VBox>
+
+            <!-- Family Member Club card -->
+            <VBox spacing="10" styleClass="card">
+
+                <CheckBox fx:id="chkSubscriber"
+                          text="Join the Family Member Club (Subscriber)"
+                          style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #2E7D32;"
+                          onAction="#onSubscriberToggle"/>
+
+                <VBox fx:id="subscriberFields" spacing="10"
+                      visible="false" managed="false">
+                    <Separator/>
+                    <Label text="A unique subscriber ID will be generated automatically after registration."
+                           styleClass="lbl-hint" wrapText="true"/>
+
+                    <GridPane hgap="14" vgap="10">
+                        <Label text="Family Size *" styleClass="field-label"
+                               GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                        <TextField fx:id="txtFamilySize"
+                                   promptText="Number of family members (1–10)"
+                                   GridPane.columnIndex="1" GridPane.rowIndex="0" prefWidth="280"/>
+
+                        <Label text="Credit Card" styleClass="field-label"
+                               GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                        <TextField fx:id="txtCreditCard"
+                                   promptText="16-digit card number (optional)"
+                                   GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                    </GridPane>
+                </VBox>
+            </VBox>
+
+            <!-- Error label -->
+            <Label fx:id="lblError" text="" styleClass="lbl-error" wrapText="true"/>
+
+            <!-- Action buttons -->
+            <HBox spacing="12">
+                <Button text="✅  Create Account" onAction="#handleRegister"
+                        maxWidth="Infinity" HBox.hgrow="ALWAYS"
+                        styleClass="btn-primary"/>
+                <Button text="Cancel" onAction="#handleCancel"
+                        styleClass="btn-secondary"/>
+            </HBox>
+
+        </VBox>
+    </ScrollPane>
+</VBox>
