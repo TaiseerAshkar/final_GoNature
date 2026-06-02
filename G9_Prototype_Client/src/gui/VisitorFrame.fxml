@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import java.net.URL?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="gui.VisitorController"
+      styleClass="screen-bg"
+      spacing="0"
+      prefWidth="540" prefHeight="700">
+
+    <stylesheets>
+        <URL value="@gonature.css"/>
+    </stylesheets>
+
+    <!-- Header bar -->
+    <HBox styleClass="header-bar" alignment="CENTER_LEFT" spacing="10">
+        <Label text="🌿 GoNature" styleClass="header-logo"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Label fx:id="lblRoleBadge" styleClass="header-badge"/>
+        <Button text="Help ?"  onAction="#handleHelp"   styleClass="btn-outline"/>
+        <Button text="Logout"  onAction="#handleLogout"
+                style="-fx-background-color:#C62828; -fx-text-fill:white;
+                       -fx-font-weight:bold; -fx-background-radius:5;
+                       -fx-padding:5 14; -fx-cursor:hand;"/>
+    </HBox>
+
+    <!-- Scrollable content -->
+    <ScrollPane fitToWidth="true" styleClass="scroll-pane" VBox.vgrow="ALWAYS">
+        <VBox spacing="20" style="-fx-padding: 36;" alignment="TOP_CENTER">
+
+            <Label fx:id="lblWelcome" styleClass="screen-title"/>
+
+            <!-- Action card -->
+            <VBox spacing="12" styleClass="card" maxWidth="440">
+                <Label fx:id="lblInfo" styleClass="screen-subtitle" wrapText="true"/>
+                <Separator/>
+                <Button text="📋  View My Reservations" maxWidth="Infinity"
+                        onAction="#handleViewOrders" styleClass="btn-teal"/>
+                <Button text="🏕  Book a Visit" maxWidth="Infinity"
+                        onAction="#handleBookVisit" styleClass="btn-primary"/>
+                <Button text="❌  Cancel a Reservation" maxWidth="Infinity"
+                        onAction="#handleViewOrders" styleClass="btn-danger"/>
+                <Separator/>
+                <Button text="🚗  Register My Exit" maxWidth="Infinity"
+                        onAction="#handleRegisterExit" styleClass="btn-secondary"/>
+                <Separator/>
+                <Button text="✅  Confirm My Visit" maxWidth="Infinity"
+                        onAction="#handleConfirmVisit"
+                        style="-fx-background-color:#1565C0; -fx-text-fill:white;
+                               -fx-font-weight:bold; -fx-background-radius:5;
+                               -fx-padding:8 14; -fx-cursor:hand; -fx-font-size:13px;"/>
+            </VBox>
+
+            <!-- ── Notification inbox ──────────────────────────────────────── -->
+            <VBox spacing="8" styleClass="card" maxWidth="440">
+
+                <HBox alignment="CENTER_LEFT" spacing="8">
+                    <Label text="📬  Notifications" styleClass="card-title"/>
+                    <Label fx:id="lblNotifBadge" styleClass="header-badge" text="0"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Button text="↻  Refresh" onAction="#handleRefreshNotifications"
+                            styleClass="btn-outline"
+                            style="-fx-font-size:11px; -fx-padding:3 10;"/>
+                </HBox>
+
+                <Separator/>
+
+                <!-- shown when inbox is empty -->
+                <Label fx:id="lblNoNotif"
+                       text="No notifications yet. Notifications appear here after booking, cancellation, or when a waiting-list spot opens."
+                       styleClass="lbl-hint" wrapText="true"
+                       style="-fx-font-style:italic;"/>
+
+                <!-- shown when there are notifications -->
+                <ListView fx:id="lstNotifications"
+                          prefHeight="150"
+                          visible="false" managed="false"/>
+
+            </VBox>
+
+        </VBox>
+    </ScrollPane>
+</VBox>

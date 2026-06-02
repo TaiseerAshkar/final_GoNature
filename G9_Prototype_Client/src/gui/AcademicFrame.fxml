@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import java.net.URL?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="gui.AcademicFrameController"
+      styleClass="screen-bg"
+      spacing="0"
+      prefWidth="780">
+
+    <stylesheets>
+        <URL value="@gonature.css"/>
+    </stylesheets>
+
+    <!-- Header bar -->
+    <HBox styleClass="header-bar" alignment="CENTER_LEFT" spacing="10">
+        <Label text="🌿 GoNature" styleClass="header-logo"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Label fx:id="lblUserName" styleClass="header-subtitle"/>
+        <Label fx:id="lblUserRole" styleClass="header-badge"/>
+        <Button text="Help ?" onAction="#handleHelp" styleClass="btn-outline"/>
+        <Button text="🚪 Logout" onAction="#handleLogout"
+                style="-fx-background-color: #C62828; -fx-text-fill: white;
+                       -fx-font-weight: bold; -fx-background-radius: 4; -fx-padding: 5 12;"/>
+    </HBox>
+
+    <!-- Main content -->
+    <VBox spacing="16" style="-fx-padding: 24;">
+
+        <Label text="Management Dashboard" styleClass="screen-title"/>
+
+        <!-- Action row -->
+        <HBox spacing="12">
+            <Button text="🔄  Load All Orders"       onAction="#loadOrders"        styleClass="btn-blue"/>
+            <Button text="📊  View Reports Dashboard" onAction="#handleViewReports" styleClass="btn-teal"/>
+        </HBox>
+
+        <!-- Orders table (live orders) -->
+        <TableView fx:id="tableOrders" prefHeight="240" styleClass="table-view">
+            <columns>
+                <TableColumn fx:id="colId"        text="Order #"   prefWidth="75"/>
+                <TableColumn fx:id="colPark"      text="Park"      prefWidth="100"/>
+                <TableColumn fx:id="colVisitorId" text="Visitor ID" prefWidth="100"/>
+                <TableColumn fx:id="colDate"      text="Date"      prefWidth="98"/>
+                <TableColumn fx:id="colTime"      text="Time"      prefWidth="65"/>
+                <TableColumn fx:id="colVisitors"  text="Visitors"  prefWidth="65"/>
+                <TableColumn fx:id="colType"      text="Type"      prefWidth="95"/>
+                <TableColumn fx:id="colStatus"    text="Status"    prefWidth="95"/>
+                <TableColumn fx:id="colBookedOn"  text="Booked On" prefWidth="130"/>
+            </columns>
+            <placeholder>
+                <Label text="Click 'Load All Orders' to view live bookings."
+                       styleClass="lbl-hint" style="-fx-font-style: italic;"/>
+            </placeholder>
+        </TableView>
+
+        <!-- Update order card -->
+        <VBox spacing="10" styleClass="card">
+            <Label text="Update Order" styleClass="card-title"/>
+            <Separator/>
+            <GridPane hgap="14" vgap="10">
+                <Label text="Order Number *"       styleClass="field-label"
+                       GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                <TextField fx:id="txtOrderNum"     prefWidth="220"
+                           GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+
+                <Label text="New Date (YYYY-MM-DD) *" styleClass="field-label"
+                       GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                <TextField fx:id="txtNewDate"      prefWidth="220"
+                           GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+
+                <Label text="New Visitors *"       styleClass="field-label"
+                       GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+                <TextField fx:id="txtNewVisitors"  prefWidth="220"
+                           GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+
+                <Button text="Update Order" onAction="#updateOrder"
+                        styleClass="btn-warning"
+                        GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+            </GridPane>
+        </VBox>
+
+        <Label fx:id="lblResult" text="" styleClass="lbl-success"/>
+
+        <Button text="Exit" onAction="#getExitBtn" styleClass="btn-danger"/>
+
+    </VBox>
+</VBox>

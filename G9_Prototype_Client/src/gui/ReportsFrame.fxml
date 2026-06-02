@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import java.net.URL?>
+<?import javafx.scene.chart.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="gui.ReportsController"
+      styleClass="screen-bg"
+      spacing="0"
+      prefWidth="1000" prefHeight="680">
+
+    <stylesheets>
+        <URL value="@gonature.css"/>
+    </stylesheets>
+
+    <!-- Header -->
+    <HBox styleClass="header-bar" alignment="CENTER_LEFT" spacing="10">
+        <Label text="🌿 GoNature — Reports Dashboard" styleClass="header-logo"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Label fx:id="lblManagerName" styleClass="header-subtitle"/>
+        <Button text="Close" onAction="#handleClose" styleClass="btn-outline"/>
+    </HBox>
+
+    <!-- Tab pane -->
+    <TabPane VBox.vgrow="ALWAYS" tabClosingPolicy="UNAVAILABLE">
+
+        <!-- TAB 1: VISITOR REPORT -->
+        <Tab text="  📈  Visitor Report  ">
+            <VBox spacing="10" style="-fx-padding: 16;">
+
+                <HBox spacing="10" alignment="CENTER_LEFT"
+                      styleClass="card" style="-fx-padding: 10 16;">
+                    <Label text="Park:" styleClass="field-label"/>
+                    <ComboBox fx:id="cboVisitorPark" prefWidth="220"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Label fx:id="lblVisitorStatus" styleClass="lbl-hint"/>
+                    <Button text="🔄  Refresh" onAction="#handleRefreshVisitor"
+                            styleClass="btn-blue"/>
+                </HBox>
+
+                <Label fx:id="lblVisitorError" text="" styleClass="lbl-error" wrapText="true"/>
+
+                <BarChart fx:id="chartVisitors" VBox.vgrow="ALWAYS"
+                          animated="false" barGap="2" categoryGap="14"
+                          styleClass="chart">
+                    <xAxis>
+                        <CategoryAxis label="Date" tickLabelRotation="-45"/>
+                    </xAxis>
+                    <yAxis>
+                        <NumberAxis label="Total Visitors" lowerBound="0" autoRanging="true"/>
+                    </yAxis>
+                </BarChart>
+
+            </VBox>
+        </Tab>
+
+        <!-- TAB 2: CANCELLATION REPORT -->
+        <Tab text="  ❌  Cancellation Report  ">
+            <VBox spacing="10" style="-fx-padding: 16;">
+
+                <HBox spacing="10" alignment="CENTER_LEFT"
+                      styleClass="card" style="-fx-padding: 10 16;">
+                    <Label text="Park:" styleClass="field-label"/>
+                    <ComboBox fx:id="cboCancelPark" prefWidth="220"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Label fx:id="lblCancelStatus" styleClass="lbl-hint"/>
+                    <Button text="🔄  Refresh" onAction="#handleRefreshCancel"
+                            styleClass="btn-blue"/>
+                </HBox>
+
+                <Label fx:id="lblCancelError" text="" styleClass="lbl-error" wrapText="true"/>
+
+                <TableView fx:id="tableCancels" VBox.vgrow="ALWAYS" styleClass="table-view">
+                    <placeholder>
+                        <Label text="No cancelled or no-show orders found."
+                               styleClass="lbl-hint"/>
+                    </placeholder>
+                    <columns>
+                        <TableColumn fx:id="colCancelId"       text="Order #"    prefWidth="76"/>
+                        <TableColumn fx:id="colCancelPark"     text="Park"       prefWidth="180"/>
+                        <TableColumn fx:id="colCancelVisitor"  text="Visitor ID" prefWidth="105"/>
+                        <TableColumn fx:id="colCancelDate"     text="Date"       prefWidth="96"/>
+                        <TableColumn fx:id="colCancelTime"     text="Time"       prefWidth="64"/>
+                        <TableColumn fx:id="colCancelType"     text="Type"       prefWidth="100"/>
+                        <TableColumn fx:id="colCancelStatus"   text="Status"     prefWidth="96"/>
+                        <TableColumn fx:id="colCancelVisitors" text="Visitors"   prefWidth="72"/>
+                        <TableColumn fx:id="colCancelCreated"  text="Booked On"  prefWidth="135"/>
+                    </columns>
+                </TableView>
+
+            </VBox>
+        </Tab>
+
+        <!-- TAB 3: USAGE REPORT -->
+        <Tab text="  📊  Usage Report  ">
+            <VBox spacing="10" style="-fx-padding: 16;">
+
+                <HBox spacing="10" alignment="CENTER_LEFT"
+                      styleClass="card" style="-fx-padding: 10 16;">
+                    <Label text="Hourly park usage as % of capacity — last 30 days"
+                           styleClass="lbl-hint" style="-fx-font-style: normal;"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Label fx:id="lblUsageStatus" styleClass="lbl-hint"/>
+                    <Button text="🔄  Refresh" onAction="#handleRefreshUsage"
+                            styleClass="btn-blue"/>
+                </HBox>
+
+                <Label fx:id="lblUsageError" text="" styleClass="lbl-error" wrapText="true"/>
+
+                <LineChart fx:id="chartUsage" VBox.vgrow="ALWAYS"
+                           animated="false" createSymbols="true"
+                           styleClass="chart">
+                    <xAxis>
+                        <CategoryAxis label="Hour of Day"/>
+                    </xAxis>
+                    <yAxis>
+                        <NumberAxis label="Capacity (%)" lowerBound="0" upperBound="100"
+                                    autoRanging="false" tickUnit="10"/>
+                    </yAxis>
+                </LineChart>
+
+            </VBox>
+        </Tab>
+
+    </TabPane>
+</VBox>

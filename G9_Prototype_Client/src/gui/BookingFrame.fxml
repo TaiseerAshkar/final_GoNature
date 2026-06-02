@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import java.net.URL?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="gui.BookingController"
+      styleClass="screen-bg"
+      spacing="0"
+      prefWidth="560">
+
+    <stylesheets>
+        <URL value="@gonature.css"/>
+    </stylesheets>
+
+    <!-- Header bar -->
+    <HBox styleClass="header-bar" alignment="CENTER_LEFT" spacing="10">
+        <Label text="🌿 GoNature — New Booking" styleClass="header-logo"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button text="Cancel" onAction="#handleCancel" styleClass="btn-outline"/>
+    </HBox>
+
+    <ScrollPane fitToWidth="true" styleClass="scroll-pane" VBox.vgrow="ALWAYS">
+        <VBox spacing="16" style="-fx-padding: 24;">
+
+            <!-- Park -->
+            <VBox spacing="5">
+                <Label text="Park  *" styleClass="field-label"/>
+                <ComboBox fx:id="cboPark" maxWidth="Infinity"/>
+            </VBox>
+
+            <!-- Date + Time -->
+            <HBox spacing="14">
+                <VBox spacing="5" HBox.hgrow="ALWAYS">
+                    <Label text="Visit Date  *" styleClass="field-label"/>
+                    <DatePicker fx:id="dpDate" maxWidth="Infinity"/>
+                </VBox>
+                <VBox spacing="5" HBox.hgrow="ALWAYS">
+                    <Label text="Visit Time  *" styleClass="field-label"/>
+                    <ComboBox fx:id="cboTime" maxWidth="Infinity"/>
+                </VBox>
+            </HBox>
+
+            <!-- Order Type + Visitor count -->
+            <HBox spacing="14">
+                <VBox spacing="5" HBox.hgrow="ALWAYS">
+                    <Label text="Order Type  *" styleClass="field-label"/>
+                    <ComboBox fx:id="cboOrderType" maxWidth="Infinity"/>
+                </VBox>
+                <VBox spacing="5" HBox.hgrow="ALWAYS">
+                    <Label text="Number of Visitors  *" styleClass="field-label"/>
+                    <TextField fx:id="txtVisitors" promptText="e.g. 4"/>
+                    <Label fx:id="lblVisitorHint" styleClass="lbl-hint"/>
+                </VBox>
+            </HBox>
+
+            <!-- Visitor ID (read-only) -->
+            <VBox spacing="5">
+                <Label text="Visitor ID" styleClass="field-label"/>
+                <TextField fx:id="txtVisitorId" editable="false"
+                           style="-fx-background-color:#F5F5F5; -fx-border-color:#E0E0E0;
+                                  -fx-border-radius:6; -fx-border-width:1.5; -fx-padding:7;"/>
+                <Label text="Filled automatically from your login." styleClass="lbl-hint"/>
+            </VBox>
+
+            <!-- Email -->
+            <VBox spacing="5">
+                <Label text="Confirmation Email  *" styleClass="field-label"/>
+                <TextField fx:id="txtEmail" promptText="your@email.com"/>
+            </VBox>
+
+            <!-- Price estimate -->
+            <Label fx:id="lblPriceEstimate" styleClass="lbl-price"/>
+
+            <!-- Error -->
+            <Label fx:id="lblError" text="" styleClass="lbl-error" wrapText="true"/>
+
+            <!-- Submit -->
+            <Button fx:id="btnSubmit" text="🔍  Check Availability &amp; Book"
+                    onAction="#handleSubmit" maxWidth="Infinity"
+                    styleClass="btn-primary"/>
+
+        </VBox>
+    </ScrollPane>
+</VBox>
