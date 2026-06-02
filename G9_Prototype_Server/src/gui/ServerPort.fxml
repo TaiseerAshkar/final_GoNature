@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.effect.*?>
+
+<VBox xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="gui.ServerPortFrameController"
+      spacing="14"
+      style="-fx-padding: 20; -fx-background-color: linear-gradient(to bottom right, #E8F5E9, #F1F8E9);">
+
+    <!-- Title bar -->
+    <HBox alignment="CENTER_LEFT" spacing="10">
+        <Label text="🌿 GoNature — Server Control"
+               style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #1B5E20;"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Label text="● LIVE"
+               style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #2E7D32;
+                      -fx-background-color: #C8E6C9; -fx-background-radius: 20;
+                      -fx-padding: 3 10;"/>
+    </HBox>
+
+    <!-- Port + controls card -->
+    <VBox spacing="0"
+          style="-fx-background-color: white; -fx-background-radius: 10;
+                 -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.10), 12, 0, 0, 3);
+                 -fx-border-color: #A5D6A7; -fx-border-radius: 10; -fx-border-width: 1;">
+
+        <HBox style="-fx-background-color: linear-gradient(to right,#1B5E20,#2E7D32);
+                     -fx-background-radius: 10 10 0 0; -fx-padding: 10 16;">
+            <Label text="Server Configuration"
+                   style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #C8E6C9;"/>
+        </HBox>
+
+        <HBox spacing="10" alignment="CENTER_LEFT"
+              style="-fx-padding: 12 16;">
+            <Label text="Port:"
+                   style="-fx-font-weight: bold; -fx-text-fill: #2E7D32; -fx-font-size: 13px;"/>
+            <TextField fx:id="portxt" prefWidth="100"
+                       style="-fx-background-radius: 6; -fx-border-color: #C8E6C9;
+                              -fx-border-radius: 6; -fx-padding: 6;"/>
+            <Button text="▶  Start Server" onAction="#Done"
+                    style="-fx-background-color: linear-gradient(to bottom, #43A047, #2E7D32);
+                           -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 13px;
+                           -fx-background-radius: 7; -fx-padding: 8 20;
+                           -fx-effect: dropshadow(gaussian, rgba(46,125,50,0.35), 5, 0, 0, 2);
+                           -fx-cursor: hand;"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="✖  Exit" onAction="#getExitBtn"
+                    style="-fx-background-color: linear-gradient(to bottom, #EF5350, #C62828);
+                           -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 13px;
+                           -fx-background-radius: 7; -fx-padding: 8 20;
+                           -fx-effect: dropshadow(gaussian, rgba(198,40,40,0.30), 5, 0, 0, 2);
+                           -fx-cursor: hand;"/>
+        </HBox>
+    </VBox>
+
+    <!-- Connected Clients card -->
+    <VBox spacing="0"
+          style="-fx-background-color: white; -fx-background-radius: 10;
+                 -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.10), 12, 0, 0, 3);
+                 -fx-border-color: #A5D6A7; -fx-border-radius: 10; -fx-border-width: 1;">
+
+        <HBox style="-fx-background-color: linear-gradient(to right,#1B5E20,#2E7D32);
+                     -fx-background-radius: 10 10 0 0; -fx-padding: 10 16;">
+            <Label text="🖥  Connected Clients"
+                   style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #C8E6C9;"/>
+        </HBox>
+
+        <TableView fx:id="clientTable" prefHeight="160"
+                   style="-fx-background-radius: 0 0 10 10;">
+            <columns>
+                <TableColumn fx:id="colIP"     text="IP Address"  prefWidth="160"/>
+                <TableColumn fx:id="colHost"   text="Host Name"   prefWidth="180"/>
+                <TableColumn fx:id="colStatus" text="Status"      prefWidth="130"/>
+            </columns>
+        </TableView>
+    </VBox>
+
+    <!-- Connection Log card -->
+    <VBox spacing="0"
+          style="-fx-background-color: white; -fx-background-radius: 10;
+                 -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.10), 12, 0, 0, 3);
+                 -fx-border-color: #A5D6A7; -fx-border-radius: 10; -fx-border-width: 1;">
+
+        <HBox style="-fx-background-color: linear-gradient(to right,#1B5E20,#2E7D32);
+                     -fx-background-radius: 10 10 0 0; -fx-padding: 10 16;">
+            <Label text="📋  Connection Log"
+                   style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #C8E6C9;"/>
+        </HBox>
+
+        <TextArea fx:id="txtLog" prefHeight="100" editable="false"
+                  style="-fx-control-inner-background: #F1F8E9;
+                         -fx-background-radius: 0 0 10 10;
+                         -fx-font-family: monospace; -fx-font-size: 12px;
+                         -fx-border-color: transparent;"/>
+    </VBox>
+
+    <!-- Live Notifications card -->
+    <VBox spacing="0" VBox.vgrow="ALWAYS"
+          style="-fx-background-color: white; -fx-background-radius: 10;
+                 -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.10), 12, 0, 0, 3);
+                 -fx-border-color: #90CAF9; -fx-border-radius: 10; -fx-border-width: 1;">
+
+        <HBox style="-fx-background-color: linear-gradient(to right, #1565C0, #1E88E5);
+                     -fx-background-radius: 10 10 0 0; -fx-padding: 10 16;">
+            <Label text="📬  Live Notifications"
+                   style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #BBDEFB;"/>
+        </HBox>
+
+        <TextArea fx:id="txtSimLog" prefHeight="160" editable="false" VBox.vgrow="ALWAYS"
+                  style="-fx-control-inner-background: #E3F2FD;
+                         -fx-background-radius: 0 0 10 10;
+                         -fx-font-family: monospace; -fx-font-size: 12px;
+                         -fx-border-color: transparent;"/>
+    </VBox>
+
+</VBox>
