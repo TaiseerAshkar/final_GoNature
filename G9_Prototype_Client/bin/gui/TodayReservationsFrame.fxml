@@ -7,7 +7,7 @@
       fx:controller="gui.TodayReservationsController"
       styleClass="screen-bg"
       spacing="0"
-      prefWidth="860" prefHeight="520">
+      prefWidth="880" prefHeight="540">
 
     <stylesheets>
         <URL value="@gonature.css"/>
@@ -22,29 +22,34 @@
     </HBox>
 
     <!-- Control bar -->
-    <HBox spacing="10" alignment="CENTER_LEFT"
-          style="-fx-padding: 12 20; -fx-background-color: white;
+    <HBox spacing="12" alignment="CENTER_LEFT"
+          style="-fx-padding: 12 20;
+                 -fx-background-color: white;
                  -fx-border-color: #E0E0E0; -fx-border-width: 0 0 1 0;">
-        <Label fx:id="lblDate" styleClass="field-label"/>
+        <Label text="📅" style="-fx-font-size: 16px;"/>
+        <Label fx:id="lblDate" styleClass="field-label"
+               style="-fx-font-size: 14px;"/>
         <Region HBox.hgrow="ALWAYS"/>
-        <Label fx:id="lblCount" styleClass="lbl-hint" style="-fx-font-style: normal;"/>
-        <Button text="🔄  Refresh" onAction="#handleRefresh" styleClass="btn-blue"/>
+        <Label fx:id="lblCount" styleClass="lbl-hint"
+               style="-fx-font-style: normal; -fx-font-size: 12px;"/>
+        <Button text="🔄  Refresh" onAction="#handleRefresh"
+                styleClass="btn-blue" style="-fx-padding:8 16;"/>
     </HBox>
 
     <!-- Error label -->
     <Label fx:id="lblError" text="" styleClass="lbl-error"
-           style="-fx-padding: 4 20;" wrapText="true"/>
+           style="-fx-padding: 6 20;" wrapText="true"/>
 
     <!-- Orders table -->
     <TableView fx:id="tableOrders" styleClass="table-view" VBox.vgrow="ALWAYS">
         <columns>
-            <TableColumn fx:id="colId"        text="Order #"    prefWidth="76"/>
-            <TableColumn fx:id="colVisitorId" text="Visitor ID" prefWidth="115"/>
-            <TableColumn fx:id="colTime"      text="Time"       prefWidth="68"/>
-            <TableColumn fx:id="colVisitors"  text="Visitors"   prefWidth="72"/>
-            <TableColumn fx:id="colType"      text="Type"       prefWidth="105"/>
-            <TableColumn fx:id="colStatus"    text="Status"     prefWidth="110"/>
-            <TableColumn fx:id="colEmail"     text="Email"      prefWidth="220"/>
+            <TableColumn fx:id="colId"        text="Order #"    prefWidth="80"/>
+            <TableColumn fx:id="colVisitorId" text="Visitor ID" prefWidth="120"/>
+            <TableColumn fx:id="colTime"      text="Time"       prefWidth="74"/>
+            <TableColumn fx:id="colVisitors"  text="Visitors"   prefWidth="76"/>
+            <TableColumn fx:id="colType"      text="Type"       prefWidth="110"/>
+            <TableColumn fx:id="colStatus"    text="Status"     prefWidth="115"/>
+            <TableColumn fx:id="colEmail"     text="Email"      prefWidth="240"/>
         </columns>
         <placeholder>
             <Label text="No reservations for today at this park."

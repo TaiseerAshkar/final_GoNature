@@ -7,7 +7,7 @@
       fx:controller="gui.EntryControlController"
       styleClass="screen-bg"
       spacing="0"
-      prefWidth="840" prefHeight="620">
+      prefWidth="860" prefHeight="640">
 
     <stylesheets>
         <URL value="@gonature.css"/>
@@ -24,115 +24,139 @@
     <!-- Tab pane -->
     <TabPane VBox.vgrow="ALWAYS" tabClosingPolicy="UNAVAILABLE">
 
-        <!-- TAB 1: CHECK-IN -->
+        <!-- ── TAB 1: CHECK-IN ──────────────────────────────── -->
         <Tab text="  ✅  Check-In Visitor  ">
             <ScrollPane fitToWidth="true" styleClass="scroll-pane">
-                <VBox spacing="14" style="-fx-padding: 20;">
+                <VBox spacing="16" style="-fx-padding: 20;">
 
                     <!-- Input card -->
-                    <VBox spacing="10" styleClass="card">
-                        <Label text="Visitor Lookup" styleClass="card-title"/>
+                    <VBox spacing="14" styleClass="card">
+                        <Label text="✅  Visitor Check-In" styleClass="card-title"/>
                         <Separator/>
-                        <HBox spacing="12" alignment="CENTER_LEFT">
-                            <VBox spacing="4">
+
+                        <!-- Row 1: Visitor ID + Park + buttons -->
+                        <HBox spacing="14" alignment="BOTTOM_LEFT">
+                            <VBox spacing="6">
                                 <Label text="Visitor ID *" styleClass="field-label"/>
-                                <TextField fx:id="txtVisitorId" prefWidth="145"
-                                           promptText="Government ID"/>
+                                <TextField fx:id="txtVisitorId" prefWidth="160"
+                                           promptText="Government ID"
+                                           style="-fx-background-radius:8; -fx-border-radius:8;
+                                                  -fx-border-color:#B0BEC5; -fx-border-width:1.5;
+                                                  -fx-padding:8 10; -fx-font-size:13px;"/>
                             </VBox>
-                            <VBox spacing="4">
+                            <VBox spacing="6">
                                 <Label text="Park *" styleClass="field-label"/>
-                                <ComboBox fx:id="cboPark" prefWidth="165"
-                                          promptText="Select Park"/>
+                                <ComboBox fx:id="cboPark" prefWidth="190"
+                                          promptText="Select park…"
+                                          style="-fx-background-color:white;
+                                                 -fx-background-radius:8;
+                                                 -fx-border-color:#B0BEC5;
+                                                 -fx-border-radius:8;
+                                                 -fx-border-width:1.5;
+                                                 -fx-font-size:13px;
+                                                 -fx-padding:3 2;"/>
                             </VBox>
-                            <VBox spacing="4">
+                            <VBox spacing="6">
                                 <Label text="Visitors" styleClass="field-label"/>
-                                <TextField fx:id="txtWalkInVisitors" prefWidth="58" text="1"/>
+                                <TextField fx:id="txtWalkInVisitors" prefWidth="68" text="1"
+                                           style="-fx-background-radius:8; -fx-border-radius:8;
+                                                  -fx-border-color:#B0BEC5; -fx-border-width:1.5;
+                                                  -fx-padding:8 10; -fx-font-size:13px;"/>
                             </VBox>
-                            <VBox spacing="4">
-                                <Label text="Type" styleClass="field-label"/>
-                                <ComboBox fx:id="cboOrderType" prefWidth="130"/>
+                            <VBox spacing="6">
+                                <Label text="Visit Type" styleClass="field-label"/>
+                                <ComboBox fx:id="cboOrderType" prefWidth="140"
+                                          style="-fx-background-color:white;
+                                                 -fx-background-radius:8;
+                                                 -fx-border-color:#B0BEC5;
+                                                 -fx-border-radius:8;
+                                                 -fx-border-width:1.5;
+                                                 -fx-font-size:13px;
+                                                 -fx-padding:3 2;"/>
                             </VBox>
                             <Region HBox.hgrow="ALWAYS"/>
-                            <VBox alignment="BOTTOM_RIGHT" spacing="0">
-                                <Label text=" " styleClass="field-label"/>
+                            <VBox spacing="6" alignment="BOTTOM_RIGHT">
+                                <Label text="" styleClass="field-label"/>
                                 <HBox spacing="8">
                                     <Button text="📷  Scan QR" onAction="#handleScanQRCode"
-                                            styleClass="btn-outline"/>
+                                            styleClass="btn-secondary"
+                                            style="-fx-padding:9 14;"/>
                                     <Button fx:id="btnCheckIn" text="✅  Check In"
-                                            onAction="#handleCheckIn" styleClass="btn-primary"/>
+                                            onAction="#handleCheckIn" styleClass="btn-primary"
+                                            style="-fx-padding:9 18;"/>
                                 </HBox>
                             </VBox>
                         </HBox>
-                        <!-- Visitor count rule hint — updated dynamically when type changes -->
+
+                        <!-- Hints -->
                         <Label fx:id="lblVisitorHint"
-                               text="Individual: exactly 1 visitor. Count is fixed automatically."
-                               styleClass="lbl-hint" wrapText="true"
-                               style="-fx-font-style: italic;"/>
-                        <Label text="For pre-booked visitors, count and type are auto-filled from their booking."
+                               text="Solo: exactly 1 visitor."
+                               styleClass="lbl-hint" wrapText="true"/>
+                        <Label text="Pre-booked visitors: count and type are auto-filled from their booking."
                                styleClass="lbl-hint" wrapText="true"/>
                     </VBox>
 
                     <!-- Feedback message -->
                     <Label fx:id="lblCheckInMessage" text="" wrapText="true"
-                           styleClass="lbl-error" maxWidth="800"/>
+                           maxWidth="820"
+                           style="-fx-font-size:12px; -fx-font-weight:bold;"/>
 
                     <!-- Result card -->
                     <VBox fx:id="paneResult" visible="false" managed="false"
-                          spacing="10" styleClass="card">
+                          spacing="14" styleClass="card">
 
                         <!-- Status banner -->
                         <HBox fx:id="bannerBox" spacing="10" alignment="CENTER_LEFT"
                               styleClass="banner-confirmed"
-                              style="-fx-padding: 10 14; -fx-background-radius: 6;">
+                              style="-fx-padding: 12 16; -fx-background-radius: 8;">
                             <Label fx:id="lblResultStatus" styleClass="banner-text"/>
                         </HBox>
 
-                        <!-- Detail grid — column 1 has minWidth so labels never collapse -->
-                        <GridPane hgap="20" vgap="8" style="-fx-padding: 4 0;">
+                        <!-- Detail grid -->
+                        <GridPane hgap="20" vgap="10" style="-fx-padding: 4 0;">
                             <columnConstraints>
-                                <ColumnConstraints minWidth="100" prefWidth="110"/>
-                                <ColumnConstraints minWidth="180" prefWidth="340" hgrow="ALWAYS"/>
+                                <ColumnConstraints minWidth="110" prefWidth="120"/>
+                                <ColumnConstraints minWidth="180" hgrow="ALWAYS"/>
                             </columnConstraints>
 
                             <Label text="Order #:"    styleClass="lbl-detail-key"
                                    GridPane.rowIndex="0" GridPane.columnIndex="0"/>
                             <Label fx:id="lblResultOrderId"
-                                   style="-fx-font-size: 13px; -fx-text-fill: #1A1A1A;"
+                                   style="-fx-font-size:13px; -fx-text-fill:#1A1A1A;"
                                    GridPane.rowIndex="0" GridPane.columnIndex="1"/>
 
                             <Label text="Visitor ID:" styleClass="lbl-detail-key"
                                    GridPane.rowIndex="1" GridPane.columnIndex="0"/>
                             <Label fx:id="lblResultVisitorId"
-                                   style="-fx-font-size: 13px; -fx-text-fill: #1A1A1A;"
+                                   style="-fx-font-size:13px; -fx-text-fill:#1A1A1A;"
                                    GridPane.rowIndex="1" GridPane.columnIndex="1"/>
 
                             <Label text="Park:"       styleClass="lbl-detail-key"
                                    GridPane.rowIndex="2" GridPane.columnIndex="0"/>
                             <Label fx:id="lblResultPark"
-                                   style="-fx-font-size: 13px; -fx-text-fill: #1A1A1A;"
+                                   style="-fx-font-size:13px; -fx-text-fill:#1A1A1A;"
                                    GridPane.rowIndex="2" GridPane.columnIndex="1"/>
 
                             <Label text="Visitors:"   styleClass="lbl-detail-key"
                                    GridPane.rowIndex="3" GridPane.columnIndex="0"/>
                             <Label fx:id="lblResultVisitors"
-                                   style="-fx-font-size: 13px; -fx-text-fill: #1A1A1A;"
+                                   style="-fx-font-size:13px; -fx-text-fill:#1A1A1A;"
                                    GridPane.rowIndex="3" GridPane.columnIndex="1"/>
 
                             <Label text="Order Type:" styleClass="lbl-detail-key"
                                    GridPane.rowIndex="4" GridPane.columnIndex="0"/>
                             <Label fx:id="lblResultType"
-                                   style="-fx-font-size: 13px; -fx-text-fill: #1A1A1A;"
+                                   style="-fx-font-size:13px; -fx-text-fill:#1A1A1A;"
                                    GridPane.rowIndex="4" GridPane.columnIndex="1"/>
                         </GridPane>
 
                         <Separator/>
 
-                        <!-- Payment -->
-                        <HBox spacing="10" alignment="CENTER_LEFT">
+                        <HBox spacing="12" alignment="CENTER_LEFT">
                             <Label text="Payment Due:"
-                                   style="-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #212121;"/>
+                                   style="-fx-font-weight:bold; -fx-font-size:14px; -fx-text-fill:#212121;"/>
                             <Label fx:id="lblResultPayment"
-                                   style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #2E7D32;"/>
+                                   style="-fx-font-size:24px; -fx-font-weight:bold; -fx-text-fill:#2E7D32;"/>
                         </HBox>
                         <Label fx:id="lblResultNote" styleClass="lbl-hint" wrapText="true"/>
                     </VBox>
@@ -141,39 +165,51 @@
             </ScrollPane>
         </Tab>
 
-        <!-- TAB 2: REGISTER EXIT -->
+        <!-- ── TAB 2: REGISTER EXIT ─────────────────────────── -->
         <Tab text="  🚪  Register Exit  ">
-            <VBox spacing="14" style="-fx-padding: 20;">
+            <VBox spacing="16" style="-fx-padding: 20;">
 
-                <!-- Input card -->
-                <VBox spacing="10" styleClass="card">
-                    <Label text="Visitor Exit Registration" styleClass="card-title"/>
+                <VBox spacing="14" styleClass="card">
+                    <Label text="🚪  Visitor Exit Registration" styleClass="card-title"/>
                     <Separator/>
-                    <HBox spacing="12" alignment="CENTER_LEFT">
-                        <VBox spacing="4">
+
+                    <HBox spacing="14" alignment="BOTTOM_LEFT">
+                        <VBox spacing="6">
                             <Label text="Visitor ID *" styleClass="field-label"/>
-                            <TextField fx:id="txtExitVisitorId" prefWidth="180"
-                                       promptText="Government ID"/>
+                            <TextField fx:id="txtExitVisitorId" prefWidth="200"
+                                       promptText="Government ID"
+                                       style="-fx-background-radius:8; -fx-border-radius:8;
+                                              -fx-border-color:#B0BEC5; -fx-border-width:1.5;
+                                              -fx-padding:8 10; -fx-font-size:13px;"/>
                         </VBox>
-                        <VBox spacing="4">
+                        <VBox spacing="6">
                             <Label text="Park *" styleClass="field-label"/>
-                            <ComboBox fx:id="cboExitPark" prefWidth="165"
-                                      promptText="Select Park"/>
+                            <ComboBox fx:id="cboExitPark" prefWidth="200"
+                                      promptText="Select park…"
+                                      style="-fx-background-color:white;
+                                             -fx-background-radius:8;
+                                             -fx-border-color:#B0BEC5;
+                                             -fx-border-radius:8;
+                                             -fx-border-width:1.5;
+                                             -fx-font-size:13px;
+                                             -fx-padding:3 2;"/>
                         </VBox>
                         <Region HBox.hgrow="ALWAYS"/>
-                        <VBox alignment="BOTTOM_RIGHT">
-                            <Label text=" " styleClass="field-label"/>
+                        <VBox spacing="6" alignment="BOTTOM_RIGHT">
+                            <Label text="" styleClass="field-label"/>
                             <Button text="🚪  Register Exit" onAction="#handleRegisterExit"
-                                    styleClass="btn-warning"/>
+                                    styleClass="btn-teal"
+                                    style="-fx-padding:9 18;"/>
                         </VBox>
                     </HBox>
+
                     <Label text="Records the visitor's exit time. Only visitors who checked in today at the selected park are valid."
                            styleClass="lbl-hint" wrapText="true"/>
                 </VBox>
 
-                <!-- Result message -->
                 <Label fx:id="lblExitMessage" text="" wrapText="true"
-                       styleClass="lbl-success" maxWidth="800"/>
+                       maxWidth="820"
+                       style="-fx-font-size:13px; -fx-font-weight:bold;"/>
 
             </VBox>
         </Tab>

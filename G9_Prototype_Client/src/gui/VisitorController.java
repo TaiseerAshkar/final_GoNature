@@ -360,7 +360,7 @@ public class VisitorController {
                 "BOOKING A VISIT\n" +
                 "  • Click 'Book a Visit' to open the reservation form.\n" +
                 "  • SOLO: 1 visitor — 15% pre-booked discount.\n" +
-                "  • GROUP: 2–16 visitors — 15% group discount (guide free if guide leads).\n\n" +
+                "  • GROUP: 2–15 visitors — 15% group discount.\n\n" +
                 "VIEWING YOUR RESERVATIONS\n" +
                 "  • Click 'View My Reservations' to see all your bookings.\n\n" +
                 "CANCELLING A RESERVATION\n" +

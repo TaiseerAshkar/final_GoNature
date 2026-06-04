@@ -263,7 +263,7 @@ public class DBController {
      */
     public int createOrder(BookingRequest req) {
         if (connection == null) return -1;
-        String orderTypeValue = req.getOrderType().toLowerCase();
+        String orderTypeValue = toDbOrderType(req.getOrderType());
         System.out.printf(
             "[SQL INSERT] orders → visitor_id='%s' park_id=%d date='%s' time='%s'" +
             " num_visitors=%d order_type='%s' status='confirmed' email='%s'%n",
@@ -301,7 +301,7 @@ public class DBController {
      */
     public int addToWaitingList(BookingRequest req) {
         if (connection == null) return -1;
-        String orderTypeValue = req.getOrderType().toLowerCase();
+        String orderTypeValue = toDbOrderType(req.getOrderType());
         System.out.printf(
             "[SQL INSERT] waiting_list → visitor_id='%s' park_id=%d date='%s' time='%s'" +
             " num_visitors=%d order_type='%s'%n",
@@ -347,7 +347,7 @@ public class DBController {
                 "       DATE_FORMAT(o.visit_date, '%Y-%m-%d')    AS visit_date, " +
                 "       TIME_FORMAT(o.visit_time, '%H:%i')        AS visit_time, " +
                 "       o.num_visitors, " +
-                "       UPPER(o.order_type)  AS order_type, " +
+                "       CASE UPPER(o.order_type) WHEN 'INDIVIDUAL' THEN 'SOLO' WHEN 'SOLO' THEN 'SOLO' WHEN 'FAMILY' THEN 'FAMILY' WHEN 'GROUP' THEN 'GROUP' ELSE UPPER(o.order_type) END AS order_type, " +
                 "       UPPER(o.status)      AS status, " +
                 "       o.email, " +
                 "       DATE_FORMAT(o.created_at, '%Y-%m-%d %H:%i') AS created_at " +
@@ -457,6 +457,20 @@ public class DBController {
             System.out.println("Visitor lookup error: " + e.getMessage());
         }
         return null;
+    }
+
+    /**
+     * maps a UI display type (SOLO / FAMILY / GROUP) to its canonical DB value
+     * (individual / family / group). Handles legacy lowercase values too.
+     */
+    private static String toDbOrderType(String displayType) {
+        if (displayType == null) return "individual";
+        switch (displayType.toUpperCase()) {
+            case "SOLO":       return "individual";
+            case "FAMILY":     return "family";
+            case "GROUP":      return "group";
+            default:           return displayType.toLowerCase();
+        }
     }
 
     /**
@@ -605,7 +619,9 @@ public class DBController {
             if (rs.next()) {
                 int    orderId      = rs.getInt("id");
                 int    numVis       = rs.getInt("num_visitors");
-                String oType        = rs.getString("order_type").toUpperCase();
+                // map DB value to display name (SOLO / FAMILY / GROUP)
+                String oTypeRaw     = rs.getString("order_type").toUpperCase();
+                String oType        = "INDIVIDUAL".equals(oTypeRaw) ? "SOLO" : oTypeRaw;
                 String parkName     = rs.getString("park_name");
                 double fullPrice    = rs.getDouble("full_price");
                 boolean isGuide     = isRegisteredGuide(visitorId);
@@ -628,8 +644,9 @@ public class DBController {
         }
 
         // no booking found — treat as walk-in
-        int    numVis    = req.getNumVisitors();
-        String wType     = req.getOrderType().toLowerCase();
+        int    numVis        = req.getNumVisitors();
+        String wDisplayType  = req.getOrderType().toUpperCase(); // SOLO / FAMILY / GROUP (for display + pricing)
+        String wType         = toDbOrderType(req.getOrderType()); // individual / family / group (for DB insert)
         String parkName  = "";
         double fullPrice = 0;
 
@@ -655,11 +672,11 @@ public class DBController {
 
         if (available < 0)
             return new EntryResult(false, false, -1, parkName, visitorId, numVis,
-                wType.toUpperCase(), 0, "Could not check park capacity. Please try again.");
+                wDisplayType, 0, "Could not check park capacity. Please try again.");
 
         if (available < numVis)
             return new EntryResult(false, false, -1, parkName, visitorId, numVis,
-                wType.toUpperCase(), 0,
+                wDisplayType, 0,
                 "Not enough space. Park has " + available + " spot(s) remaining.");
 
         // walk-in order is completed immediately — no pre-existing pending status
@@ -683,10 +700,10 @@ public class DBController {
 
             boolean isGuide      = isRegisteredGuide(visitorId);
             boolean isSubscriber = isRegisteredSubscriber(visitorId);
-            double total = calculateEntryPrice(false, wType.toUpperCase(), numVis, fullPrice, isGuide, isSubscriber);
-            String note  = buildEntryPricingNote(false, wType.toUpperCase(), numVis, isGuide, isSubscriber);
+            double total = calculateEntryPrice(false, wDisplayType, numVis, fullPrice, isGuide, isSubscriber);
+            String note  = buildEntryPricingNote(false, wDisplayType, numVis, isGuide, isSubscriber);
             return new EntryResult(true, false, orderId, parkName, visitorId,
-                numVis, wType.toUpperCase(), total, note);
+                numVis, wDisplayType, total, note);
 
         } catch (SQLException e) {
             System.out.println("checkInVisitor (walk-in insert) error: " + e.getMessage());
@@ -792,7 +809,7 @@ public class DBController {
             String sql =
                 "SELECT DATE_FORMAT(o.visit_date,'%m/%d') AS day_label, " +
                 "       DATE_FORMAT(o.visit_date,'%Y-%m-%d') AS visit_date, " +
-                "       UPPER(o.order_type) AS order_type, " +
+                "       CASE UPPER(o.order_type) WHEN 'INDIVIDUAL' THEN 'SOLO' WHEN 'SOLO' THEN 'SOLO' WHEN 'FAMILY' THEN 'FAMILY' WHEN 'GROUP' THEN 'GROUP' ELSE UPPER(o.order_type) END AS order_type, " +
                 "       SUM(o.num_visitors) AS total_visitors " +
                 "FROM orders o " +
                 "WHERE o.status IN ('confirmed','completed') " +
@@ -831,8 +848,8 @@ public class DBController {
                 "SELECT o.id, p.name AS park_name, o.visitor_id, " +
                 "       DATE_FORMAT(o.visit_date,'%Y-%m-%d') AS visit_date, " +
                 "       TIME_FORMAT(o.visit_time,'%H:%i')    AS visit_time, " +
-                "       UPPER(o.order_type) AS order_type, " +
-                "       UPPER(o.status)     AS status, " +
+                "       CASE UPPER(o.order_type) WHEN 'INDIVIDUAL' THEN 'SOLO' WHEN 'SOLO' THEN 'SOLO' WHEN 'FAMILY' THEN 'FAMILY' WHEN 'GROUP' THEN 'GROUP' ELSE UPPER(o.order_type) END AS order_type, " +
+                "       UPPER(o.status)     AS status," +
                 "       o.num_visitors, " +
                 "       DATE_FORMAT(o.created_at,'%Y-%m-%d %H:%i') AS created_at " +
                 "FROM orders o JOIN parks p ON p.id = o.park_id " +
@@ -1013,26 +1030,71 @@ public class DBController {
     }
 
     /**
-     * updates the visit date and visitor count of a live order.
+     * updates the visit date, visitor count, and visit type of a live order.
      * the {@code WHERE} clause restricts to pending/confirmed so completed orders can't be modified.
+     * GROUP orders additionally require the order's {@code visitor_id} to be an approved guide.
      *
      * @param orderId     the order's primary-key ID
      * @param newDate     the new visit date in {@code yyyy-MM-dd} format
      * @param newVisitors the new number of visitors
-     * @return {@code true} if exactly one row was updated; {@code false} otherwise
+     * @param orderType   display visit type: {@code "SOLO"}, {@code "FAMILY"}, or {@code "GROUP"}
+     * @return {@code null} on success; a human-readable error message on failure
      */
-    public boolean updateOrder(int orderId, String newDate, int newVisitors) {
+    public String updateOrder(int orderId, String newDate, int newVisitors, String orderType) {
+        if (connection == null) return "Database connection unavailable.";
         try {
-            PreparedStatement st = connection.prepareStatement(
-                "UPDATE orders SET visit_date=?, num_visitors=? " +
-                "WHERE id=? AND status IN ('pending','confirmed')");
-            st.setString(1, newDate);
-            st.setInt(2, newVisitors);
-            st.setInt(3, orderId);
-            return st.executeUpdate() == 1;
+            // Fetch the order's current status and visitor_id so we can validate before updating.
+            PreparedStatement chk = connection.prepareStatement(
+                "SELECT status, visitor_id FROM orders WHERE id=?");
+            chk.setInt(1, orderId);
+            ResultSet rs = chk.executeQuery();
+            if (!rs.next())
+                return "Order #" + orderId + " not found.";
+            String currentStatus = rs.getString("status");
+            String visitorId     = rs.getString("visitor_id");
+
+            if ("completed".equalsIgnoreCase(currentStatus) ||
+                "cancelled".equalsIgnoreCase(currentStatus) ||
+                "no_show".equalsIgnoreCase(currentStatus)) {
+                return "Cannot update a " + currentStatus + " order. " +
+                       "Only pending or confirmed orders can be modified.";
+            }
+
+            // GROUP type is only valid when the booking visitor is an approved guide.
+            if ("GROUP".equalsIgnoreCase(orderType)) {
+                PreparedStatement guideChk = connection.prepareStatement(
+                    "SELECT 1 FROM guides WHERE id_number = ? AND is_approved = 1 LIMIT 1");
+                guideChk.setString(1, visitorId);
+                if (!guideChk.executeQuery().next())
+                    return "Cannot set type to GROUP: visitor " + visitorId +
+                           " is not a registered approved guide.";
+            }
+
+            PreparedStatement st;
+            if (orderType == null || orderType.trim().isEmpty()) {
+                // Caller did not supply a type (e.g. ServiceRep screen) — leave order_type unchanged.
+                st = connection.prepareStatement(
+                    "UPDATE orders SET visit_date=?, num_visitors=? " +
+                    "WHERE id=? AND status IN ('pending','confirmed')");
+                st.setString(1, newDate);
+                st.setInt(2,    newVisitors);
+                st.setInt(3,    orderId);
+            } else {
+                String dbType = toDbOrderType(orderType);
+                st = connection.prepareStatement(
+                    "UPDATE orders SET visit_date=?, num_visitors=?, order_type=? " +
+                    "WHERE id=? AND status IN ('pending','confirmed')");
+                st.setString(1, newDate);
+                st.setInt(2,    newVisitors);
+                st.setString(3, dbType);
+                st.setInt(4,    orderId);
+            }
+            if (st.executeUpdate() != 1)
+                return "Update failed. The order may have changed status — please refresh and try again.";
+            return null; // success
         } catch (SQLException e) {
             System.out.println("updateOrder error: " + e.getMessage());
-            return false;
+            return "Database error: " + e.getMessage();
         }
     }
 
@@ -1052,8 +1114,8 @@ public class DBController {
                 "       DATE_FORMAT(o.visit_date, '%Y-%m-%d')    AS visit_date, " +
                 "       TIME_FORMAT(o.visit_time, '%H:%i')        AS visit_time, " +
                 "       o.num_visitors, " +
-                "       UPPER(o.order_type) AS order_type, " +
-                "       UPPER(o.status)     AS status, " +
+                "       CASE UPPER(o.order_type) WHEN 'INDIVIDUAL' THEN 'SOLO' WHEN 'SOLO' THEN 'SOLO' WHEN 'FAMILY' THEN 'FAMILY' WHEN 'GROUP' THEN 'GROUP' ELSE UPPER(o.order_type) END AS order_type, " +
+                "       UPPER(o.status)     AS status," +
                 "       o.email, " +
                 "       DATE_FORMAT(o.created_at, '%Y-%m-%d %H:%i') AS created_at " +
                 "FROM orders o JOIN parks p ON p.id = o.park_id " +
@@ -1090,8 +1152,8 @@ public class DBController {
                 "       DATE_FORMAT(o.visit_date, '%Y-%m-%d')    AS visit_date, " +
                 "       TIME_FORMAT(o.visit_time, '%H:%i')        AS visit_time, " +
                 "       o.num_visitors, " +
-                "       UPPER(o.order_type) AS order_type, " +
-                "       UPPER(o.status)     AS status, " +
+                "       CASE UPPER(o.order_type) WHEN 'INDIVIDUAL' THEN 'SOLO' WHEN 'SOLO' THEN 'SOLO' WHEN 'FAMILY' THEN 'FAMILY' WHEN 'GROUP' THEN 'GROUP' ELSE UPPER(o.order_type) END AS order_type, " +
+                "       UPPER(o.status)     AS status," +
                 "       o.email, " +
                 "       DATE_FORMAT(o.created_at, '%Y-%m-%d %H:%i') AS created_at " +
                 "FROM orders o JOIN parks p ON p.id = o.park_id " +
@@ -1131,7 +1193,7 @@ public class DBController {
                 "       DATE_FORMAT(wl.visit_date, '%Y-%m-%d')    AS visit_date, " +
                 "       TIME_FORMAT(wl.visit_time, '%H:%i')        AS visit_time, " +
                 "       wl.num_visitors, " +
-                "       UPPER(wl.order_type) AS order_type, " +
+                "       CASE UPPER(wl.order_type) WHEN 'INDIVIDUAL' THEN 'SOLO' WHEN 'SOLO' THEN 'SOLO' WHEN 'FAMILY' THEN 'FAMILY' WHEN 'GROUP' THEN 'GROUP' ELSE UPPER(wl.order_type) END AS order_type, " +
                 "       'WAITING'            AS status, " +
                 "       wl.email, " +
                 "       DATE_FORMAT(wl.created_at, '%Y-%m-%d %H:%i') AS created_at " +

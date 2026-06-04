@@ -24,64 +24,96 @@
         <VBox spacing="16" style="-fx-padding: 24 28;">
 
             <!-- Personal information card -->
-            <VBox spacing="12" styleClass="card">
+            <VBox spacing="14" styleClass="card">
 
-                <Label text="Personal Information" styleClass="card-title"/>
+                <Label text="👤  Personal Information" styleClass="card-title"/>
                 <Separator/>
 
-                <GridPane hgap="14" vgap="10">
+                <GridPane hgap="14" vgap="12">
+                    <columnConstraints>
+                        <ColumnConstraints minWidth="120" prefWidth="130"/>
+                        <ColumnConstraints minWidth="200" hgrow="ALWAYS"/>
+                    </columnConstraints>
+
                     <Label text="ID Number *" styleClass="field-label"
                            GridPane.columnIndex="0" GridPane.rowIndex="0"/>
                     <TextField fx:id="txtIdNumber" promptText="5–15 digit government ID"
-                               GridPane.columnIndex="1" GridPane.rowIndex="0" prefWidth="280"/>
+                               style="-fx-background-radius:8; -fx-border-radius:8;
+                                      -fx-border-color:#B0BEC5; -fx-border-width:1.5;
+                                      -fx-padding:8 10; -fx-font-size:13px;"
+                               GridPane.columnIndex="1" GridPane.rowIndex="0"/>
 
                     <Label text="First Name *" styleClass="field-label"
                            GridPane.columnIndex="0" GridPane.rowIndex="1"/>
                     <TextField fx:id="txtFirstName" promptText="First name"
+                               style="-fx-background-radius:8; -fx-border-radius:8;
+                                      -fx-border-color:#B0BEC5; -fx-border-width:1.5;
+                                      -fx-padding:8 10; -fx-font-size:13px;"
                                GridPane.columnIndex="1" GridPane.rowIndex="1"/>
 
                     <Label text="Last Name *" styleClass="field-label"
                            GridPane.columnIndex="0" GridPane.rowIndex="2"/>
                     <TextField fx:id="txtLastName" promptText="Last name"
+                               style="-fx-background-radius:8; -fx-border-radius:8;
+                                      -fx-border-color:#B0BEC5; -fx-border-width:1.5;
+                                      -fx-padding:8 10; -fx-font-size:13px;"
                                GridPane.columnIndex="1" GridPane.rowIndex="2"/>
 
                     <Label text="Email *" styleClass="field-label"
                            GridPane.columnIndex="0" GridPane.rowIndex="3"/>
                     <TextField fx:id="txtEmail" promptText="your@email.com"
+                               style="-fx-background-radius:8; -fx-border-radius:8;
+                                      -fx-border-color:#B0BEC5; -fx-border-width:1.5;
+                                      -fx-padding:8 10; -fx-font-size:13px;"
                                GridPane.columnIndex="1" GridPane.rowIndex="3"/>
 
                     <Label text="Phone Number *" styleClass="field-label"
                            GridPane.columnIndex="0" GridPane.rowIndex="4"/>
                     <TextField fx:id="txtPhone" promptText="9–15 digits"
+                               style="-fx-background-radius:8; -fx-border-radius:8;
+                                      -fx-border-color:#B0BEC5; -fx-border-width:1.5;
+                                      -fx-padding:8 10; -fx-font-size:13px;"
                                GridPane.columnIndex="1" GridPane.rowIndex="4"/>
                 </GridPane>
             </VBox>
 
             <!-- Family Member Club card -->
-            <VBox spacing="10" styleClass="card">
+            <VBox spacing="12" styleClass="card">
 
                 <CheckBox fx:id="chkSubscriber"
                           text="Join the Family Member Club (Subscriber)"
-                          style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #2E7D32;"
+                          style="-fx-font-size: 13px; -fx-font-weight: bold;
+                                 -fx-text-fill: #2E7D32;"
                           onAction="#onSubscriberToggle"/>
 
-                <VBox fx:id="subscriberFields" spacing="10"
+                <VBox fx:id="subscriberFields" spacing="12"
                       visible="false" managed="false">
                     <Separator/>
                     <Label text="A unique subscriber ID will be generated automatically after registration."
                            styleClass="lbl-hint" wrapText="true"/>
 
-                    <GridPane hgap="14" vgap="10">
+                    <GridPane hgap="14" vgap="12">
+                        <columnConstraints>
+                            <ColumnConstraints minWidth="120" prefWidth="130"/>
+                            <ColumnConstraints minWidth="200" hgrow="ALWAYS"/>
+                        </columnConstraints>
+
                         <Label text="Family Size *" styleClass="field-label"
                                GridPane.columnIndex="0" GridPane.rowIndex="0"/>
                         <TextField fx:id="txtFamilySize"
                                    promptText="Number of family members (1–10)"
-                                   GridPane.columnIndex="1" GridPane.rowIndex="0" prefWidth="280"/>
+                                   style="-fx-background-radius:8; -fx-border-radius:8;
+                                          -fx-border-color:#B0BEC5; -fx-border-width:1.5;
+                                          -fx-padding:8 10; -fx-font-size:13px;"
+                                   GridPane.columnIndex="1" GridPane.rowIndex="0"/>
 
                         <Label text="Credit Card" styleClass="field-label"
                                GridPane.columnIndex="0" GridPane.rowIndex="1"/>
                         <TextField fx:id="txtCreditCard"
                                    promptText="16-digit card number (optional)"
+                                   style="-fx-background-radius:8; -fx-border-radius:8;
+                                          -fx-border-color:#B0BEC5; -fx-border-width:1.5;
+                                          -fx-padding:8 10; -fx-font-size:13px;"
                                    GridPane.columnIndex="1" GridPane.rowIndex="1"/>
                     </GridPane>
                 </VBox>
@@ -94,9 +126,11 @@
             <HBox spacing="12">
                 <Button text="✅  Create Account" onAction="#handleRegister"
                         maxWidth="Infinity" HBox.hgrow="ALWAYS"
-                        styleClass="btn-primary"/>
+                        styleClass="btn-primary"
+                        style="-fx-font-size: 14px; -fx-padding: 10 22;"/>
                 <Button text="Cancel" onAction="#handleCancel"
-                        styleClass="btn-secondary"/>
+                        styleClass="btn-secondary"
+                        style="-fx-padding: 10 22;"/>
             </HBox>
 
         </VBox>

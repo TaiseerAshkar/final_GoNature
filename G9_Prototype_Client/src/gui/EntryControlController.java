@@ -66,7 +66,7 @@ public class EntryControlController {
         UserSession s = UserSession.getInstance();
         lblParkName.setText(s != null && s.getParkId() != null
             ? "Park #" + s.getParkId() : "No Park Assigned");
-        cboOrderType.getItems().addAll("SOLO", "GROUP");
+        cboOrderType.getItems().addAll("SOLO", "FAMILY", "GROUP");
         cboOrderType.setValue("SOLO");
         // Listener: update hint and auto-set/lock visitors when type changes
         cboOrderType.valueProperty().addListener((obs, oldVal, newVal) ->
@@ -103,7 +103,7 @@ public class EntryControlController {
     }
 
     /**
-     * locks the count field at 1 for SOLO, or unlocks it for GROUP.
+     * locks the count field at 1 for SOLO, or unlocks it for FAMILY / GROUP.
      * also updates the hint so the employee knows the allowed range.
      *
      * @param orderType the newly selected visit type string
@@ -116,15 +116,22 @@ public class EntryControlController {
                 txtWalkInVisitors.setDisable(true);
                 txtWalkInVisitors.setStyle(
                     "-fx-background-color: #f5f5f5; -fx-background-radius: 4;");
-                lblVisitorHint.setText("Solo: exactly 1 visitor.");
+                lblVisitorHint.setText("SOLO: exactly 1 visitor.");
+                break;
+            case "FAMILY":
+                txtWalkInVisitors.setDisable(false);
+                txtWalkInVisitors.setStyle("");
+                if ("1".equals(txtWalkInVisitors.getText().trim()))
+                    txtWalkInVisitors.setText("2");
+                lblVisitorHint.setText("FAMILY: 2–15 visitors (15% discount for subscribers).");
                 break;
             case "GROUP":
                 txtWalkInVisitors.setDisable(false);
                 txtWalkInVisitors.setStyle("");
                 if ("1".equals(txtWalkInVisitors.getText().trim()))
-                    txtWalkInVisitors.setText("2"); // reset from SOLO default
+                    txtWalkInVisitors.setText("2");
                 lblVisitorHint.setText(
-                    "Group: 2–16 visitors. Registered guides enter free.");
+                    "GROUP: 2–16 visitors led by a registered guide (guide enters free).");
                 break;
             default:
                 txtWalkInVisitors.setDisable(false);
@@ -190,17 +197,24 @@ public class EntryControlController {
         switch (orderType) {
             case "SOLO":
                 if (numVisitors != 1) {
-                    setCheckInError("Solo check-in allows exactly 1 visitor.");
+                    setCheckInError("SOLO check-in allows exactly 1 visitor.");
+                    return;
+                }
+                break;
+            case "FAMILY":
+                if (numVisitors < 2 || numVisitors > 15) {
+                    setCheckInError("FAMILY check-in requires 2–15 visitors.");
                     return;
                 }
                 break;
             case "GROUP":
                 if (numVisitors < 2) {
-                    setCheckInError("Minimum 2 visitors required for a group check-in.");
+                    setCheckInError("Minimum 2 visitors required for a GROUP check-in.");
                     return;
                 }
                 if (numVisitors > 16) {
-                    setCheckInError("Maximum 16 visitors allowed for a group check-in.");
+                    setCheckInError(
+                        "Maximum 16 visitors allowed for a GROUP check-in (15 guests + guide).");
                     return;
                 }
                 break;

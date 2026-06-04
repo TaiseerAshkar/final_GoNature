@@ -85,9 +85,9 @@ public class BookingController {
             "13:00", "14:00", "15:00", "16:00");
     }
 
-    /** sets up the two visit types and applies the initial hint for SOLO. */
+    /** sets up the three visit types and applies the initial hint for SOLO. */
     private void setupOrderTypes() {
-        cboOrderType.getItems().addAll("SOLO", "GROUP");
+        cboOrderType.getItems().addAll("SOLO", "FAMILY", "GROUP");
         cboOrderType.setValue("SOLO");
         updateVisitorHint("SOLO");
     }
@@ -124,7 +124,7 @@ public class BookingController {
 
     /**
      * locks or unlocks the visitor-count field and updates the hint based on visit type.
-     * SOLO is fixed at 1; GROUP allows 2–16 and the guide enters free if the booker is a guide.
+     * SOLO is fixed at 1; FAMILY allows 2–15 for anyone; GROUP is for registered guides (2–16).
      *
      * @param orderType the currently selected visit type string
      */
@@ -136,12 +136,12 @@ public class BookingController {
                 txtVisitors.setText("1");
                 txtVisitors.setDisable(true);
                 break;
+            case "FAMILY":
+                lblVisitorHint.setText("2–15 visitors — 15% family discount");
+                txtVisitors.setDisable(false);
+                break;
             case "GROUP":
-                UserSession gs = UserSession.getInstance();
-                boolean isGuide = gs != null && "GUIDE".equals(gs.getRole());
-                lblVisitorHint.setText(isGuide
-                    ? "2–16 total (you enter free · others get 25% advance discount)"
-                    : "2–16 visitors — 15% group discount");
+                lblVisitorHint.setText("2–16 total (guide enters free · up to 15 guests · 25% advance discount)");
                 txtVisitors.setDisable(false);
                 break;
         }
@@ -149,9 +149,9 @@ public class BookingController {
 
     /**
      * recomputes the price estimate live. clears the label if inputs are incomplete.
-     * SOLO: 1 × fullPrice × 0.85 (15% discount).
-     * GROUP by guide: (visitors − 1) × fullPrice × 0.75 (guide free + 25% advance discount).
-     * GROUP by visitor: visitors × fullPrice × 0.85 (15% group discount).
+     * SOLO:   1 × fullPrice × 0.85 (15% pre-booked discount).
+     * FAMILY: visitors × fullPrice × 0.85 (15% family discount).
+     * GROUP:  (visitors − 1) × fullPrice × 0.75 (guide free + 25% advance discount).
      */
     private void updatePriceEstimate() {
         Park   park   = cboPark.getValue();
@@ -164,18 +164,14 @@ public class BookingController {
             double total;
             String note;
             if ("GROUP".equals(type)) {
-                UserSession s = UserSession.getInstance();
-                boolean isGuide = s != null && "GUIDE".equals(s.getRole());
-                if (isGuide) {
-                    int paying = Math.max(0, visitors - 1); // guide enters free
-                    total = paying * park.getFullPrice() * 0.75;
-                    note  = String.format(" (guide free · %d paying · 25%% advance discount)", paying);
-                } else {
-                    total = visitors * park.getFullPrice() * 0.85;
-                    note  = " (15% group discount)";
-                }
+                int paying = Math.max(0, visitors - 1); // guide enters free
+                total = paying * park.getFullPrice() * 0.75;
+                note  = String.format(" (guide free · %d paying · 25%% advance discount)", paying);
+            } else if ("FAMILY".equals(type)) {
+                total = visitors * park.getFullPrice() * 0.85;
+                note  = " (15% family discount)";
             } else {
-                // SOLO — same 15% pre-booked discount regardless of role
+                // SOLO
                 total = park.getFullPrice() * 0.85;
                 note  = " (15% pre-booked discount)";
             }
@@ -214,8 +210,9 @@ public class BookingController {
 
     /**
      * validates all form inputs and builds a {@link BookingRequest} on success.
-     * SOLO = exactly 1 visitor, any role.
-     * GROUP = 2–16 visitors, any role (guides get the guide-free benefit at entry).
+     * SOLO   = exactly 1 visitor, any role.
+     * FAMILY = 2–15 visitors, any role.
+     * GROUP  = 2–16 total, registered guides only (guide enters free at check-in).
      *
      * @return a populated {@link BookingRequest}, or {@code null} if validation failed
      */
@@ -246,12 +243,23 @@ public class BookingController {
         switch (orderType) {
             case "SOLO":
                 if (visitors != 1) {
-                    setError("Solo bookings allow exactly 1 visitor."); return null;
+                    setError("SOLO bookings allow exactly 1 visitor."); return null;
+                }
+                break;
+            case "FAMILY":
+                if (visitors < 2 || visitors > 15) {
+                    setError("FAMILY bookings require 2–15 visitors."); return null;
                 }
                 break;
             case "GROUP":
+                UserSession gs2 = UserSession.getInstance();
+                boolean isGuideBooking = gs2 != null && "GUIDE".equals(gs2.getRole());
+                if (!isGuideBooking) {
+                    setError("GROUP bookings are for registered guides only. Use FAMILY for group visits."); return null;
+                }
+                // guide books the full headcount (themselves + up to 15 guests = max 16 total)
                 if (visitors < 2 || visitors > 16) {
-                    setError("Group bookings require 2–16 visitors."); return null;
+                    setError("Guide GROUP bookings require 2–16 visitors total (you enter free)."); return null;
                 }
                 break;
         }

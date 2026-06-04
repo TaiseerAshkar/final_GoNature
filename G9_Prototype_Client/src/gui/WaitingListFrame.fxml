@@ -7,7 +7,7 @@
       fx:controller="gui.WaitingListController"
       styleClass="screen-bg"
       spacing="0"
-      prefWidth="760" prefHeight="480">
+      prefWidth="780" prefHeight="500">
 
     <stylesheets>
         <URL value="@gonature.css"/>
@@ -22,29 +22,34 @@
     </HBox>
 
     <!-- Control bar -->
-    <HBox spacing="10" alignment="CENTER_LEFT"
-          style="-fx-padding: 12 20; -fx-background-color: white;
+    <HBox spacing="12" alignment="CENTER_LEFT"
+          style="-fx-padding: 12 20;
+                 -fx-background-color: white;
                  -fx-border-color: #E0E0E0; -fx-border-width: 0 0 1 0;">
+        <Label text="⏳" style="-fx-font-size: 16px;"/>
         <Label text="Visitors waiting to be notified if a spot opens up"
-               styleClass="field-label"/>
+               styleClass="field-label"
+               style="-fx-font-size: 13px;"/>
         <Region HBox.hgrow="ALWAYS"/>
-        <Label fx:id="lblCount" styleClass="lbl-hint" style="-fx-font-style: normal;"/>
-        <Button text="🔄  Refresh" onAction="#handleRefresh" styleClass="btn-blue"/>
+        <Label fx:id="lblCount" styleClass="lbl-hint"
+               style="-fx-font-style: normal; -fx-font-size: 12px;"/>
+        <Button text="🔄  Refresh" onAction="#handleRefresh"
+                styleClass="btn-blue" style="-fx-padding:8 16;"/>
     </HBox>
 
     <!-- Error label -->
     <Label fx:id="lblError" text="" styleClass="lbl-error"
-           style="-fx-padding: 4 20;" wrapText="true"/>
+           style="-fx-padding: 6 20;" wrapText="true"/>
 
     <!-- Waiting list table -->
     <TableView fx:id="tableWaiting" styleClass="table-view" VBox.vgrow="ALWAYS">
         <columns>
-            <TableColumn fx:id="colVisitorId" text="Visitor ID" prefWidth="120"/>
-            <TableColumn fx:id="colDate"      text="Date"       prefWidth="110"/>
-            <TableColumn fx:id="colTime"      text="Time"       prefWidth="80"/>
-            <TableColumn fx:id="colVisitors"  text="Visitors"   prefWidth="80"/>
-            <TableColumn fx:id="colType"      text="Type"       prefWidth="110"/>
-            <TableColumn fx:id="colAddedOn"   text="Added On"   prefWidth="160"/>
+            <TableColumn fx:id="colVisitorId" text="Visitor ID" prefWidth="130"/>
+            <TableColumn fx:id="colDate"      text="Visit Date"  prefWidth="115"/>
+            <TableColumn fx:id="colTime"      text="Time"        prefWidth="85"/>
+            <TableColumn fx:id="colVisitors"  text="Visitors"    prefWidth="85"/>
+            <TableColumn fx:id="colType"      text="Type"        prefWidth="115"/>
+            <TableColumn fx:id="colAddedOn"   text="Added On"    prefWidth="170"/>
         </columns>
         <placeholder>
             <Label text="No visitors currently on the waiting list for this park."

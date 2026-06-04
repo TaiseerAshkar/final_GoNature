@@ -251,10 +251,18 @@ public class EchoServer extends AbstractServer {
                             "Solo check-in requires exactly 1 visitor."));
                         break;
                     }
-                    if ("GROUP".equals(ot) && (nv < 2 || nv > 16)) {
-                        client.sendToClient(new Message("ENTRY_DENIED",
-                            "Group check-in requires 2–16 visitors (got " + nv + ")."));
-                        break;
+                    if ("GROUP".equals(ot)) {
+                        // guides (who enter free) may present with up to 15 guests + themselves = 16 total;
+                        // regular visitors and subscribers are capped at 15
+                        boolean isGuideCI = DBController.getInstance()
+                            .isRegisteredGuide(req.getVisitorId());
+                        int maxCI = isGuideCI ? 16 : 15;
+                        if (nv < 2 || nv > maxCI) {
+                            client.sendToClient(new Message("ENTRY_DENIED",
+                                "Group check-in requires 2–" + maxCI + " visitors (got " + nv + ")."
+                                + (isGuideCI ? " Guide is included in the count." : "")));
+                            break;
+                        }
                     }
                     EntryResult entryResult = DBController.getInstance().checkInVisitor(req);
                     if (entryResult.isSuccess()) {
@@ -400,9 +408,13 @@ public class EchoServer extends AbstractServer {
 
                 case "UPDATE_ORDER": {
                     Order o = (Order) incoming.getData();
-                    boolean ok = DBController.getInstance()
-                        .updateOrder(o.getOrderNumber(), o.getOrderDate(), o.getNumberOfVisitors());
-                    client.sendToClient(new Message(ok ? "UPDATE_SUCCESS" : "UPDATE_FAIL", null));
+                    String updateErr = DBController.getInstance()
+                        .updateOrder(o.getOrderNumber(), o.getOrderDate(),
+                                     o.getNumberOfVisitors(), o.getOrderType());
+                    if (updateErr == null)
+                        client.sendToClient(new Message("UPDATE_SUCCESS", null));
+                    else
+                        client.sendToClient(new Message("UPDATE_FAIL", updateErr));
                     break;
                 }
 
@@ -505,8 +517,8 @@ public class EchoServer extends AbstractServer {
 
     /**
      * validates a booking request before persisting. enforces visit-type limits:
-     * SOLO = exactly 1 visitor (any role); GROUP = 2–16 visitors (any role can organise;
-     * guides receive the guide-free benefit at entry, not at booking time).
+     * SOLO = exactly 1 visitor (any role); GROUP = 2–15 for regular visitors/subscribers,
+     * or 2–16 total for registered guides (guide is included in the count but enters free).
      *
      * @param req the booking request to validate
      * @return a human-readable error string if invalid; {@code null} if all checks pass
@@ -537,8 +549,15 @@ public class EchoServer extends AbstractServer {
                     return "Solo bookings allow exactly 1 visitor.";
                 break;
             case "GROUP":
-                if (req.getNumVisitors() < 2 || req.getNumVisitors() > 16)
-                    return "Group bookings require 2–16 visitors.";
+                // guides count themselves in numVisitors (they enter free); max 15 paying guests
+                // means a guide-led group may have up to 16 total. regular visitors max out at 15.
+                boolean isGuide = DBController.getInstance()
+                    .isRegisteredGuide(req.getVisitorId());
+                int maxGroup = isGuide ? 16 : 15;
+                if (req.getNumVisitors() < 2 || req.getNumVisitors() > maxGroup)
+                    return isGuide
+                        ? "Guide group bookings require 2–16 visitors total (guide enters free)."
+                        : "Group bookings require 2–15 visitors.";
                 break;
             default:
                 return "Invalid visit type. Must be SOLO or GROUP.";

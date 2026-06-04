@@ -22,9 +22,14 @@ import javafx.scene.control.*;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
 
+import javafx.collections.FXCollections;
+import javafx.scene.chart.CategoryAxis;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeSet;
 
 /**
  * FXML controller for the reports dashboard ({@code ReportsFrame.fxml}).
@@ -296,12 +301,24 @@ public class ReportsController {
 
         LinkedHashMap<String, List<ReportUsageRow>> byPark = new LinkedHashMap<>();
         for (ReportUsageRow r : rows) {
-            byPark.computeIfAbsent(r.getParkName(), k -> new java.util.ArrayList<>()).add(r);
+            byPark.computeIfAbsent(r.getParkName(), k -> new ArrayList<>()).add(r);
         }
         // drop all other parks when locked — park managers should only see their park
         if (myParkName != null) {
             byPark.entrySet().removeIf(e -> !e.getKey().equals(myParkName));
         }
+
+        // Collect all hour slots across every park, sort them (zero-padded strings sort
+        // chronologically), then pre-seed the CategoryAxis so JavaFX registers the order
+        // before any series data is added — otherwise categories appear in first-encounter order.
+        TreeSet<String> allHours = new TreeSet<>();
+        for (List<ReportUsageRow> parkRows : byPark.values()) {
+            for (ReportUsageRow r : parkRows) allHours.add(r.getHourSlot());
+        }
+        CategoryAxis xAxis = (CategoryAxis) chartUsage.getXAxis();
+        xAxis.setCategories(FXCollections.observableArrayList(allHours));
+        xAxis.setAutoRanging(false);
+
         for (Map.Entry<String, List<ReportUsageRow>> entry : byPark.entrySet()) {
             XYChart.Series<String, Number> series = new XYChart.Series<>();
             series.setName(entry.getKey());

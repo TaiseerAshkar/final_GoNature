@@ -17,6 +17,7 @@ public class Order implements Serializable {
     private int    confirmationCode;
     private int    subscriberId;
     private String dateOfPlacingOrder;  // "YYYY-MM-DD"
+    private String orderType;           // display name: "SOLO" | "FAMILY" | "GROUP"
 
     /**
      * @param orderNumber        the unique order identifier
@@ -28,12 +29,29 @@ public class Order implements Serializable {
      */
     public Order(int orderNumber, String orderDate, int numberOfVisitors,
                  int confirmationCode, int subscriberId, String dateOfPlacingOrder) {
+        this(orderNumber, orderDate, numberOfVisitors, confirmationCode,
+             subscriberId, dateOfPlacingOrder, "");
+    }
+
+    /**
+     * @param orderNumber        the unique order identifier
+     * @param orderDate          the scheduled visit date in {@code YYYY-MM-DD} format
+     * @param numberOfVisitors   the number of visitors on the order
+     * @param confirmationCode   the numeric confirmation code sent to the visitor
+     * @param subscriberId       the ID of the subscriber who placed the order
+     * @param dateOfPlacingOrder the date the order was created in {@code YYYY-MM-DD} format
+     * @param orderType          the display visit type: {@code "SOLO"}, {@code "FAMILY"}, or {@code "GROUP"}
+     */
+    public Order(int orderNumber, String orderDate, int numberOfVisitors,
+                 int confirmationCode, int subscriberId, String dateOfPlacingOrder,
+                 String orderType) {
         this.orderNumber        = orderNumber;
         this.orderDate          = orderDate;
         this.numberOfVisitors   = numberOfVisitors;
         this.confirmationCode   = confirmationCode;
         this.subscriberId       = subscriberId;
         this.dateOfPlacingOrder = dateOfPlacingOrder;
+        this.orderType          = orderType != null ? orderType : "";
     }
 
     /** @return the unique order number */
@@ -54,11 +72,17 @@ public class Order implements Serializable {
     /** @return the date the order was placed in {@code YYYY-MM-DD} format */
     public String getDateOfPlacingOrder()   { return dateOfPlacingOrder; }
 
+    /** @return the display visit type: SOLO, FAMILY, or GROUP */
+    public String getOrderType()            { return orderType; }
+
     /** @param d the new visit date in {@code YYYY-MM-DD} format */
     public void setOrderDate(String d)      { this.orderDate = d; }
 
     /** @param n the new visitor count */
     public void setNumberOfVisitors(int n)  { this.numberOfVisitors = n; }
+
+    /** @param t the new display visit type */
+    public void setOrderType(String t)      { this.orderType = t; }
 
     @Override
     public String toString() {

@@ -22,6 +22,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.Arrays;
 
 /**
  * controller for the academic/admin screen ({@code AcademicFrame.fxml}).
@@ -47,13 +48,16 @@ public class AcademicFrameController {
     @FXML private TableColumn<OrderDetail, String>  colBookedOn;
 
     // ── update-order form ─────────────────────────────────────────────────────
-    @FXML private TextField txtOrderNum;
-    @FXML private TextField txtNewDate;
-    @FXML private TextField txtNewVisitors;
-    @FXML private Label     lblResult;
+    @FXML private TextField        txtOrderNum;
+    @FXML private TextField        txtNewDate;
+    @FXML private ComboBox<String> cboNewOrderType;
+    @FXML private TextField        txtNewVisitors;
+    @FXML private Label            lblResult;
 
     /**
-     * populates header labels from {@link UserSession} and wires all column cell-value factories.
+     * populates header labels from {@link UserSession}, wires column cell-value factories,
+     * sets up the visit-type dropdown, and installs a table-row selection listener that
+     * pre-fills the update form when a row is clicked.
      */
     @FXML
     public void initialize() {
@@ -81,6 +85,44 @@ public class AcademicFrameController {
             new SimpleStringProperty(d.getValue().getStatus()));
         colBookedOn.setCellValueFactory(d ->
             new SimpleStringProperty(d.getValue().getCreatedAt()));
+
+        // Visit-type dropdown — SOLO locks visitors to 1; FAMILY/GROUP unlock it.
+        cboNewOrderType.getItems().addAll("SOLO", "FAMILY", "GROUP");
+        cboNewOrderType.setValue("SOLO");
+        applyTypeSideEffects("SOLO");
+        cboNewOrderType.valueProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null) applyTypeSideEffects(newVal);
+        });
+
+        // Clicking a table row pre-fills the update form.
+        tableOrders.getSelectionModel().selectedItemProperty().addListener(
+            (obs, oldSel, sel) -> {
+                if (sel == null) return;
+                txtOrderNum.setText(String.valueOf(sel.getId()));
+                txtNewDate.setText(sel.getVisitDate());
+                txtNewVisitors.setText(String.valueOf(sel.getNumVisitors()));
+                String type = sel.getOrderType();
+                if (Arrays.asList("SOLO", "FAMILY", "GROUP").contains(type))
+                    cboNewOrderType.setValue(type);
+                else
+                    cboNewOrderType.setValue("SOLO");
+                lblResult.setText("");
+            });
+    }
+
+    /** Locks/unlocks the visitors field and resets its value when the type changes. */
+    private void applyTypeSideEffects(String type) {
+        if ("SOLO".equals(type)) {
+            txtNewVisitors.setText("1");
+            txtNewVisitors.setDisable(true);
+            txtNewVisitors.setStyle("-fx-background-color:#f5f5f5; -fx-background-radius:8;");
+        } else {
+            txtNewVisitors.setDisable(false);
+            txtNewVisitors.setStyle("");
+            // Reset to minimum valid value when switching away from SOLO
+            if ("1".equals(txtNewVisitors.getText().trim()))
+                txtNewVisitors.setText("2");
+        }
     }
 
     /**
@@ -104,12 +146,18 @@ public class AcademicFrameController {
 
     /**
      * validates and sends an {@code UPDATE_ORDER} request.
-     * date must be a future {@code YYYY-MM-DD}; visitors must be 1–15.
+     * <ul>
+     *   <li>SOLO  — visitor count forced to 1.</li>
+     *   <li>FAMILY — visitor count must be 2–15.</li>
+     *   <li>GROUP  — visitor count must be 2–15; server additionally checks that
+     *               the order's visitor_id is an approved guide.</li>
+     * </ul>
      *
      * @param event the button-click event
      */
     public void updateOrder(ActionEvent event) {
         try {
+            // ── Order number ─────────────────────────────────────────────────
             String orderNumText = txtOrderNum.getText().trim();
             if (orderNumText.isEmpty()) {
                 lblResult.setText("Please enter an order number.");
@@ -117,36 +165,68 @@ public class AcademicFrameController {
             }
             int num = Integer.parseInt(orderNumText);
 
+            // ── Date ─────────────────────────────────────────────────────────
             String date = txtNewDate.getText().trim();
-            if (date.isEmpty()) { lblResult.setText("Please enter a date."); return; }
+            if (date.isEmpty()) { lblResult.setText("Please enter a new date."); return; }
             try {
                 LocalDate newDate = LocalDate.parse(date, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
                 if (!newDate.isAfter(LocalDate.now())) {
-                    lblResult.setText("Error: Date must be a future date!");
+                    lblResult.setText("Date must be a future date (use YYYY-MM-DD).");
                     return;
                 }
             } catch (DateTimeParseException e) {
-                lblResult.setText("Error: Invalid date format — use YYYY-MM-DD.");
+                lblResult.setText("Invalid date format — please use YYYY-MM-DD.");
                 return;
             }
 
+            // ── Visit type ───────────────────────────────────────────────────
+            String orderType = cboNewOrderType.getValue();
+            if (orderType == null) {
+                lblResult.setText("Please select a visit type.");
+                return;
+            }
+
+            // ── Visitor count (type-specific rules) ──────────────────────────
             String visText = txtNewVisitors.getText().trim();
             if (visText.isEmpty()) {
-                lblResult.setText("Please enter number of visitors.");
+                lblResult.setText("Please enter the number of visitors.");
                 return;
             }
             int vis = Integer.parseInt(visText);
-            if (vis < 1 || vis > 15) {
-                lblResult.setText("Error: Visitors must be between 1 and 15!");
-                return;
+
+            switch (orderType) {
+                case "SOLO":
+                    if (vis != 1) {
+                        lblResult.setText("SOLO orders must have exactly 1 visitor.");
+                        return;
+                    }
+                    break;
+                case "FAMILY":
+                    if (vis < 2 || vis > 15) {
+                        lblResult.setText("FAMILY orders require 2–15 visitors.");
+                        return;
+                    }
+                    break;
+                case "GROUP":
+                    if (vis < 2 || vis > 15) {
+                        lblResult.setText("GROUP orders require 2–15 visitors " +
+                                          "(the guide enters free at the gate).");
+                        return;
+                    }
+                    // Guide eligibility is validated server-side; we rely on the
+                    // server's error message to explain why it was rejected.
+                    break;
+                default:
+                    lblResult.setText("Unknown visit type selected.");
+                    return;
             }
 
-            Order o = new Order(num, date, vis, 0, 0, "");
+            Order o = new Order(num, date, vis, 0, 0, "", orderType);
             ClientUI.chat.accept(new Message("UPDATE_ORDER", o));
-            lblResult.setText(ChatClient.lastResult);
+            lblResult.setText(ChatClient.lastResult != null ? ChatClient.lastResult : "No response from server.");
 
         } catch (NumberFormatException e) {
-            lblResult.setText("Please enter valid numbers.");
+            lblResult.setText("Please enter valid numbers for Order ID and Visitor Count.");
         }
     }
 
@@ -162,8 +242,12 @@ public class AcademicFrameController {
             "MANAGING ORDERS\n" +
             "  • Click 'Load All Orders' to view all live bookings.\n" +
             "  • Columns: Order #, Park, Visitor ID, Date, Time, Visitors, Type, Status, Booked On.\n" +
-            "  • To update: enter Order Number, new Date (YYYY-MM-DD), and visitor count,\n" +
-            "    then click 'Update Order'. Visitor count must be 1–15.\n\n" +
+            "  • To update: click a row to pre-fill the form, or enter the Order Number manually.\n" +
+            "    Set a new Date (YYYY-MM-DD), choose a Visit Type, and adjust visitor count:\n" +
+            "      SOLO   → exactly 1 visitor.\n" +
+            "      FAMILY → 2–15 visitors.\n" +
+            "      GROUP  → 2–15 visitors; only allowed when the visitor is an approved guide.\n" +
+            "    Then click 'Update Order'.\n\n" +
             "REPORTS DASHBOARD\n" +
             "  • Click 'View Reports Dashboard' to open the analytics panel.\n\n" +
             "  Visitor Report — bar chart of daily visitors for the last 30 days,\n" +

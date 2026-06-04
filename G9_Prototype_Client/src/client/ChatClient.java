@@ -110,7 +110,8 @@ public class ChatClient extends AbstractClient {
                 lastResult = "Update successful!";
                 break;
             case "UPDATE_FAIL":
-                lastResult = "Update failed.";
+                lastResult = (m.getData() instanceof String && !((String) m.getData()).isEmpty())
+                    ? (String) m.getData() : "Update failed.";
                 break;
             case "LOGIN_SUCCESS":
                 lastLoginResult = (LoginResult) m.getData();
