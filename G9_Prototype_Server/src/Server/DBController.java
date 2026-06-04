@@ -11,6 +11,8 @@ import logic.Park;
 import logic.ReportCancelRow;
 import logic.ReportUsageRow;
 import logic.ReportVisitorRow;
+import logic.GuideDetail;
+import logic.RegisterGuideRequest;
 import logic.RegisterRequest;
 import logic.RegisterResult;
 import java.io.InputStream;
@@ -1214,5 +1216,108 @@ public class DBController {
             System.out.println("getWaitingList error: " + e.getMessage());
         }
         return list;
+    }
+
+    // ── Guide management ──────────────────────────────────────────────────────
+
+    /**
+     * registers a new guide with {@code is_approved = 0} (pending manager approval).
+     *
+     * @param req the registration details from the service representative
+     * @return {@code null} on success; a human-readable error message on failure
+     */
+    public String registerGuide(RegisterGuideRequest req) {
+        if (connection == null) return "Database connection unavailable.";
+        try {
+            PreparedStatement chk = connection.prepareStatement(
+                "SELECT 1 FROM guides WHERE id_number = ? LIMIT 1");
+            chk.setString(1, req.getIdNumber());
+            if (chk.executeQuery().next())
+                return "Guide already registered.";
+
+            PreparedStatement st = connection.prepareStatement(
+                "INSERT INTO guides (id_number, first_name, last_name, email, phone, is_approved) " +
+                "VALUES (?, ?, ?, ?, ?, 0)");
+            st.setString(1, req.getIdNumber());
+            st.setString(2, req.getFirstName());
+            st.setString(3, req.getLastName());
+            st.setString(4, req.getEmail());
+            st.setString(5, req.getPhone());
+            st.executeUpdate();
+            return null; // success
+        } catch (SQLException e) {
+            System.out.println("registerGuide error: " + e.getMessage());
+            return "Database error: " + e.getMessage();
+        }
+    }
+
+    /**
+     * returns all rows in the {@code guides} table — pending first, then alphabetically.
+     *
+     * @return list of {@link GuideDetail}; empty on error or no data
+     */
+    public List<GuideDetail> getAllGuides() {
+        List<GuideDetail> list = new ArrayList<>();
+        if (connection == null) return list;
+        try {
+            PreparedStatement st = connection.prepareStatement(
+                "SELECT id_number, first_name, last_name, email, phone, is_approved " +
+                "FROM guides ORDER BY is_approved ASC, last_name ASC");
+            ResultSet rs = st.executeQuery();
+            while (rs.next()) {
+                list.add(new GuideDetail(
+                    rs.getString("id_number"),
+                    rs.getString("first_name"),
+                    rs.getString("last_name"),
+                    rs.getString("email"),
+                    rs.getString("phone"),
+                    rs.getInt("is_approved")));
+            }
+        } catch (SQLException e) {
+            System.out.println("getAllGuides error: " + e.getMessage());
+        }
+        return list;
+    }
+
+    /**
+     * approves a guide by setting {@code is_approved = 1}.
+     *
+     * @param idNumber the guide's government ID
+     * @return {@code null} on success; a human-readable error message on failure
+     */
+    public String approveGuide(String idNumber) {
+        if (connection == null) return "Database connection unavailable.";
+        try {
+            PreparedStatement st = connection.prepareStatement(
+                "UPDATE guides SET is_approved = 1 WHERE id_number = ?");
+            st.setString(1, idNumber);
+            if (st.executeUpdate() == 0)
+                return "Guide with ID " + idNumber + " not found.";
+            return null;
+        } catch (SQLException e) {
+            System.out.println("approveGuide error: " + e.getMessage());
+            return "Database error: " + e.getMessage();
+        }
+    }
+
+    /**
+     * rejects (deletes) a guide row from the {@code guides} table.
+     *
+     * @param idNumber the guide's government ID
+     * @return {@code null} on success; a human-readable error message on failure
+     */
+    public String rejectGuide(String idNumber) {
+        if (connection == null) return "Database connection unavailable.";
+        try {
+            PreparedStatement st = connection.prepareStatement(
+                "DELETE FROM guides WHERE id_number = ?");
+            st.setString(1, idNumber);
+            if (st.executeUpdate() == 0)
+                return "Guide with ID " + idNumber + " not found.";
+            return null;
+        } catch (SQLException e) {
+            System.out.println("rejectGuide error: " + e.getMessage());
+            return "Database error: " + e.getMessage();
+        }
     }
 }

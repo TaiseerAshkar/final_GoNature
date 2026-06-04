@@ -2,6 +2,7 @@ package gui;
 
 import client.ChatClient;
 import client.ClientUI;
+import logic.GuideDetail;
 import logic.Message;
 import logic.Order;
 import logic.OrderDetail;
@@ -12,9 +13,14 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
@@ -227,6 +233,164 @@ public class AcademicFrameController {
 
         } catch (NumberFormatException e) {
             lblResult.setText("Please enter valid numbers for Order ID and Visitor Count.");
+        }
+    }
+
+    /**
+     * opens a modal panel showing all registered guides.
+     * the manager can Approve (sets {@code is_approved=1}) or Reject (deletes row) each guide.
+     * the table refreshes automatically after each action.
+     *
+     * @param event the button-click event
+     */
+    @FXML
+    public void handleManageGuides(ActionEvent event) {
+        Stage stage = new Stage();
+        stage.initModality(Modality.WINDOW_MODAL);
+        stage.initOwner(lblUserName.getScene().getWindow());
+        stage.setTitle("GoNature — Manage Guides");
+
+        Label titleLbl = new Label("Guide Management");
+        titleLbl.setStyle("-fx-font-size:17px; -fx-font-weight:bold; -fx-text-fill:#1b5e20;");
+
+        Label statusLbl = new Label("Loading…");
+        statusLbl.setStyle("-fx-font-size:12px; -fx-text-fill:#555;");
+
+        // ── Table ────────────────────────────────────────────────────────────
+        TableView<GuideDetail> table = new TableView<>();
+        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        table.setPrefHeight(300);
+
+        TableColumn<GuideDetail, String> colId     = new TableColumn<>("ID Number");
+        TableColumn<GuideDetail, String> colName   = new TableColumn<>("Name");
+        TableColumn<GuideDetail, String> colEmail  = new TableColumn<>("Email");
+        TableColumn<GuideDetail, String> colStatus = new TableColumn<>("Status");
+
+        colId.setCellValueFactory(    new PropertyValueFactory<>("idNumber"));
+        colName.setCellValueFactory(  d -> new SimpleStringProperty(d.getValue().getFullName()));
+        colEmail.setCellValueFactory( new PropertyValueFactory<>("email"));
+        colStatus.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getStatusLabel()));
+
+        // Colour the status cell
+        colStatus.setCellFactory(col -> new TableCell<GuideDetail, String>() {
+            @Override protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) { setText(null); setStyle(""); return; }
+                setText(item);
+                setStyle("APPROVED".equals(item)
+                    ? "-fx-text-fill:#1b5e20; -fx-font-weight:bold;"
+                    : "-fx-text-fill:#e65100; -fx-font-weight:bold;");
+            }
+        });
+
+        // Actions column
+        TableColumn<GuideDetail, Void> colActions = new TableColumn<>("Actions");
+        colActions.setMinWidth(190);
+        colActions.setCellFactory(col -> new TableCell<GuideDetail, Void>() {
+            private final Button btnApprove = new Button("✅  Approve");
+            private final Button btnReject  = new Button("❌  Reject");
+            {
+                btnApprove.setStyle(
+                    "-fx-background-color:#2e7d32; -fx-text-fill:white;" +
+                    "-fx-font-size:11px; -fx-background-radius:4; -fx-padding:3 10;");
+                btnReject.setStyle(
+                    "-fx-background-color:#c62828; -fx-text-fill:white;" +
+                    "-fx-font-size:11px; -fx-background-radius:4; -fx-padding:3 10;");
+
+                btnApprove.setOnAction(e -> {
+                    GuideDetail g = getTableView().getItems().get(getIndex());
+                    ChatClient.lastGuideActionSuccess = null;
+                    ChatClient.lastGuideActionFail    = null;
+                    ClientUI.chat.accept(new Message("APPROVE_GUIDE", g.getIdNumber()));
+                    if (ChatClient.lastGuideActionSuccess != null) {
+                        statusLbl.setStyle("-fx-font-size:12px; -fx-text-fill:#1b5e20;");
+                        statusLbl.setText("✅  Approved: " + g.getFullName());
+                    } else {
+                        statusLbl.setStyle("-fx-font-size:12px; -fx-text-fill:#c62828;");
+                        statusLbl.setText("❌  " + (ChatClient.lastGuideActionFail != null
+                            ? ChatClient.lastGuideActionFail : "Approval failed."));
+                    }
+                    refreshGuideTable(table, statusLbl);
+                });
+
+                btnReject.setOnAction(e -> {
+                    GuideDetail g = getTableView().getItems().get(getIndex());
+                    Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
+                        "Remove guide " + g.getFullName() + " (ID: " + g.getIdNumber() + ")?",
+                        ButtonType.YES, ButtonType.NO);
+                    confirm.setTitle("Confirm Rejection");
+                    confirm.setHeaderText("This will permanently delete the guide record.");
+                    confirm.showAndWait().ifPresent(btn -> {
+                        if (btn != ButtonType.YES) return;
+                        ChatClient.lastGuideActionSuccess = null;
+                        ChatClient.lastGuideActionFail    = null;
+                        ClientUI.chat.accept(new Message("REJECT_GUIDE", g.getIdNumber()));
+                        if (ChatClient.lastGuideActionSuccess != null) {
+                            statusLbl.setStyle("-fx-font-size:12px; -fx-text-fill:#555;");
+                            statusLbl.setText("🗑  Removed: " + g.getFullName());
+                        } else {
+                            statusLbl.setStyle("-fx-font-size:12px; -fx-text-fill:#c62828;");
+                            statusLbl.setText("❌  " + (ChatClient.lastGuideActionFail != null
+                                ? ChatClient.lastGuideActionFail : "Rejection failed."));
+                        }
+                        refreshGuideTable(table, statusLbl);
+                    });
+                });
+            }
+
+            @Override protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty) { setGraphic(null); return; }
+                GuideDetail g = getTableView().getItems().get(getIndex());
+                btnApprove.setVisible(g.getIsApproved() == 0); // hide for already-approved
+                HBox box = new HBox(8, btnApprove, btnReject);
+                box.setAlignment(Pos.CENTER_LEFT);
+                setGraphic(box);
+            }
+        });
+
+        table.getColumns().addAll(colId, colName, colEmail, colStatus, colActions);
+        table.setPlaceholder(new Label("No guides registered yet."));
+
+        Button btnRefresh = new Button("🔄  Refresh");
+        btnRefresh.setStyle(
+            "-fx-background-color:#0277BD; -fx-text-fill:white;" +
+            "-fx-font-size:12px; -fx-background-radius:4; -fx-padding:5 14;");
+        btnRefresh.setOnAction(e -> refreshGuideTable(table, statusLbl));
+
+        Button btnClose = new Button("Close");
+        btnClose.setStyle(
+            "-fx-background-color:#546e7a; -fx-text-fill:white;" +
+            "-fx-font-size:12px; -fx-background-radius:4; -fx-padding:5 14;");
+        btnClose.setOnAction(e -> stage.close());
+
+        HBox btnBar = new HBox(10, btnRefresh, btnClose);
+        btnBar.setAlignment(Pos.CENTER_LEFT);
+
+        VBox root = new VBox(12, titleLbl, statusLbl, table, btnBar);
+        root.setPadding(new Insets(20));
+        stage.setScene(new Scene(root, 720, 430));
+
+        refreshGuideTable(table, statusLbl);
+        stage.show();
+    }
+
+    /** Sends GET_ALL_GUIDES and reloads the guide table, updating the status label. */
+    private void refreshGuideTable(TableView<GuideDetail> table, Label statusLbl) {
+        ChatClient.lastGuidesList = null;
+        ClientUI.chat.accept(new Message("GET_ALL_GUIDES", null));
+        List<GuideDetail> guides = ChatClient.lastGuidesList;
+        if (guides != null) {
+            table.getItems().setAll(guides);
+            long pending  = guides.stream().filter(g -> g.getIsApproved() == 0).count();
+            long approved = guides.stream().filter(g -> g.getIsApproved() == 1).count();
+            statusLbl.setStyle("-fx-font-size:12px; -fx-text-fill:#555;");
+            statusLbl.setText(guides.size() + " guide(s)  —  " + pending
+                + " pending  |  " + approved + " approved");
+        } else {
+            table.getItems().clear();
+            statusLbl.setStyle("-fx-font-size:12px; -fx-text-fill:#c62828;");
+            statusLbl.setText("Could not load guides — is the server running?");
         }
     }
 

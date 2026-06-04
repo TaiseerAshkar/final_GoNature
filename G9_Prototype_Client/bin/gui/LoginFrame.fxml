@@ -80,6 +80,7 @@
             <Label text="Password"
                    style="-fx-font-size: 12px; -fx-font-weight: bold;
                           -fx-text-fill: #2E7D32;"/>
+            <!-- Hidden password (default) -->
             <PasswordField fx:id="txtPassword"
                            promptText="Staff only — leave blank if you are a visitor"
                            style="-fx-font-size: 13px; -fx-padding: 10 12;
@@ -87,6 +88,20 @@
                                   -fx-background-radius: 9; -fx-border-radius: 9;
                                   -fx-border-color: #CFD8DC; -fx-border-width: 1.5;
                                   -fx-prompt-text-fill: #B0BEC5;"/>
+            <!-- Visible password (shown when checkbox is ticked) -->
+            <TextField fx:id="txtPasswordVisible"
+                       promptText="Staff only — leave blank if you are a visitor"
+                       visible="false" managed="false"
+                       style="-fx-font-size: 13px; -fx-padding: 10 12;
+                              -fx-background-color: #FAFAFA;
+                              -fx-background-radius: 9; -fx-border-radius: 9;
+                              -fx-border-color: #CFD8DC; -fx-border-width: 1.5;
+                              -fx-prompt-text-fill: #B0BEC5;"/>
+            <!-- Show / hide toggle -->
+            <CheckBox fx:id="chkShowPassword" text="Show password"
+                      onAction="#handleShowPassword"
+                      style="-fx-font-size: 11px; -fx-text-fill: #546E7A;
+                             -fx-cursor: hand; -fx-padding: 2 0 0 2;"/>
             <Label text="Visitors and guides: enter your ID and leave the password blank."
                    styleClass="lbl-hint" wrapText="true"
                    style="-fx-font-size: 11px; -fx-text-fill: #78909C;

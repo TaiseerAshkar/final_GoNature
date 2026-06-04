@@ -11,6 +11,8 @@ import logic.Message;
 import logic.Order;
 import logic.OrderDetail;
 import logic.Park;
+import logic.GuideDetail;
+import logic.RegisterGuideRequest;
 import logic.RegisterRequest;
 import logic.RegisterResult;
 import logic.ReportCancelRow;
@@ -490,6 +492,49 @@ public class EchoServer extends AbstractServer {
                 case "LOGOUT": {
                     // socket stays open — the user may log back in on the same connection.
                     // "Disconnected" only appears when the socket actually closes (clientDisconnected / clientException).
+                    break;
+                }
+
+                // ── Guide management ─────────────────────────────────────────────────
+
+                case "REGISTER_GUIDE": {
+                    if (!(incoming.getData() instanceof RegisterGuideRequest)) {
+                        client.sendToClient(new Message("GUIDE_REGISTER_FAIL", "Invalid request."));
+                        break;
+                    }
+                    RegisterGuideRequest req = (RegisterGuideRequest) incoming.getData();
+                    String err = DBController.getInstance().registerGuide(req);
+                    if (err == null)
+                        client.sendToClient(new Message("GUIDE_REGISTER_SUCCESS",
+                            "Guide registered — pending department manager approval."));
+                    else
+                        client.sendToClient(new Message("GUIDE_REGISTER_FAIL", err));
+                    break;
+                }
+
+                case "GET_ALL_GUIDES": {
+                    List<GuideDetail> guides = DBController.getInstance().getAllGuides();
+                    client.sendToClient(new Message("GUIDES_LIST", guides));
+                    break;
+                }
+
+                case "APPROVE_GUIDE": {
+                    String approveId  = (String) incoming.getData();
+                    String approveErr = DBController.getInstance().approveGuide(approveId);
+                    if (approveErr == null)
+                        client.sendToClient(new Message("GUIDE_APPROVE_SUCCESS", approveId));
+                    else
+                        client.sendToClient(new Message("GUIDE_APPROVE_FAIL", approveErr));
+                    break;
+                }
+
+                case "REJECT_GUIDE": {
+                    String rejectId  = (String) incoming.getData();
+                    String rejectErr = DBController.getInstance().rejectGuide(rejectId);
+                    if (rejectErr == null)
+                        client.sendToClient(new Message("GUIDE_REJECT_SUCCESS", rejectId));
+                    else
+                        client.sendToClient(new Message("GUIDE_REJECT_FAIL", rejectErr));
                     break;
                 }
             }

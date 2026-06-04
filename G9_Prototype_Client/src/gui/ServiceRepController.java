@@ -5,6 +5,7 @@ import client.ClientUI;
 import logic.Message;
 import logic.Order;
 import logic.OrderDetail;
+import logic.RegisterGuideRequest;
 import logic.UserSession;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleIntegerProperty;
@@ -12,9 +13,11 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Insets;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.layout.GridPane;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
@@ -22,6 +25,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * controller for the service representative dashboard ({@code ServiceRepFrame.fxml}).
@@ -115,6 +119,92 @@ public class ServiceRepController {
             new RegisterController().start(modal);
         } catch (Exception e) {
             lblResult.setText("Error opening registration form: " + e.getMessage());
+        }
+    }
+
+    /**
+     * opens a modal dialog for registering a new guide (pending manager approval).
+     * validates that ID, first name, and last name are filled; all other fields optional.
+     * sends {@code REGISTER_GUIDE}; server rejects with "Guide already registered" on duplicate ID.
+     *
+     * @param event the button-click event
+     */
+    @FXML
+    public void handleRegisterGuide(ActionEvent event) {
+        Dialog<ButtonType> dlg = new Dialog<>();
+        dlg.setTitle("Register New Guide");
+        dlg.setHeaderText("Register a new tour guide\n(pending department manager approval)");
+        dlg.initModality(Modality.WINDOW_MODAL);
+        dlg.initOwner(lblUserName.getScene().getWindow());
+
+        ButtonType submitBtn = new ButtonType("Register", ButtonBar.ButtonData.OK_DONE);
+        dlg.getDialogPane().getButtonTypes().addAll(submitBtn, ButtonType.CANCEL);
+
+        GridPane grid = new GridPane();
+        grid.setHgap(12);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(18, 24, 10, 24));
+
+        TextField fldId        = new TextField(); fldId.setPromptText("e.g. 123456789");
+        TextField fldFirstName = new TextField(); fldFirstName.setPromptText("First name");
+        TextField fldLastName  = new TextField(); fldLastName.setPromptText("Last name");
+        TextField fldEmail     = new TextField(); fldEmail.setPromptText("Optional");
+        TextField fldPhone     = new TextField(); fldPhone.setPromptText("Optional");
+
+        grid.add(new Label("ID Number *"),  0, 0); grid.add(fldId,        1, 0);
+        grid.add(new Label("First Name *"), 0, 1); grid.add(fldFirstName, 1, 1);
+        grid.add(new Label("Last Name *"),  0, 2); grid.add(fldLastName,  1, 2);
+        grid.add(new Label("Email"),        0, 3); grid.add(fldEmail,     1, 3);
+        grid.add(new Label("Phone"),        0, 4); grid.add(fldPhone,     1, 4);
+
+        Label lblErr = new Label("");
+        lblErr.setStyle("-fx-text-fill:#c62828; -fx-font-size:12px;");
+        grid.add(lblErr, 0, 5, 2, 1);
+
+        dlg.getDialogPane().setContent(grid);
+        dlg.getDialogPane().setPrefWidth(400);
+
+        // Keep Register button disabled until the three required fields are non-empty
+        javafx.scene.Node okBtn = dlg.getDialogPane().lookupButton(submitBtn);
+        okBtn.setDisable(true);
+        Runnable checkRequired = () -> okBtn.setDisable(
+            fldId.getText().trim().isEmpty() ||
+            fldFirstName.getText().trim().isEmpty() ||
+            fldLastName.getText().trim().isEmpty());
+        fldId.textProperty().addListener((o, ov, nv)        -> checkRequired.run());
+        fldFirstName.textProperty().addListener((o, ov, nv) -> checkRequired.run());
+        fldLastName.textProperty().addListener((o, ov, nv)  -> checkRequired.run());
+
+        Platform.runLater(fldId::requestFocus);
+
+        // Loop so validation errors keep the dialog open for correction
+        while (true) {
+            Optional<ButtonType> result = dlg.showAndWait();
+            if (!result.isPresent() || result.get() != submitBtn) return; // cancelled
+
+            String id    = fldId.getText().trim();
+            String first = fldFirstName.getText().trim();
+            String last  = fldLastName.getText().trim();
+            String email = fldEmail.getText().trim();
+            String phone = fldPhone.getText().trim();
+
+            if (id.isEmpty() || first.isEmpty() || last.isEmpty()) {
+                lblErr.setText("ID, first name, and last name are required.");
+                continue;
+            }
+
+            ChatClient.lastGuideRegisterSuccess = null;
+            ChatClient.lastGuideRegisterFail    = null;
+            ClientUI.chat.accept(new Message("REGISTER_GUIDE",
+                new RegisterGuideRequest(id, first, last, email, phone)));
+
+            if (ChatClient.lastGuideRegisterSuccess != null) {
+                lblResult.setText("✅ " + ChatClient.lastGuideRegisterSuccess);
+                return;
+            }
+            // Server returned an error — show it inline and let the rep correct
+            lblErr.setText(ChatClient.lastGuideRegisterFail != null
+                ? ChatClient.lastGuideRegisterFail : "Registration failed. Try again.");
         }
     }
 

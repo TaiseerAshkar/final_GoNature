@@ -26,12 +26,16 @@ public class LoginController {
 
     @FXML private TextField     txtIdentifier;
     @FXML private PasswordField txtPassword;
-    @FXML private Label  lblError;
-    @FXML private Button btnLogin;
+    @FXML private TextField     txtPasswordVisible;
+    @FXML private CheckBox      chkShowPassword;
+    @FXML private Label         lblError;
+    @FXML private Button        btnLogin;
 
     /**
      * routes to visitor or staff login based on whether a password was supplied.
      * visitors leave the password blank; staff always supply one.
+     * reads from the visible TextField when "Show password" is checked,
+     * otherwise reads from the PasswordField.
      *
      * @param event the button-click event
      */
@@ -39,7 +43,9 @@ public class LoginController {
     public void handleLogin(ActionEvent event) {
         lblError.setText("");
         String identifier = txtIdentifier.getText().trim();
-        String password   = txtPassword.getText();
+        String password   = chkShowPassword.isSelected()
+                            ? txtPasswordVisible.getText()
+                            : txtPassword.getText();
 
         if (identifier.isEmpty()) {
             setError("Please enter an ID");
@@ -50,6 +56,36 @@ public class LoginController {
             loginAsVisitor(identifier);
         } else {
             loginAsStaff(identifier, password);
+        }
+    }
+
+    /**
+     * toggles the password field between masked ({@link PasswordField}) and
+     * plain-text ({@link TextField}).
+     * syncs the text content so the value is preserved across toggles.
+     *
+     * @param event the checkbox action event
+     */
+    @FXML
+    public void handleShowPassword(ActionEvent event) {
+        if (chkShowPassword.isSelected()) {
+            // Copy masked text into the plain field and swap visibility
+            txtPasswordVisible.setText(txtPassword.getText());
+            txtPassword.setVisible(false);
+            txtPassword.setManaged(false);
+            txtPasswordVisible.setVisible(true);
+            txtPasswordVisible.setManaged(true);
+            txtPasswordVisible.requestFocus();
+            txtPasswordVisible.positionCaret(txtPasswordVisible.getText().length());
+        } else {
+            // Copy plain text back into the password field and swap back
+            txtPassword.setText(txtPasswordVisible.getText());
+            txtPasswordVisible.setVisible(false);
+            txtPasswordVisible.setManaged(false);
+            txtPassword.setVisible(true);
+            txtPassword.setManaged(true);
+            txtPassword.requestFocus();
+            txtPassword.positionCaret(txtPassword.getText().length());
         }
     }
 

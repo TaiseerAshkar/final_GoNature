@@ -4,6 +4,7 @@ import common.ChatIF;
 import logic.BookingResult;
 import logic.CancelResult;
 import logic.EntryResult;
+import logic.GuideDetail;
 import logic.LoginResult;
 import logic.Message;
 import logic.OrderDetail;
@@ -80,6 +81,13 @@ public class ChatClient extends AbstractClient {
     public static String lastParkSettingsError      = null;
     public static Park   lastParkSettingsUpdated    = null;
     public static String lastParkSettingsUpdateFail = null;
+
+    // ── Guide management ──────────────────────────────────────────────────────
+    public static String            lastGuideRegisterSuccess = null;
+    public static String            lastGuideRegisterFail    = null;
+    public static List<GuideDetail> lastGuidesList           = null;
+    public static String            lastGuideActionSuccess   = null;
+    public static String            lastGuideActionFail      = null;
 
     /**
      * @param host     the server hostname or IP address
@@ -217,6 +225,29 @@ public class ChatClient extends AbstractClient {
                 break;
             case "LOGOUT_OK":
                 break; // fire-and-forget — no state change needed
+
+            // ── Guide management ─────────────────────────────────────────────
+            case "GUIDE_REGISTER_SUCCESS":
+                lastGuideRegisterSuccess = (String) m.getData();
+                lastGuideRegisterFail    = null;
+                break;
+            case "GUIDE_REGISTER_FAIL":
+                lastGuideRegisterSuccess = null;
+                lastGuideRegisterFail    = (String) m.getData();
+                break;
+            case "GUIDES_LIST":
+                lastGuidesList = (List<GuideDetail>) m.getData();
+                break;
+            case "GUIDE_APPROVE_SUCCESS":
+            case "GUIDE_REJECT_SUCCESS":
+                lastGuideActionSuccess = (String) m.getData();
+                lastGuideActionFail    = null;
+                break;
+            case "GUIDE_APPROVE_FAIL":
+            case "GUIDE_REJECT_FAIL":
+                lastGuideActionSuccess = null;
+                lastGuideActionFail    = (String) m.getData();
+                break;
         }
     }
 

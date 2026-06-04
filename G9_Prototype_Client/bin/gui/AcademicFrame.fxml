@@ -35,6 +35,9 @@
             <HBox spacing="12">
                 <Button text="🔄  Load All Orders"        onAction="#loadOrders"
                         styleClass="btn-blue" style="-fx-padding:9 18;"/>
+                <Button text="🧭  Manage Guides"          onAction="#handleManageGuides"
+                        style="-fx-background-color:#6a1b9a; -fx-text-fill:white;
+                               -fx-font-weight:bold; -fx-background-radius:4; -fx-padding:9 18;"/>
                 <Button text="📊  View Reports Dashboard" onAction="#handleViewReports"
                         styleClass="btn-teal" style="-fx-padding:9 18;"/>
             </HBox>
