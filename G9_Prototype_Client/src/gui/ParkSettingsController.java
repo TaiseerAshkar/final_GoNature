@@ -4,6 +4,7 @@ import client.ChatClient;
 import client.ClientUI;
 import logic.Message;
 import logic.Park;
+import logic.ParkSettingsRequest;
 import logic.UserSession;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -68,8 +69,8 @@ public class ParkSettingsController {
     }
 
     /**
-     * validates the form, sends {@code UPDATE_PARK_SETTINGS}, and shows the result.
-     * on success the form is refreshed with the values confirmed by the server.
+     * validates the form and sends {@code SUBMIT_PARK_SETTINGS} to queue the change
+     * for department manager approval. The live park values are NOT updated immediately.
      *
      * @param event the button-click event
      */
@@ -96,7 +97,7 @@ public class ParkSettingsController {
             return;
         }
 
-        // client-side validation mirrors server rules
+        // Client-side validation mirrors server rules.
         if (capacity < 1 || capacity > 10000) {
             setError("Capacity must be between 1 and 10 000."); return;
         }
@@ -110,23 +111,25 @@ public class ParkSettingsController {
             setError("Full price must be greater than $0.00 and at most $9 999.99."); return;
         }
 
-        // reuse Park as the transport object — name kept from current label, id from session
         String currentName = lblParkName.getText().contains("(")
             ? lblParkName.getText().substring(0, lblParkName.getText().indexOf("(")).trim()
             : lblParkName.getText();
-        Park updated = new Park(s.getParkId(), currentName, capacity, maxOrders, duration, price);
 
-        ChatClient.lastParkSettingsUpdated    = null;
-        ChatClient.lastParkSettingsUpdateFail = null;
-        ClientUI.chat.accept(new Message("UPDATE_PARK_SETTINGS", updated));
+        // Send as a pending request — the department manager must approve before it goes live.
+        ParkSettingsRequest req = new ParkSettingsRequest(
+            s.getParkId(), currentName, s.getUserId(),
+            capacity, maxOrders, duration, price);
 
-        if (ChatClient.lastParkSettingsUpdated != null) {
-            populate(ChatClient.lastParkSettingsUpdated);
-            setSuccess("Settings saved successfully.");
+        ChatClient.lastSettingsSubmitSuccess = null;
+        ChatClient.lastSettingsSubmitFail    = null;
+        ClientUI.chat.accept(new Message("SUBMIT_PARK_SETTINGS", req));
+
+        if (ChatClient.lastSettingsSubmitSuccess != null) {
+            setSuccess("Settings change submitted for department manager approval.");
         } else {
-            setError(ChatClient.lastParkSettingsUpdateFail != null
-                ? ChatClient.lastParkSettingsUpdateFail
-                : "Save failed. Please try again.");
+            setError(ChatClient.lastSettingsSubmitFail != null
+                ? ChatClient.lastSettingsSubmitFail
+                : "Submission failed. Please try again.");
         }
     }
 

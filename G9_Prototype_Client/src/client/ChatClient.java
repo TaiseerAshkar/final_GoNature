@@ -5,6 +5,7 @@ import logic.BookingResult;
 import logic.CancelResult;
 import logic.EntryResult;
 import logic.GuideDetail;
+import logic.ParkSettingsRequest;
 import logic.LoginResult;
 import logic.Message;
 import logic.OrderDetail;
@@ -88,6 +89,13 @@ public class ChatClient extends AbstractClient {
     public static List<GuideDetail> lastGuidesList           = null;
     public static String            lastGuideActionSuccess   = null;
     public static String            lastGuideActionFail      = null;
+
+    // ── Park settings approval workflow ───────────────────────────────────────
+    public static String                       lastSettingsSubmitSuccess = null;
+    public static String                       lastSettingsSubmitFail    = null;
+    public static List<ParkSettingsRequest>    lastPendingSettings       = null;
+    public static String                       lastSettingsActionSuccess = null;
+    public static String                       lastSettingsActionFail    = null;
 
     /**
      * @param host     the server hostname or IP address
@@ -247,6 +255,29 @@ public class ChatClient extends AbstractClient {
             case "GUIDE_REJECT_FAIL":
                 lastGuideActionSuccess = null;
                 lastGuideActionFail    = (String) m.getData();
+                break;
+
+            // ── Park settings approval workflow ──────────────────────────────
+            case "PARK_SETTINGS_SUBMITTED":
+                lastSettingsSubmitSuccess = (String) m.getData();
+                lastSettingsSubmitFail    = null;
+                break;
+            case "PARK_SETTINGS_SUBMIT_FAIL":
+                lastSettingsSubmitSuccess = null;
+                lastSettingsSubmitFail    = (String) m.getData();
+                break;
+            case "PENDING_SETTINGS_LIST":
+                lastPendingSettings = (List<ParkSettingsRequest>) m.getData();
+                break;
+            case "SETTINGS_APPROVE_SUCCESS":
+            case "SETTINGS_REJECT_SUCCESS":
+                lastSettingsActionSuccess = String.valueOf(m.getData());
+                lastSettingsActionFail    = null;
+                break;
+            case "SETTINGS_APPROVE_FAIL":
+            case "SETTINGS_REJECT_FAIL":
+                lastSettingsActionSuccess = null;
+                lastSettingsActionFail    = (String) m.getData();
                 break;
         }
     }

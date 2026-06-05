@@ -3,6 +3,7 @@ package gui;
 import client.ChatClient;
 import client.ClientUI;
 import logic.GuideDetail;
+import logic.ParkSettingsRequest;
 import logic.Message;
 import logic.Order;
 import logic.OrderDetail;
@@ -391,6 +392,153 @@ public class AcademicFrameController {
             table.getItems().clear();
             statusLbl.setStyle("-fx-font-size:12px; -fx-text-fill:#c62828;");
             statusLbl.setText("Could not load guides — is the server running?");
+        }
+    }
+
+    /**
+     * opens a modal panel listing all pending park-settings change requests.
+     * the department manager can Approve (applies values to the parks table)
+     * or Reject (marks the request rejected without touching the parks table).
+     * the table refreshes automatically after each action.
+     *
+     * @param event the button-click event
+     */
+    @FXML
+    public void handlePendingApprovals(ActionEvent event) {
+        Stage stage = new Stage();
+        stage.initModality(Modality.WINDOW_MODAL);
+        stage.initOwner(lblUserName.getScene().getWindow());
+        stage.setTitle("GoNature — Pending Park Settings Approvals");
+
+        Label titleLbl = new Label("Pending Park Settings Requests");
+        titleLbl.setStyle("-fx-font-size:17px; -fx-font-weight:bold; -fx-text-fill:#0d47a1;");
+
+        Label statusLbl = new Label("Loading…");
+        statusLbl.setStyle("-fx-font-size:12px; -fx-text-fill:#555;");
+
+        // ── Table ────────────────────────────────────────────────────────────
+        TableView<ParkSettingsRequest> table = new TableView<>();
+        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        table.setPrefHeight(320);
+
+        TableColumn<ParkSettingsRequest, String> colPark      = new TableColumn<>("Park");
+        TableColumn<ParkSettingsRequest, String> colBy        = new TableColumn<>("Requested By");
+        TableColumn<ParkSettingsRequest, String> colValues    = new TableColumn<>("Proposed Values");
+        TableColumn<ParkSettingsRequest, String> colDate      = new TableColumn<>("Submitted");
+
+        colPark.setCellValueFactory(  d -> new SimpleStringProperty(d.getValue().getParkName()));
+        colBy.setCellValueFactory(    d -> new SimpleStringProperty(d.getValue().getRequestedBy()));
+        colValues.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getSummary()));
+        colDate.setCellValueFactory(  d -> new SimpleStringProperty(d.getValue().getRequestedAt()));
+
+        // Actions column
+        TableColumn<ParkSettingsRequest, Void> colActions = new TableColumn<>("Actions");
+        colActions.setMinWidth(190);
+        colActions.setCellFactory(col -> new TableCell<ParkSettingsRequest, Void>() {
+            private final Button btnApprove = new Button("✅  Approve");
+            private final Button btnReject  = new Button("❌  Reject");
+            {
+                btnApprove.setStyle(
+                    "-fx-background-color:#1565c0; -fx-text-fill:white;" +
+                    "-fx-font-size:11px; -fx-background-radius:4; -fx-padding:3 10;");
+                btnReject.setStyle(
+                    "-fx-background-color:#c62828; -fx-text-fill:white;" +
+                    "-fx-font-size:11px; -fx-background-radius:4; -fx-padding:3 10;");
+
+                btnApprove.setOnAction(e -> {
+                    ParkSettingsRequest r = getTableView().getItems().get(getIndex());
+                    ChatClient.lastSettingsActionSuccess = null;
+                    ChatClient.lastSettingsActionFail    = null;
+                    ClientUI.chat.accept(new Message("APPROVE_SETTINGS", r.getId()));
+                    if (ChatClient.lastSettingsActionSuccess != null) {
+                        statusLbl.setStyle("-fx-font-size:12px; -fx-text-fill:#1b5e20;");
+                        statusLbl.setText("✅  Approved request #" + r.getId()
+                            + " — " + r.getParkName() + " settings updated.");
+                    } else {
+                        statusLbl.setStyle("-fx-font-size:12px; -fx-text-fill:#c62828;");
+                        statusLbl.setText("❌  " + (ChatClient.lastSettingsActionFail != null
+                            ? ChatClient.lastSettingsActionFail : "Approval failed."));
+                    }
+                    refreshRequestsTable(table, statusLbl);
+                });
+
+                btnReject.setOnAction(e -> {
+                    ParkSettingsRequest r = getTableView().getItems().get(getIndex());
+                    Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
+                        "Reject settings request #" + r.getId() + " from " + r.getRequestedBy()
+                        + " for " + r.getParkName() + "?",
+                        ButtonType.YES, ButtonType.NO);
+                    confirm.setTitle("Confirm Rejection");
+                    confirm.setHeaderText("The proposed values will not be applied.");
+                    confirm.showAndWait().ifPresent(btn -> {
+                        if (btn != ButtonType.YES) return;
+                        ChatClient.lastSettingsActionSuccess = null;
+                        ChatClient.lastSettingsActionFail    = null;
+                        ClientUI.chat.accept(new Message("REJECT_SETTINGS", r.getId()));
+                        if (ChatClient.lastSettingsActionSuccess != null) {
+                            statusLbl.setStyle("-fx-font-size:12px; -fx-text-fill:#555;");
+                            statusLbl.setText("🗑  Rejected request #" + r.getId()
+                                + " from " + r.getRequestedBy() + ".");
+                        } else {
+                            statusLbl.setStyle("-fx-font-size:12px; -fx-text-fill:#c62828;");
+                            statusLbl.setText("❌  " + (ChatClient.lastSettingsActionFail != null
+                                ? ChatClient.lastSettingsActionFail : "Rejection failed."));
+                        }
+                        refreshRequestsTable(table, statusLbl);
+                    });
+                });
+            }
+
+            @Override protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty) { setGraphic(null); return; }
+                HBox box = new HBox(8, btnApprove, btnReject);
+                box.setAlignment(Pos.CENTER_LEFT);
+                setGraphic(box);
+            }
+        });
+
+        table.getColumns().addAll(colPark, colBy, colValues, colDate, colActions);
+        table.setPlaceholder(new Label("No pending settings requests."));
+
+        Button btnRefresh = new Button("🔄  Refresh");
+        btnRefresh.setStyle(
+            "-fx-background-color:#0277BD; -fx-text-fill:white;" +
+            "-fx-font-size:12px; -fx-background-radius:4; -fx-padding:5 14;");
+        btnRefresh.setOnAction(e -> refreshRequestsTable(table, statusLbl));
+
+        Button btnClose = new Button("Close");
+        btnClose.setStyle(
+            "-fx-background-color:#546e7a; -fx-text-fill:white;" +
+            "-fx-font-size:12px; -fx-background-radius:4; -fx-padding:5 14;");
+        btnClose.setOnAction(e -> stage.close());
+
+        HBox btnBar = new HBox(10, btnRefresh, btnClose);
+        btnBar.setAlignment(Pos.CENTER_LEFT);
+
+        VBox root = new VBox(12, titleLbl, statusLbl, table, btnBar);
+        root.setPadding(new Insets(20));
+        stage.setScene(new Scene(root, 820, 450));
+
+        refreshRequestsTable(table, statusLbl);
+        stage.show();
+    }
+
+    /** Sends GET_PENDING_SETTINGS and reloads the requests table. */
+    private void refreshRequestsTable(TableView<ParkSettingsRequest> table, Label statusLbl) {
+        ChatClient.lastPendingSettings = null;
+        ClientUI.chat.accept(new Message("GET_PENDING_SETTINGS", null));
+        List<ParkSettingsRequest> reqs = ChatClient.lastPendingSettings;
+        if (reqs != null) {
+            table.getItems().setAll(reqs);
+            statusLbl.setStyle("-fx-font-size:12px; -fx-text-fill:#555;");
+            statusLbl.setText(reqs.isEmpty()
+                ? "No pending requests."
+                : reqs.size() + " pending request(s) awaiting approval.");
+        } else {
+            table.getItems().clear();
+            statusLbl.setStyle("-fx-font-size:12px; -fx-text-fill:#c62828;");
+            statusLbl.setText("Could not load requests — is the server running?");
         }
     }
 

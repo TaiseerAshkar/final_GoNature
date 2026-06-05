@@ -12,6 +12,7 @@ import logic.ReportCancelRow;
 import logic.ReportUsageRow;
 import logic.ReportVisitorRow;
 import logic.GuideDetail;
+import logic.ParkSettingsRequest;
 import logic.RegisterGuideRequest;
 import logic.RegisterRequest;
 import logic.RegisterResult;
@@ -717,18 +718,25 @@ public class DBController {
     /**
      * computes the total entry price.
      *
-     * <p>Pricing rules:
-     * <ul>
-     *   <li>GROUP by guide — guide enters free; others: 25% advance discount (pre-booked)
-     *       or 10% walk-in discount.</li>
-     *   <li>Any visitor, pre-booked — 15% advance-booking discount.</li>
-     *   <li>Subscriber (Family Member Club), walk-in — 15% membership discount
-     *       (the tangible benefit of subscribing).</li>
-     *   <li>Regular visitor, walk-in — full price.</li>
-     * </ul>
+     * <p>Pricing rules (applied in order):
+     * <ol>
+     *   <li><b>GROUP by guide</b> — guide enters free; paying visitors receive 25% advance
+     *       discount (pre-booked) or 10% walk-in discount. Guide pricing is not affected by
+     *       subscriber status — guide path returns immediately.</li>
+     *   <li><b>Base discount</b> — pre-booked visitors receive 15%; walk-in visitors pay full
+     *       price (multiplier = 1.0).</li>
+     *   <li><b>Subscriber stacking</b> — if the visitor is a Family Member Club subscriber,
+     *       an additional 10% discount is applied on top of whatever base rate was calculated
+     *       in step 2 (i.e. multiplied by 0.90). Examples:
+     *       <ul>
+     *         <li>Pre-booked subscriber: 0.85 × 0.90 = 0.765 (23.5% total discount)</li>
+     *         <li>Walk-in subscriber:    1.00 × 0.90 = 0.90  (10% total discount)</li>
+     *       </ul>
+     *   </li>
+     * </ol>
      *
      * @param prebooked    {@code true} for a confirmed pre-booking; {@code false} for walk-in
-     * @param orderType    the visit type in uppercase ({@code "SOLO"} or {@code "GROUP"})
+     * @param orderType    the visit type in uppercase ({@code "SOLO"}, {@code "FAMILY"}, or {@code "GROUP"})
      * @param numVisitors  total visitors including any guide
      * @param fullPrice    the park's per-person full price
      * @param isGuide      {@code true} if led by a registered guide
@@ -738,36 +746,53 @@ public class DBController {
     private double calculateEntryPrice(boolean prebooked, String orderType,
                                        int numVisitors, double fullPrice,
                                        boolean isGuide, boolean isSubscriber) {
+        // Guide-group pricing is fixed and does not stack with the subscriber discount.
         if ("GROUP".equals(orderType.toUpperCase()) && isGuide) {
             int paying = Math.max(0, numVisitors - 1);
             return prebooked
                 ? paying * fullPrice * 0.75   // guide free + 25% advance discount
                 : paying * fullPrice * 0.90;  // guide free + 10% walk-in discount
         }
-        if (prebooked)
-            return numVisitors * fullPrice * 0.85;  // 15% advance discount for everyone
-        if (isSubscriber)
-            return numVisitors * fullPrice * 0.85;  // 15% membership walk-in benefit
-        return numVisitors * fullPrice;             // full price for regular walk-in
+
+        // Step 1 — base multiplier: 15% off for pre-booked, full price for walk-in.
+        double baseMultiplier = prebooked ? 0.85 : 1.00;
+
+        // Step 2 — subscriber stacks an additional 10% on top of whatever base applies.
+        double subscriberMultiplier = isSubscriber ? 0.90 : 1.00;
+
+        return numVisitors * fullPrice * baseMultiplier * subscriberMultiplier;
     }
 
     /**
      * builds a human-readable pricing note for the entry result card.
      * called server-side so the note accurately reflects guide and subscriber status.
+     * shows each discount component separately so the visitor can see exactly how the
+     * total was calculated.
      */
     private String buildEntryPricingNote(boolean prebooked, String orderType,
                                          int numVisitors, boolean isGuide, boolean isSubscriber) {
+        // Guide-group note — subscriber discount does not apply here.
         if ("GROUP".equals(orderType.toUpperCase()) && isGuide) {
             int paying = Math.max(0, numVisitors - 1);
             return prebooked
                 ? "Pre-booked group: guide enters free. " + paying + " paying visitor(s) — 25% advance discount."
                 : "Walk-in group: guide enters free. " + paying + " paying visitor(s) — 10% walk-in discount.";
         }
-        if (prebooked)
-            return "Pre-booked: 15% advance-booking discount applied.";
-        if (isSubscriber)
-            return "Walk-in: Family Member Club — 15% subscriber discount applied.";
-        return "Walk-in: full price (no advance booking discount).";
+
+        // Build the note piece by piece so every active component is visible.
+        StringBuilder note = new StringBuilder();
+        if (prebooked) {
+            note.append("Pre-booked: 15% advance-booking discount");
+        } else {
+            note.append("Walk-in: full price");
+        }
+        if (isSubscriber) {
+            note.append(" + 10% Family Member Club discount");
+            if (prebooked)
+                note.append(" (23.5% total discount)");
+        }
+        note.append(".");
+        return note.toString();
     }
 
     /**
@@ -1317,6 +1342,167 @@ public class DBController {
             return null;
         } catch (SQLException e) {
             System.out.println("rejectGuide error: " + e.getMessage());
+            return "Database error: " + e.getMessage();
+        }
+    }
+
+    // ── Park settings approval workflow ───────────────────────────────────────
+
+    /**
+     * inserts a pending park-settings change request into {@code park_settings_requests}.
+     * the current park values are NOT modified; the department manager must approve first.
+     *
+     * @param req the proposed settings from the park manager
+     * @return {@code null} on success; a human-readable error message on failure
+     */
+    public String submitParkSettingsRequest(ParkSettingsRequest req) {
+        if (connection == null) return "Database connection unavailable.";
+        try {
+            PreparedStatement st = connection.prepareStatement(
+                "INSERT INTO park_settings_requests " +
+                "(park_id, requested_by, capacity, max_orders, visit_duration_hours, full_price) " +
+                "VALUES (?, ?, ?, ?, ?, ?)");
+            st.setInt(1,    req.getParkId());
+            st.setString(2, req.getRequestedBy());
+            st.setInt(3,    req.getCapacity());
+            st.setInt(4,    req.getMaxOrders());
+            st.setInt(5,    req.getVisitDurationHours());
+            st.setDouble(6, req.getFullPrice());
+            st.executeUpdate();
+            return null; // success
+        } catch (SQLException e) {
+            System.out.println("submitParkSettingsRequest error: " + e.getMessage());
+            return "Database error: " + e.getMessage();
+        }
+    }
+
+    /**
+     * returns all pending park-settings requests, newest first,
+     * joined with the parks table so the park name is included.
+     *
+     * @return list of {@link ParkSettingsRequest}; empty on error or no pending rows
+     */
+    public List<ParkSettingsRequest> getPendingSettingsRequests() {
+        List<ParkSettingsRequest> list = new ArrayList<>();
+        if (connection == null) return list;
+        try {
+            PreparedStatement st = connection.prepareStatement(
+                "SELECT r.id, r.park_id, p.name AS park_name, r.requested_by, " +
+                "       r.capacity, r.max_orders, r.visit_duration_hours, r.full_price, " +
+                "       r.status, DATE_FORMAT(r.requested_at, '%Y-%m-%d %H:%i') AS requested_at " +
+                "FROM park_settings_requests r " +
+                "JOIN parks p ON p.id = r.park_id " +
+                "WHERE r.status = 'pending' " +
+                "ORDER BY r.requested_at DESC");
+            ResultSet rs = st.executeQuery();
+            while (rs.next()) {
+                list.add(new ParkSettingsRequest(
+                    rs.getInt("id"),
+                    rs.getInt("park_id"),
+                    rs.getString("park_name"),
+                    rs.getString("requested_by"),
+                    rs.getInt("capacity"),
+                    rs.getInt("max_orders"),
+                    rs.getInt("visit_duration_hours"),
+                    rs.getDouble("full_price"),
+                    rs.getString("status"),
+                    rs.getString("requested_at")));
+            }
+        } catch (SQLException e) {
+            System.out.println("getPendingSettingsRequests error: " + e.getMessage());
+        }
+        return list;
+    }
+
+    /**
+     * approves a pending settings request: applies the proposed values to the
+     * {@code parks} table and marks the request as {@code 'approved'}.
+     * both updates run in a single transaction so they stay in sync.
+     *
+     * @param requestId the primary key of the {@code park_settings_requests} row
+     * @return {@code null} on success; a human-readable error message on failure
+     */
+    public String approveSettingsRequest(int requestId) {
+        if (connection == null) return "Database connection unavailable.";
+        try {
+            // Fetch the request row first so we have the values to apply.
+            PreparedStatement fetch = connection.prepareStatement(
+                "SELECT park_id, capacity, max_orders, visit_duration_hours, full_price, status " +
+                "FROM park_settings_requests WHERE id = ?");
+            fetch.setInt(1, requestId);
+            ResultSet rs = fetch.executeQuery();
+            if (!rs.next())
+                return "Request #" + requestId + " not found.";
+            if (!"pending".equalsIgnoreCase(rs.getString("status")))
+                return "Request #" + requestId + " is no longer pending.";
+
+            int    parkId   = rs.getInt("park_id");
+            int    cap      = rs.getInt("capacity");
+            int    maxOrd   = rs.getInt("max_orders");
+            int    dur      = rs.getInt("visit_duration_hours");
+            double price    = rs.getDouble("full_price");
+
+            connection.setAutoCommit(false);
+            try {
+                // Apply values to the live parks table.
+                PreparedStatement upPark = connection.prepareStatement(
+                    "UPDATE parks SET capacity=?, max_orders=?, visit_duration_hours=?, full_price=? " +
+                    "WHERE id=?");
+                upPark.setInt(1, cap);
+                upPark.setInt(2, maxOrd);
+                upPark.setInt(3, dur);
+                upPark.setDouble(4, price);
+                upPark.setInt(5, parkId);
+                upPark.executeUpdate();
+
+                // Mark the request approved with the review timestamp.
+                PreparedStatement upReq = connection.prepareStatement(
+                    "UPDATE park_settings_requests " +
+                    "SET status='approved', reviewed_at=NOW() WHERE id=?");
+                upReq.setInt(1, requestId);
+                upReq.executeUpdate();
+
+                connection.commit();
+            } catch (SQLException ex) {
+                connection.rollback();
+                throw ex;
+            } finally {
+                connection.setAutoCommit(true);
+            }
+            return null; // success
+        } catch (SQLException e) {
+            System.out.println("approveSettingsRequest error: " + e.getMessage());
+            return "Database error: " + e.getMessage();
+        }
+    }
+
+    /**
+     * rejects a pending settings request by setting its status to {@code 'rejected'}.
+     * the live park values are not touched.
+     *
+     * @param requestId the primary key of the {@code park_settings_requests} row
+     * @return {@code null} on success; a human-readable error message on failure
+     */
+    public String rejectSettingsRequest(int requestId) {
+        if (connection == null) return "Database connection unavailable.";
+        try {
+            PreparedStatement chk = connection.prepareStatement(
+                "SELECT status FROM park_settings_requests WHERE id = ?");
+            chk.setInt(1, requestId);
+            ResultSet rs = chk.executeQuery();
+            if (!rs.next())
+                return "Request #" + requestId + " not found.";
+            if (!"pending".equalsIgnoreCase(rs.getString("status")))
+                return "Request #" + requestId + " is no longer pending.";
+
+            PreparedStatement st = connection.prepareStatement(
+                "UPDATE park_settings_requests " +
+                "SET status='rejected', reviewed_at=NOW() WHERE id=?");
+            st.setInt(1, requestId);
+            st.executeUpdate();
+            return null; // success
+        } catch (SQLException e) {
+            System.out.println("rejectSettingsRequest error: " + e.getMessage());
             return "Database error: " + e.getMessage();
         }
     }

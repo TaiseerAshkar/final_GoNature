@@ -12,6 +12,7 @@ import logic.Order;
 import logic.OrderDetail;
 import logic.Park;
 import logic.GuideDetail;
+import logic.ParkSettingsRequest;
 import logic.RegisterGuideRequest;
 import logic.RegisterRequest;
 import logic.RegisterResult;
@@ -50,6 +51,20 @@ import gui.ServerPortFrameController;
 public class EchoServer extends AbstractServer {
 
     /**
+     * Tracks every session key (visitor ID or staff username) that is currently
+     * logged in across all active connections. Using a ConcurrentHashMap-backed set
+     * so reads and writes from multiple OCSF reader threads are race-free without
+     * explicit synchronisation on every check.
+     *
+     * <p>The corresponding per-connection key is stored in
+     * {@code client.setInfo("sessionKey", …)} at login time so that
+     * {@link #clientDisconnected} and {@link #clientException} can look it up and
+     * remove it without needing to know whether the user was a visitor or staff member.
+     */
+    private static final java.util.Set<String> activeSessions =
+        java.util.Collections.newSetFromMap(new java.util.concurrent.ConcurrentHashMap<>());
+
+    /**
      * @param port the port number to listen on
      */
     public EchoServer(int port) {
@@ -76,23 +91,42 @@ public class EchoServer extends AbstractServer {
 
                 case "LOGIN_VISITOR": {
                     String idNumber = (String) incoming.getData();
+                    // Reject if this ID is already logged in on another connection
+                    if (activeSessions.contains(idNumber)) {
+                        client.sendToClient(new Message("LOGIN_FAIL",
+                            "This account is already logged in on another device."));
+                        break;
+                    }
                     LoginResult result = DBController.getInstance().loginVisitor(idNumber);
-                    if (result != null)
+                    if (result != null) {
+                        activeSessions.add(idNumber);
+                        client.setInfo("sessionKey", idNumber); // stored for logout/disconnect cleanup
                         client.sendToClient(new Message("LOGIN_SUCCESS", result));
-                    else
+                    } else {
                         client.sendToClient(new Message("LOGIN_FAIL", "ID not registered"));
+                    }
                     break;
                 }
 
                 case "LOGIN_USER": {
                     String[] creds = (String[]) incoming.getData();
+                    String username = creds[0];
+                    // Reject if this username is already logged in on another connection
+                    if (activeSessions.contains(username)) {
+                        client.sendToClient(new Message("LOGIN_FAIL",
+                            "This account is already logged in on another device."));
+                        break;
+                    }
                     DBController db = DBController.getInstance();
-                    LoginResult result = db.loginUser(creds[0], creds[1]);
-                    if (result != null)
+                    LoginResult result = db.loginUser(username, creds[1]);
+                    if (result != null) {
+                        activeSessions.add(username);
+                        client.setInfo("sessionKey", username); // stored for logout/disconnect cleanup
                         client.sendToClient(new Message("LOGIN_SUCCESS", result));
-                    else
+                    } else {
                         client.sendToClient(new Message("LOGIN_FAIL",
                             db.loginUserFailReason != null ? db.loginUserFailReason : "Login failed."));
+                    }
                     break;
                 }
 
@@ -140,7 +174,15 @@ public class EchoServer extends AbstractServer {
                         new BookingResult(orderId, "CONFIRMED", req.getParkName(),
                             req.getVisitDate(), req.getVisitTime(),
                             req.getNumVisitors(), req.getOrderType(), req.getEmail())));
-                    // instant notification if the visit is tomorrow — 5 seconds later flip to "sent"
+
+                    // ── Booking confirmation notification — fires for EVERY successful booking ──
+                    ServerPortFrameController.logSimulation(
+                        "📧 Booking confirmation sent → " + req.getEmail() +
+                        "  |  " + req.getParkName() +
+                        "  |  " + req.getVisitDate() +
+                        "  |  Order #" + orderId);
+
+                    // ── Day-before reminder — only fires when the visit is tomorrow ──
                     String tomorrow = LocalDate.now().plusDays(1)
                         .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd"));
                     if (req.getVisitDate().equals(tomorrow)) {
@@ -490,8 +532,85 @@ public class EchoServer extends AbstractServer {
                 }
 
                 case "LOGOUT": {
-                    // socket stays open — the user may log back in on the same connection.
-                    // "Disconnected" only appears when the socket actually closes (clientDisconnected / clientException).
+                    // Free the session slot so the same account can log in elsewhere.
+                    // The socket stays open — the client may show the login screen again
+                    // on the same connection without a full reconnect.
+                    String sessionKey = (String) client.getInfo("sessionKey");
+                    if (sessionKey != null) {
+                        activeSessions.remove(sessionKey);
+                        client.setInfo("sessionKey", null);
+                    }
+                    break;
+                }
+
+                // ── Park settings approval workflow ──────────────────────────────────
+
+                case "SUBMIT_PARK_SETTINGS": {
+                    if (!(incoming.getData() instanceof ParkSettingsRequest)) {
+                        client.sendToClient(new Message("PARK_SETTINGS_SUBMIT_FAIL",
+                            "Invalid request data."));
+                        break;
+                    }
+                    ParkSettingsRequest req = (ParkSettingsRequest) incoming.getData();
+                    // Re-validate the proposed values server-side (mirrors ParkSettingsController rules).
+                    if (req.getCapacity() < 1 || req.getCapacity() > 10000) {
+                        client.sendToClient(new Message("PARK_SETTINGS_SUBMIT_FAIL",
+                            "Capacity must be between 1 and 10 000.")); break;
+                    }
+                    if (req.getMaxOrders() < 1 || req.getMaxOrders() > req.getCapacity()) {
+                        client.sendToClient(new Message("PARK_SETTINGS_SUBMIT_FAIL",
+                            "Max orders must be between 1 and the proposed capacity ("
+                            + req.getCapacity() + ").")); break;
+                    }
+                    if (req.getVisitDurationHours() < 1 || req.getVisitDurationHours() > 24) {
+                        client.sendToClient(new Message("PARK_SETTINGS_SUBMIT_FAIL",
+                            "Visit duration must be between 1 and 24 hours.")); break;
+                    }
+                    if (req.getFullPrice() <= 0 || req.getFullPrice() > 9999.99) {
+                        client.sendToClient(new Message("PARK_SETTINGS_SUBMIT_FAIL",
+                            "Full price must be greater than 0 and at most 9 999.99.")); break;
+                    }
+                    String submitErr = DBController.getInstance().submitParkSettingsRequest(req);
+                    if (submitErr == null)
+                        client.sendToClient(new Message("PARK_SETTINGS_SUBMITTED",
+                            "Settings change submitted for department manager approval."));
+                    else
+                        client.sendToClient(new Message("PARK_SETTINGS_SUBMIT_FAIL", submitErr));
+                    break;
+                }
+
+                case "GET_PENDING_SETTINGS": {
+                    List<ParkSettingsRequest> pending =
+                        DBController.getInstance().getPendingSettingsRequests();
+                    client.sendToClient(new Message("PENDING_SETTINGS_LIST", pending));
+                    break;
+                }
+
+                case "APPROVE_SETTINGS": {
+                    if (!(incoming.getData() instanceof Integer)) {
+                        client.sendToClient(new Message("SETTINGS_APPROVE_FAIL",
+                            "Invalid request ID.")); break;
+                    }
+                    int reqId = (Integer) incoming.getData();
+                    String approveErr = DBController.getInstance().approveSettingsRequest(reqId);
+                    if (approveErr == null)
+                        client.sendToClient(new Message("SETTINGS_APPROVE_SUCCESS", reqId));
+                    else
+                        client.sendToClient(new Message("SETTINGS_APPROVE_FAIL", approveErr));
+                    break;
+                }
+
+                case "REJECT_SETTINGS": {
+                    if (!(incoming.getData() instanceof Integer)) {
+                        client.sendToClient(new Message("SETTINGS_REJECT_FAIL",
+                            "Invalid request ID.")); break;
+                    }
+                    int reqId = (Integer) incoming.getData();
+                    String rejectErr = DBController.getInstance().rejectSettingsRequest(reqId);
+                    if (rejectErr == null)
+                        client.sendToClient(new Message("SETTINGS_REJECT_SUCCESS", reqId));
+                    else
+                        client.sendToClient(new Message("SETTINGS_REJECT_FAIL", rejectErr));
                     break;
                 }
 
@@ -562,8 +681,12 @@ public class EchoServer extends AbstractServer {
 
     /**
      * validates a booking request before persisting. enforces visit-type limits:
-     * SOLO = exactly 1 visitor (any role); GROUP = 2–15 for regular visitors/subscribers,
-     * or 2–16 total for registered guides (guide is included in the count but enters free).
+     * <ul>
+     *   <li>SOLO   — exactly 1 visitor, any role.</li>
+     *   <li>FAMILY — 2–15 visitors, any role; receives 15% advance-booking discount.</li>
+     *   <li>GROUP  — 2–15 visitors for regular visitors/subscribers, or 2–16 total for
+     *               registered guides (guide is included in the count but enters free).</li>
+     * </ul>
      *
      * @param req the booking request to validate
      * @return a human-readable error string if invalid; {@code null} if all checks pass
@@ -591,21 +714,26 @@ public class EchoServer extends AbstractServer {
         switch (type) {
             case "SOLO":
                 if (req.getNumVisitors() != 1)
-                    return "Solo bookings allow exactly 1 visitor.";
+                    return "SOLO bookings allow exactly 1 visitor.";
+                break;
+            case "FAMILY":
+                // Any role may book a family visit; 2–15 visitors, 15% advance discount applies.
+                if (req.getNumVisitors() < 2 || req.getNumVisitors() > 15)
+                    return "FAMILY bookings require 2–15 visitors.";
                 break;
             case "GROUP":
-                // guides count themselves in numVisitors (they enter free); max 15 paying guests
-                // means a guide-led group may have up to 16 total. regular visitors max out at 15.
+                // Guides count themselves in numVisitors (they enter free); max 15 paying guests
+                // means a guide-led group may have up to 16 total. Regular visitors max out at 15.
                 boolean isGuide = DBController.getInstance()
                     .isRegisteredGuide(req.getVisitorId());
                 int maxGroup = isGuide ? 16 : 15;
                 if (req.getNumVisitors() < 2 || req.getNumVisitors() > maxGroup)
                     return isGuide
-                        ? "Guide group bookings require 2–16 visitors total (guide enters free)."
-                        : "Group bookings require 2–15 visitors.";
+                        ? "Guide GROUP bookings require 2–16 visitors total (guide enters free)."
+                        : "GROUP bookings require 2–15 visitors.";
                 break;
             default:
-                return "Invalid visit type. Must be SOLO or GROUP.";
+                return "Invalid visit type. Must be SOLO, FAMILY, or GROUP.";
         }
         String email = req.getEmail();
         if (email == null || email.trim().isEmpty())
@@ -631,13 +759,19 @@ public class EchoServer extends AbstractServer {
     }
 
     /**
-     * marks the client's row as "Disconnected" — keeps the row so the operator can
-     * see who has been connected. synchronised against concurrent disconnect events.
+     * marks the client's row as "Disconnected" and frees their session slot so the
+     * same account can log in again from another client.
+     * synchronised against concurrent disconnect events.
      *
      * @param client the client that disconnected
      */
     @Override
     protected synchronized void clientDisconnected(ConnectionToClient client) {
+        // Release the session slot — must happen whether the user explicitly logged
+        // out or just closed the window, so the account is not permanently locked out.
+        String sessionKey = (String) client.getInfo("sessionKey");
+        if (sessionKey != null) activeSessions.remove(sessionKey);
+
         String ip = (String) client.getInfo("ip");
         if (ip == null) return;
         System.out.println("Client disconnected | IP: " + ip);
@@ -653,6 +787,10 @@ public class EchoServer extends AbstractServer {
      */
     @Override
     protected synchronized void clientException(ConnectionToClient client, Throwable exception) {
+        // Same cleanup as a clean disconnect — free the session slot.
+        String sessionKey = (String) client.getInfo("sessionKey");
+        if (sessionKey != null) activeSessions.remove(sessionKey);
+
         String ip = (String) client.getInfo("ip");
         if (ip == null) return;
         System.out.println("Client lost connection | IP: " + ip);
