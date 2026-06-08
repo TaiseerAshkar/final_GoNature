@@ -16,6 +16,13 @@ public class RegisterGuideRequest implements Serializable {
     private final String email;
     private final String phone;
 
+    /**
+     * @param idNumber  the new guide's government-issued ID number
+     * @param firstName the guide's first name
+     * @param lastName  the guide's last name
+     * @param email     the guide's contact email, or {@code null} (trimmed, or stored as empty)
+     * @param phone     the guide's contact phone, or {@code null} (trimmed, or stored as empty)
+     */
     public RegisterGuideRequest(String idNumber, String firstName, String lastName,
                                 String email, String phone) {
         this.idNumber  = idNumber;
@@ -25,9 +32,18 @@ public class RegisterGuideRequest implements Serializable {
         this.phone     = phone != null ? phone.trim() : "";
     }
 
+    /** @return the new guide's government-issued ID number */
     public String getIdNumber()  { return idNumber; }
+
+    /** @return the guide's first name */
     public String getFirstName() { return firstName; }
+
+    /** @return the guide's last name */
     public String getLastName()  { return lastName; }
+
+    /** @return the guide's contact email, or an empty string if none was provided */
     public String getEmail()     { return email; }
+
+    /** @return the guide's contact phone, or an empty string if none was provided */
     public String getPhone()     { return phone; }
 }

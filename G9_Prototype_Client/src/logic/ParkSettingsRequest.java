@@ -52,15 +52,34 @@ public class ParkSettingsRequest implements Serializable {
              capacity, maxOrders, visitDurationHours, fullPrice, "pending", "");
     }
 
+    /** @return the request's primary-key ID, or 0 when this object is a fresh submission */
     public int    getId()                 { return id; }
+
+    /** @return the ID of the park the change applies to */
     public int    getParkId()             { return parkId; }
+
+    /** @return the park's display name (not stored in the table; for display only) */
     public String getParkName()           { return parkName; }
+
+    /** @return the username of the park manager who submitted the request */
     public String getRequestedBy()        { return requestedBy; }
+
+    /** @return the proposed maximum simultaneous-visitor capacity */
     public int    getCapacity()           { return capacity; }
+
+    /** @return the proposed maximum number of bookable orders per time slot */
     public int    getMaxOrders()          { return maxOrders; }
+
+    /** @return the proposed visit-window length, in hours */
     public int    getVisitDurationHours() { return visitDurationHours; }
+
+    /** @return the proposed full per-person admission price */
     public double getFullPrice()          { return fullPrice; }
+
+    /** @return the request status: {@code "pending"}, {@code "approved"}, or {@code "rejected"} */
     public String getStatus()             { return status; }
+
+    /** @return the formatted submission timestamp, or an empty string for a fresh submission */
     public String getRequestedAt()        { return requestedAt; }
 
     /** Formatted summary of the proposed values — shown in the approvals table. */

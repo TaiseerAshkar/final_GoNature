@@ -84,6 +84,10 @@ public class Order implements Serializable {
     /** @param t the new display visit type */
     public void setOrderType(String t)      { this.orderType = t; }
 
+    /**
+     * @return a readable one-line summary of the order's key fields,
+     *         intended for logging and debugging rather than display to users
+     */
     @Override
     public String toString() {
         return orderNumber + " | " + orderDate + " | " + numberOfVisitors +

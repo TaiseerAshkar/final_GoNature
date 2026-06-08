@@ -58,6 +58,10 @@ public class Message implements Serializable {
      */
     public Object getData() { return data; }
 
+    /**
+     * @return a short debug string showing the command type and its payload,
+     *         handy when tracing traffic in the server or client logs
+     */
     @Override
     public String toString() {
         return "Message[type=" + type + ", data=" + data + "]";
