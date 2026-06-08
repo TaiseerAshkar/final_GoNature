@@ -148,8 +148,8 @@ public class MyOrdersController {
         tableOrders.getItems().clear();
         btnCancel.setDisable(true);
         if (orders == null) {
-            lblOrderCount.setText("Could not load orders.");
-            lblMessage.setText("Server did not respond. Please try again.");
+            lblOrderCount.setText("Couldn't load your reservations.");
+            lblMessage.setText("The server didn't respond. Please check your connection and try again.");
             return;
         }
         tableOrders.getItems().addAll(orders);

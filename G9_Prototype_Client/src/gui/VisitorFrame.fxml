@@ -46,10 +46,7 @@
                         onAction="#handleRegisterExit" styleClass="btn-secondary"/>
                 <Separator/>
                 <Button text="✅  Confirm My Visit" maxWidth="Infinity"
-                        onAction="#handleConfirmVisit"
-                        style="-fx-background-color:#1565C0; -fx-text-fill:white;
-                               -fx-font-weight:bold; -fx-background-radius:5;
-                               -fx-padding:8 14; -fx-cursor:hand; -fx-font-size:13px;"/>
+                        onAction="#handleConfirmVisit" styleClass="btn-blue"/>
             </VBox>
 
             <!-- ── Notification inbox ──────────────────────────────────────── -->
@@ -60,21 +57,20 @@
                     <Label fx:id="lblNotifBadge" styleClass="header-badge" text="0"/>
                     <Region HBox.hgrow="ALWAYS"/>
                     <Button text="↻  Refresh" onAction="#handleRefreshNotifications"
-                            styleClass="btn-outline"
-                            style="-fx-font-size:11px; -fx-padding:3 10;"/>
+                            styleClass="btn-ghost"/>
                 </HBox>
 
                 <Separator/>
 
                 <!-- shown when inbox is empty -->
                 <Label fx:id="lblNoNotif"
-                       text="No notifications yet. Notifications appear here after booking, cancellation, or when a waiting-list spot opens."
-                       styleClass="lbl-hint" wrapText="true"
-                       style="-fx-font-style:italic;"/>
+                       text="📭  No notifications yet. They'll appear here after booking, cancellation, or when a waiting-list spot opens."
+                       styleClass="empty-state" wrapText="true" maxWidth="Infinity"/>
 
                 <!-- shown when there are notifications -->
                 <ListView fx:id="lstNotifications"
-                          prefHeight="150"
+                          styleClass="notif-list"
+                          prefHeight="160"
                           visible="false" managed="false"/>
 
             </VBox>

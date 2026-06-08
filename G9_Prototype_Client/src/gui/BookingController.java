@@ -358,7 +358,8 @@ public class BookingController {
             stage.setScene(new Scene(root));                         // attach to live scene first
             ctrl.populate(result);                                   // then data-bind (labels now in live scene)
         } catch (IOException e) {
-            setError("Error showing confirmation: " + e.getMessage());
+            setError("Your booking went through, but we couldn't open the confirmation screen. "
+                   + "You can view it any time under 'My Reservations'.");
             e.printStackTrace();
         }
     }

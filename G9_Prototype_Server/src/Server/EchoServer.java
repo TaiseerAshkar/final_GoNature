@@ -103,7 +103,8 @@ public class EchoServer extends AbstractServer {
                         client.setInfo("sessionKey", idNumber); // stored for logout/disconnect cleanup
                         client.sendToClient(new Message("LOGIN_SUCCESS", result));
                     } else {
-                        client.sendToClient(new Message("LOGIN_FAIL", "ID not registered"));
+                        client.sendToClient(new Message("LOGIN_FAIL",
+                            "That ID number isn't registered. Please check it, or create an account to get started."));
                     }
                     break;
                 }
@@ -125,7 +126,8 @@ public class EchoServer extends AbstractServer {
                         client.sendToClient(new Message("LOGIN_SUCCESS", result));
                     } else {
                         client.sendToClient(new Message("LOGIN_FAIL",
-                            db.loginUserFailReason != null ? db.loginUserFailReason : "Login failed."));
+                            db.loginUserFailReason != null ? db.loginUserFailReason
+                                : "We couldn't sign you in. Please check your username and password and try again."));
                     }
                     break;
                 }
@@ -138,7 +140,8 @@ public class EchoServer extends AbstractServer {
 
                 case "BOOK_ORDER": {
                     if (!(incoming.getData() instanceof BookingRequest)) {
-                        client.sendToClient(new Message("BOOKING_ERROR", "Invalid booking data."));
+                        client.sendToClient(new Message("BOOKING_ERROR",
+                            "We couldn't read your booking request. Please try again."));
                         break;
                     }
                     BookingRequest req = (BookingRequest) incoming.getData();
@@ -162,12 +165,14 @@ public class EchoServer extends AbstractServer {
                     try {
                         orderId = DBController.getInstance().createOrder(req);
                     } catch (RuntimeException e) {
-                        client.sendToClient(new Message("BOOKING_ERROR", e.getMessage()));
+                        System.out.println("createOrder error: " + e.getMessage());
+                        client.sendToClient(new Message("BOOKING_ERROR",
+                            "We couldn't complete your booking. Please try again."));
                         break;
                     }
                     if (orderId < 0) {
                         client.sendToClient(new Message("BOOKING_ERROR",
-                            "Failed to create booking. Please try again."));
+                            "We couldn't complete your booking. Please try again."));
                         break;
                     }
                     client.sendToClient(new Message("BOOKING_CONFIRMED",
@@ -214,7 +219,8 @@ public class EchoServer extends AbstractServer {
 
                 case "JOIN_WAITING_LIST": {
                     if (!(incoming.getData() instanceof BookingRequest)) {
-                        client.sendToClient(new Message("BOOKING_ERROR", "Invalid booking data."));
+                        client.sendToClient(new Message("BOOKING_ERROR",
+                            "We couldn't read your booking request. Please try again."));
                         break;
                     }
                     BookingRequest req = (BookingRequest) incoming.getData();
@@ -222,12 +228,14 @@ public class EchoServer extends AbstractServer {
                     try {
                         waitId = DBController.getInstance().addToWaitingList(req);
                     } catch (RuntimeException e) {
-                        client.sendToClient(new Message("BOOKING_ERROR", e.getMessage()));
+                        System.out.println("addToWaitingList error: " + e.getMessage());
+                        client.sendToClient(new Message("BOOKING_ERROR",
+                            "We couldn't add you to the waiting list. Please try again."));
                         break;
                     }
                     if (waitId < 0) {
                         client.sendToClient(new Message("BOOKING_ERROR",
-                            "Failed to join waiting list. Please try again."));
+                            "We couldn't add you to the waiting list. Please try again."));
                         break;
                     }
                     client.sendToClient(new Message("WAITING_LIST_CONFIRMED",
@@ -251,12 +259,12 @@ public class EchoServer extends AbstractServer {
 
                 case "CANCEL_ORDER": {
                     if (!(incoming.getData() instanceof Integer)) {
-                        client.sendToClient(new Message("CANCEL_FAIL", "Invalid order ID."));
+                        client.sendToClient(new Message("CANCEL_FAIL", "We couldn't identify that order. Please refresh and try again."));
                         break;
                     }
                     int orderId = (Integer) incoming.getData();
                     if (orderId <= 0) {
-                        client.sendToClient(new Message("CANCEL_FAIL", "Invalid order ID."));
+                        client.sendToClient(new Message("CANCEL_FAIL", "We couldn't identify that order. Please refresh and try again."));
                         break;
                     }
                     CancelResult result = DBController.getInstance().cancelOrder(orderId);
@@ -274,7 +282,8 @@ public class EchoServer extends AbstractServer {
 
                 case "CHECK_IN_VISITOR": {
                     if (!(incoming.getData() instanceof EntryCheckRequest)) {
-                        client.sendToClient(new Message("ENTRY_DENIED", "Invalid check-in request."));
+                        client.sendToClient(new Message("ENTRY_DENIED",
+                            "We couldn't read that check-in request. Please try again."));
                         break;
                     }
                     EntryCheckRequest req = (EntryCheckRequest) incoming.getData();
@@ -283,7 +292,7 @@ public class EchoServer extends AbstractServer {
                         break;
                     }
                     if (req.getParkId() <= 0) {
-                        client.sendToClient(new Message("ENTRY_DENIED", "Invalid park ID."));
+                        client.sendToClient(new Message("ENTRY_DENIED", "Please select a valid park."));
                         break;
                     }
                     // client validates too, but enforce on the server to be safe
@@ -292,7 +301,7 @@ public class EchoServer extends AbstractServer {
                     int    nv = req.getNumVisitors();
                     if ("SOLO".equals(ot) && nv != 1) {
                         client.sendToClient(new Message("ENTRY_DENIED",
-                            "Solo check-in requires exactly 1 visitor."));
+                            "A SOLO check-in must have exactly 1 visitor."));
                         break;
                     }
                     if ("GROUP".equals(ot)) {
@@ -319,7 +328,8 @@ public class EchoServer extends AbstractServer {
 
                 case "REGISTER_EXIT": {
                     if (!(incoming.getData() instanceof ExitRequest)) {
-                        client.sendToClient(new Message("EXIT_FAIL", "Invalid exit request."));
+                        client.sendToClient(new Message("EXIT_FAIL",
+                            "We couldn't read that exit request. Please try again."));
                         break;
                     }
                     ExitRequest exitReq = (ExitRequest) incoming.getData();
@@ -328,7 +338,7 @@ public class EchoServer extends AbstractServer {
                         break;
                     }
                     if (exitReq.getParkId() <= 0) {
-                        client.sendToClient(new Message("EXIT_FAIL", "Invalid park ID."));
+                        client.sendToClient(new Message("EXIT_FAIL", "Please select a valid park."));
                         break;
                     }
                     boolean exited = DBController.getInstance()
@@ -377,7 +387,8 @@ public class EchoServer extends AbstractServer {
 
                 case "REGISTER_VISITOR": {
                     if (!(incoming.getData() instanceof RegisterRequest)) {
-                        client.sendToClient(new Message("REGISTER_FAIL", "Invalid registration data."));
+                        client.sendToClient(new Message("REGISTER_FAIL",
+                            "We couldn't read your registration details. Please try again."));
                         break;
                     }
                     RegisterRequest req = (RegisterRequest) incoming.getData();
@@ -464,7 +475,7 @@ public class EchoServer extends AbstractServer {
 
                 case "GET_PARK_SETTINGS": {
                     if (!(incoming.getData() instanceof Integer)) {
-                        client.sendToClient(new Message("PARK_SETTINGS_ERROR", "Invalid park ID."));
+                        client.sendToClient(new Message("PARK_SETTINGS_ERROR", "Please select a valid park."));
                         break;
                     }
                     int parkId = (Integer) incoming.getData();
@@ -481,7 +492,7 @@ public class EchoServer extends AbstractServer {
                 case "UPDATE_PARK_SETTINGS": {
                     if (!(incoming.getData() instanceof Park)) {
                         client.sendToClient(new Message("PARK_SETTINGS_UPDATE_FAIL",
-                            "Invalid park data."));
+                            "We couldn't read the park settings. Please try again."));
                         break;
                     }
                     Park p = (Park) incoming.getData();
@@ -511,19 +522,19 @@ public class EchoServer extends AbstractServer {
                             updated != null ? updated : p));
                     } else {
                         client.sendToClient(new Message("PARK_SETTINGS_UPDATE_FAIL",
-                            "Failed to save settings. Please try again."));
+                            "We couldn't save the park settings. Please try again."));
                     }
                     break;
                 }
 
                 case "CONFIRM_VISIT": {
                     if (!(incoming.getData() instanceof Integer)) {
-                        client.sendToClient(new Message("CONFIRM_VISIT_FAIL", "Invalid order ID."));
+                        client.sendToClient(new Message("CONFIRM_VISIT_FAIL", "We couldn't identify that order. Please refresh and try again."));
                         break;
                     }
                     int orderId = (Integer) incoming.getData();
                     if (orderId <= 0) {
-                        client.sendToClient(new Message("CONFIRM_VISIT_FAIL", "Invalid order ID."));
+                        client.sendToClient(new Message("CONFIRM_VISIT_FAIL", "We couldn't identify that order. Please refresh and try again."));
                         break;
                     }
                     ReminderService.getInstance().confirmVisit(orderId);
@@ -548,7 +559,7 @@ public class EchoServer extends AbstractServer {
                 case "SUBMIT_PARK_SETTINGS": {
                     if (!(incoming.getData() instanceof ParkSettingsRequest)) {
                         client.sendToClient(new Message("PARK_SETTINGS_SUBMIT_FAIL",
-                            "Invalid request data."));
+                            "We couldn't read your settings request. Please try again."));
                         break;
                     }
                     ParkSettingsRequest req = (ParkSettingsRequest) incoming.getData();
@@ -589,7 +600,7 @@ public class EchoServer extends AbstractServer {
                 case "APPROVE_SETTINGS": {
                     if (!(incoming.getData() instanceof Integer)) {
                         client.sendToClient(new Message("SETTINGS_APPROVE_FAIL",
-                            "Invalid request ID.")); break;
+                            "We couldn't identify that request. Please refresh and try again.")); break;
                     }
                     int reqId = (Integer) incoming.getData();
                     String approveErr = DBController.getInstance().approveSettingsRequest(reqId);
@@ -603,7 +614,7 @@ public class EchoServer extends AbstractServer {
                 case "REJECT_SETTINGS": {
                     if (!(incoming.getData() instanceof Integer)) {
                         client.sendToClient(new Message("SETTINGS_REJECT_FAIL",
-                            "Invalid request ID.")); break;
+                            "We couldn't identify that request. Please refresh and try again.")); break;
                     }
                     int reqId = (Integer) incoming.getData();
                     String rejectErr = DBController.getInstance().rejectSettingsRequest(reqId);
@@ -618,7 +629,8 @@ public class EchoServer extends AbstractServer {
 
                 case "REGISTER_GUIDE": {
                     if (!(incoming.getData() instanceof RegisterGuideRequest)) {
-                        client.sendToClient(new Message("GUIDE_REGISTER_FAIL", "Invalid request."));
+                        client.sendToClient(new Message("GUIDE_REGISTER_FAIL",
+                            "We couldn't read the guide's details. Please try again."));
                         break;
                     }
                     RegisterGuideRequest req = (RegisterGuideRequest) incoming.getData();
@@ -695,7 +707,7 @@ public class EchoServer extends AbstractServer {
         if (req.getVisitorId() == null || req.getVisitorId().trim().isEmpty())
             return "Visitor ID is required.";
         if (req.getParkId() <= 0)
-            return "Invalid park selection.";
+            return "Please select a park for your visit.";
         if (req.getVisitDate() == null || req.getVisitDate().trim().isEmpty())
             return "Visit date is required.";
         try {
@@ -703,7 +715,7 @@ public class EchoServer extends AbstractServer {
             if (!date.isAfter(LocalDate.now()))
                 return "Visit date must be a future date.";
         } catch (DateTimeParseException e) {
-            return "Invalid date format. Expected yyyy-MM-dd.";
+            return "Please enter the visit date as YYYY-MM-DD (for example, 2026-07-15).";
         }
         if (req.getVisitTime() == null || req.getVisitTime().trim().isEmpty())
             return "Visit time is required.";
@@ -733,13 +745,13 @@ public class EchoServer extends AbstractServer {
                         : "GROUP bookings require 2–15 visitors.";
                 break;
             default:
-                return "Invalid visit type. Must be SOLO, FAMILY, or GROUP.";
+                return "Please choose a visit type: SOLO, FAMILY, or GROUP.";
         }
         String email = req.getEmail();
         if (email == null || email.trim().isEmpty())
-            return "Email address is required.";
+            return "Please enter an email address so we can send your confirmation.";
         if (!email.matches("^[\\w._%+\\-]+@[\\w.\\-]+\\.[a-zA-Z]{2,}$"))
-            return "Invalid email address format.";
+            return "Please enter a valid email address (for example, name@example.com).";
         return null;
     }
 

@@ -48,7 +48,7 @@ public class LoginController {
                             : txtPassword.getText();
 
         if (identifier.isEmpty()) {
-            setError("Please enter an ID");
+            setError("Please enter your ID number or username to sign in.");
             return;
         }
 
@@ -97,7 +97,8 @@ public class LoginController {
      */
     private void loginAsVisitor(String id) {
         if (!id.matches("\\d{5,15}")) {
-            setError("Please enter a password");
+            setError("If you're a staff member, please enter your password too. "
+                   + "Visitors should enter a 5–15 digit ID number.");
             return;
         }
         ChatClient.lastLoginResult = null;
@@ -106,7 +107,7 @@ public class LoginController {
         if (ChatClient.lastLoginResult != null) onLoginSuccess();
         else setError(ChatClient.lastLoginError != null
                 ? ChatClient.lastLoginError
-                : "ID not registered");
+                : "That ID number isn't registered. Please check it, or create an account to get started.");
     }
 
     /**
@@ -150,10 +151,10 @@ public class LoginController {
                     new ServiceRepController().start(stage);
                     break;
                 default:
-                    setError("Unknown role: " + result.getRole() + ". Contact support.");
+                    setError("Your account role isn't recognised. Please contact support for help.");
             }
         } catch (Exception e) {
-            setError("Error loading screen: " + e.getMessage());
+            setError("Something went wrong while opening your home screen. Please try signing in again.");
             e.printStackTrace();
         }
     }
@@ -179,7 +180,7 @@ public class LoginController {
         try {
             new RegisterController().start((Stage) btnLogin.getScene().getWindow());
         } catch (Exception e) {
-            setError("Error opening registration form: " + e.getMessage());
+            setError("We couldn't open the registration form. Please try again.");
         }
     }
 

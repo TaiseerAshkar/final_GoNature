@@ -224,10 +224,33 @@
     -fx-background-color: #0D47A1;
 }
 
+/* GHOST — subtle green outline that stays legible on white / light card
+   backgrounds, where .btn-outline (white text, for the green header) would be
+   invisible. Use for small secondary actions inside cards, e.g. a Refresh button. */
+.btn-ghost {
+    -fx-background-color: transparent;
+    -fx-text-fill: #2E7D32;
+    -fx-border-color: #A5D6A7;
+    -fx-border-radius: 7;
+    -fx-background-radius: 7;
+    -fx-border-width: 1.5;
+    -fx-font-weight: bold;
+    -fx-font-size: 11px;
+    -fx-padding: 5 12;
+    -fx-cursor: hand;
+}
+.btn-ghost:hover {
+    -fx-background-color: #E8F5E9;
+    -fx-border-color: #2E7D32;
+}
+.btn-ghost:pressed {
+    -fx-background-color: #C8E6C9;
+}
+
 /* Disabled state for all button types */
 .btn-primary:disabled, .btn-teal:disabled, .btn-blue:disabled,
 .btn-warning:disabled, .btn-danger:disabled, .btn-secondary:disabled,
-.btn-action:disabled {
+.btn-action:disabled, .btn-ghost:disabled {
     -fx-opacity: 0.42;
     -fx-effect: none;
 }
@@ -356,9 +379,35 @@
     -fx-font-size: 12px;
 }
 
+/* WARNING — orange. Completes the success / error / warning trio so every
+   status message in the app draws from the same three colours. */
+.lbl-warning {
+    -fx-text-fill: #E65100;
+    -fx-font-weight: bold;
+    -fx-font-size: 12px;
+}
+
+/* LOADING — muted teal italic, shown while a request is in flight ("Loading…"). */
+.lbl-loading {
+    -fx-text-fill: #00796B;
+    -fx-font-weight: bold;
+    -fx-font-size: 12px;
+    -fx-font-style: italic;
+}
+
 .lbl-hint {
     -fx-font-size: 11px;
     -fx-text-fill: #78909C;
+}
+
+/* EMPTY STATE — friendly centred message shown when a table or list has no rows. */
+.empty-state {
+    -fx-text-fill: #90A4AE;
+    -fx-font-size: 13px;
+    -fx-font-style: italic;
+    -fx-alignment: center;
+    -fx-text-alignment: center;
+    -fx-padding: 18 12;
 }
 
 .lbl-price {
@@ -484,6 +533,37 @@
 }
 
 .list-cell:empty {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+
+/* ── Notification inbox ──────────────────────────────────────── */
+/* Each notification renders as its own soft card row so the inbox reads as a
+   tidy stack of messages rather than a plain bulleted list. */
+.notif-list {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-padding: 2;
+}
+
+.notif-list .list-cell {
+    -fx-background-color: #F7FAF7;
+    -fx-background-radius: 9;
+    -fx-border-color: #E8F5E9;
+    -fx-border-radius: 9;
+    -fx-border-width: 1;
+    -fx-padding: 10 13;
+    -fx-font-size: 12px;
+    -fx-text-fill: #37474F;
+}
+
+.notif-list .list-cell:filled:hover {
+    -fx-background-color: #E8F5E9;
+    -fx-border-color: #A5D6A7;
+}
+
+.notif-list .list-cell:empty {
     -fx-background-color: transparent;
     -fx-border-color: transparent;
 }

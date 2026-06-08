@@ -585,7 +585,7 @@ public class DBController {
     public EntryResult checkInVisitor(EntryCheckRequest req) {
         if (connection == null)
             return new EntryResult(false, false, -1, "", req.getVisitorId(), 0, "", 0,
-                "Database not connected.");
+                "We can't reach the database right now. Please try again in a moment.");
 
         String visitorId = req.getVisitorId().trim();
         int    parkId    = req.getParkId();
@@ -602,7 +602,8 @@ public class DBController {
             ResultSet rs = st.executeQuery();
             if (rs.next())
                 return new EntryResult(false, false, rs.getInt("id"), "", visitorId, 0, "", 0,
-                    "Visitor " + visitorId + " is already checked in at this park today.");
+                    "Visitor " + visitorId + " is already checked in at this park today. "
+                    + "Please register their exit before checking them in again.");
         } catch (SQLException e) {
             System.out.println("checkInVisitor (already-in check) error: " + e.getMessage());
         }
@@ -643,7 +644,7 @@ public class DBController {
         } catch (SQLException e) {
             System.out.println("checkInVisitor (booking lookup) error: " + e.getMessage());
             return new EntryResult(false, false, -1, "", visitorId, 0, "", 0,
-                "Database error during booking lookup.");
+                "Something went wrong while looking up the booking. Please try again.");
         }
 
         // no booking found — treat as walk-in
@@ -660,13 +661,13 @@ public class DBController {
             ResultSet rs = st.executeQuery();
             if (!rs.next())
                 return new EntryResult(false, false, -1, "", visitorId, 0, "", 0,
-                    "Park not found.");
+                    "We couldn't find that park. Please check the selection and try again.");
             parkName  = rs.getString("name");
             fullPrice = rs.getDouble("full_price");
         } catch (SQLException e) {
             System.out.println("checkInVisitor (park lookup) error: " + e.getMessage());
             return new EntryResult(false, false, -1, "", visitorId, 0, "", 0,
-                "Database error during park lookup.");
+                "Something went wrong while looking up the park. Please try again.");
         }
 
         String curTime  = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm"));
@@ -993,7 +994,8 @@ public class DBController {
      */
     public RegisterResult registerVisitor(RegisterRequest req) {
         if (connection == null)
-            return new RegisterResult(false, "Database not connected.", null);
+            return new RegisterResult(false,
+                "We can't reach the database right now. Please try again in a moment.", null);
 
         // check for duplicate ID before inserting so the error message is user-friendly
         try {
@@ -1005,7 +1007,8 @@ public class DBController {
                     "An account with this ID already exists. Please log in instead.", null);
         } catch (SQLException e) {
             System.out.println("registerVisitor (check) error: " + e.getMessage());
-            return new RegisterResult(false, "Database error during registration.", null);
+            return new RegisterResult(false,
+                "Something went wrong while creating your account. Please try again.", null);
         }
 
         try {
@@ -1068,7 +1071,7 @@ public class DBController {
      * @return {@code null} on success; a human-readable error message on failure
      */
     public String updateOrder(int orderId, String newDate, int newVisitors, String orderType) {
-        if (connection == null) return "Database connection unavailable.";
+        if (connection == null) return "We can't reach the database right now. Please try again in a moment.";
         try {
             // Fetch the order's current status and visitor_id so we can validate before updating.
             PreparedStatement chk = connection.prepareStatement(
@@ -1076,7 +1079,7 @@ public class DBController {
             chk.setInt(1, orderId);
             ResultSet rs = chk.executeQuery();
             if (!rs.next())
-                return "Order #" + orderId + " not found.";
+                return "We couldn't find order #" + orderId + ". Please check the number and try again.";
             String currentStatus = rs.getString("status");
             String visitorId     = rs.getString("visitor_id");
 
@@ -1093,8 +1096,8 @@ public class DBController {
                     "SELECT 1 FROM guides WHERE id_number = ? AND is_approved = 1 LIMIT 1");
                 guideChk.setString(1, visitorId);
                 if (!guideChk.executeQuery().next())
-                    return "Cannot set type to GROUP: visitor " + visitorId +
-                           " is not a registered approved guide.";
+                    return "This order can't be changed to GROUP because visitor " + visitorId +
+                           " isn't a registered, approved guide.";
             }
 
             PreparedStatement st;
@@ -1121,7 +1124,7 @@ public class DBController {
             return null; // success
         } catch (SQLException e) {
             System.out.println("updateOrder error: " + e.getMessage());
-            return "Database error: " + e.getMessage();
+            return "Something went wrong on our end. Please try again.";
         }
     }
 
@@ -1252,13 +1255,13 @@ public class DBController {
      * @return {@code null} on success; a human-readable error message on failure
      */
     public String registerGuide(RegisterGuideRequest req) {
-        if (connection == null) return "Database connection unavailable.";
+        if (connection == null) return "We can't reach the database right now. Please try again in a moment.";
         try {
             PreparedStatement chk = connection.prepareStatement(
                 "SELECT 1 FROM guides WHERE id_number = ? LIMIT 1");
             chk.setString(1, req.getIdNumber());
             if (chk.executeQuery().next())
-                return "Guide already registered.";
+                return "A guide with this ID number is already registered.";
 
             PreparedStatement st = connection.prepareStatement(
                 "INSERT INTO guides (id_number, first_name, last_name, email, phone, is_approved) " +
@@ -1272,7 +1275,7 @@ public class DBController {
             return null; // success
         } catch (SQLException e) {
             System.out.println("registerGuide error: " + e.getMessage());
-            return "Database error: " + e.getMessage();
+            return "Something went wrong on our end. Please try again.";
         }
     }
 
@@ -1311,17 +1314,17 @@ public class DBController {
      * @return {@code null} on success; a human-readable error message on failure
      */
     public String approveGuide(String idNumber) {
-        if (connection == null) return "Database connection unavailable.";
+        if (connection == null) return "We can't reach the database right now. Please try again in a moment.";
         try {
             PreparedStatement st = connection.prepareStatement(
                 "UPDATE guides SET is_approved = 1 WHERE id_number = ?");
             st.setString(1, idNumber);
             if (st.executeUpdate() == 0)
-                return "Guide with ID " + idNumber + " not found.";
+                return "We couldn't find a guide with ID " + idNumber + ".";
             return null;
         } catch (SQLException e) {
             System.out.println("approveGuide error: " + e.getMessage());
-            return "Database error: " + e.getMessage();
+            return "Something went wrong on our end. Please try again.";
         }
     }
 
@@ -1332,17 +1335,17 @@ public class DBController {
      * @return {@code null} on success; a human-readable error message on failure
      */
     public String rejectGuide(String idNumber) {
-        if (connection == null) return "Database connection unavailable.";
+        if (connection == null) return "We can't reach the database right now. Please try again in a moment.";
         try {
             PreparedStatement st = connection.prepareStatement(
                 "DELETE FROM guides WHERE id_number = ?");
             st.setString(1, idNumber);
             if (st.executeUpdate() == 0)
-                return "Guide with ID " + idNumber + " not found.";
+                return "We couldn't find a guide with ID " + idNumber + ".";
             return null;
         } catch (SQLException e) {
             System.out.println("rejectGuide error: " + e.getMessage());
-            return "Database error: " + e.getMessage();
+            return "Something went wrong on our end. Please try again.";
         }
     }
 
@@ -1356,7 +1359,7 @@ public class DBController {
      * @return {@code null} on success; a human-readable error message on failure
      */
     public String submitParkSettingsRequest(ParkSettingsRequest req) {
-        if (connection == null) return "Database connection unavailable.";
+        if (connection == null) return "We can't reach the database right now. Please try again in a moment.";
         try {
             PreparedStatement st = connection.prepareStatement(
                 "INSERT INTO park_settings_requests " +
@@ -1372,7 +1375,7 @@ public class DBController {
             return null; // success
         } catch (SQLException e) {
             System.out.println("submitParkSettingsRequest error: " + e.getMessage());
-            return "Database error: " + e.getMessage();
+            return "Something went wrong on our end. Please try again.";
         }
     }
 
@@ -1423,7 +1426,7 @@ public class DBController {
      * @return {@code null} on success; a human-readable error message on failure
      */
     public String approveSettingsRequest(int requestId) {
-        if (connection == null) return "Database connection unavailable.";
+        if (connection == null) return "We can't reach the database right now. Please try again in a moment.";
         try {
             // Fetch the request row first so we have the values to apply.
             PreparedStatement fetch = connection.prepareStatement(
@@ -1472,7 +1475,7 @@ public class DBController {
             return null; // success
         } catch (SQLException e) {
             System.out.println("approveSettingsRequest error: " + e.getMessage());
-            return "Database error: " + e.getMessage();
+            return "Something went wrong on our end. Please try again.";
         }
     }
 
@@ -1484,7 +1487,7 @@ public class DBController {
      * @return {@code null} on success; a human-readable error message on failure
      */
     public String rejectSettingsRequest(int requestId) {
-        if (connection == null) return "Database connection unavailable.";
+        if (connection == null) return "We can't reach the database right now. Please try again in a moment.";
         try {
             PreparedStatement chk = connection.prepareStatement(
                 "SELECT status FROM park_settings_requests WHERE id = ?");
@@ -1503,7 +1506,7 @@ public class DBController {
             return null; // success
         } catch (SQLException e) {
             System.out.println("rejectSettingsRequest error: " + e.getMessage());
-            return "Database error: " + e.getMessage();
+            return "Something went wrong on our end. Please try again.";
         }
     }
 }

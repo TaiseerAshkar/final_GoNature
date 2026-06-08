@@ -601,7 +601,7 @@ public class AcademicFrameController {
             reportsStage.initOwner(lblUserName.getScene().getWindow());
             new ReportsController().start(reportsStage);
         } catch (Exception e) {
-            lblResult.setText("Error opening reports: " + e.getMessage());
+            lblResult.setText("We couldn't open the reports dashboard. Please try again.");
             e.printStackTrace();
         }
     }

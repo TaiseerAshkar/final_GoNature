@@ -182,7 +182,7 @@ public class EntryControlController {
         if (selectedPark == null) { setCheckInError("Please select a park."); return; }
 
         String orderType = cboOrderType.getValue();
-        if (orderType == null) { setCheckInError("Please select an order type."); return; }
+        if (orderType == null) { setCheckInError("Please select a visit type (SOLO, FAMILY, or GROUP)."); return; }
 
         int numVisitors;
         try {

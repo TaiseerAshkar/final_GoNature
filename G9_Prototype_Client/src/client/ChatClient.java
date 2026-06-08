@@ -123,7 +123,7 @@ public class ChatClient extends AbstractClient {
 
         switch (m.getType()) {
             case "UPDATE_SUCCESS":
-                lastResult = "Update successful!";
+                lastResult = "The order was updated successfully.";
                 break;
             case "UPDATE_FAIL":
                 lastResult = (m.getData() instanceof String && !((String) m.getData()).isEmpty())
