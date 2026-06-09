@@ -236,7 +236,9 @@ public class LoginController {
     public void start(Stage primaryStage) throws Exception {
         Parent root = FXMLLoader.load(getClass().getResource("/gui/LoginFrame.fxml"));
         primaryStage.setTitle("GoNature — Login");
-        primaryStage.setScene(new Scene(root));
+        Scene scene = new Scene(root);
+        ThemeManager.register(scene);   // keep the chosen light/dark theme across logout
+        primaryStage.setScene(scene);
         primaryStage.show();
     }
 }

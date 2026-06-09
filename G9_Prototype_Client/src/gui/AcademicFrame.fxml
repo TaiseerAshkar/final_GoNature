@@ -17,8 +17,10 @@
     <HBox styleClass="header-bar" alignment="CENTER_LEFT" spacing="10">
         <Label text="🌿 GoNature" styleClass="header-logo"/>
         <Region HBox.hgrow="ALWAYS"/>
+        <Label fx:id="lblSessionTimer" styleClass="header-timer" text="Session: 00:00:00"/>
         <Label fx:id="lblUserName" styleClass="header-subtitle"/>
         <Label fx:id="lblUserRole" styleClass="header-badge"/>
+        <Button fx:id="btnTheme" text="🌙" onAction="#handleToggleTheme" styleClass="btn-outline"/>
         <Button text="Help ?" onAction="#handleHelp" styleClass="btn-outline"/>
         <Button text="Logout" onAction="#handleLogout"
                 styleClass="btn-danger"

@@ -8,6 +8,8 @@ import logic.Message;
 import logic.OrderDetail;
 import logic.Park;
 import logic.UserSession;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -15,6 +17,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceDialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
@@ -22,6 +25,7 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.TextArea;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -44,10 +48,17 @@ public class VisitorController {
     @FXML private Label           lblInfo;
     @FXML private Label           lblUpcoming;
 
+    // header controls
+    @FXML private Label           lblSessionTimer;
+    @FXML private Button          btnTheme;
+
     // notification panel
     @FXML private Label           lblNotifBadge;
     @FXML private Label           lblNoNotif;
     @FXML private ListView<String> lstNotifications;
+
+    /** ticks once a second to refresh the logged-in-duration label in the header. */
+    private Timeline sessionTimeline;
 
     private static final DateTimeFormatter DATE_FMT =
         DateTimeFormatter.ofPattern("yyyy-MM-dd");
@@ -88,9 +99,60 @@ public class VisitorController {
             }
         });
 
+        if (btnTheme != null) btnTheme.setText(ThemeManager.iconText());
+        startSessionTimer();
+
         checkUpcomingReminders();
         updateUpcomingCount();
         refreshNotifications();
+    }
+
+    // ── Header: theme toggle + session timer ──────────────────────────────────
+
+    /**
+     * flips the whole app between light and dark mode and updates this button's icon.
+     *
+     * @param event the button-click event
+     */
+    @FXML
+    public void handleToggleTheme(ActionEvent event) {
+        ThemeManager.toggle();
+        if (btnTheme != null) btnTheme.setText(ThemeManager.iconText());
+    }
+
+    /**
+     * starts a 1-second ticker that keeps the "Session: HH:MM:SS" label current, and stops
+     * it automatically if the window is closed.
+     */
+    private void startSessionTimer() {
+        if (lblSessionTimer == null) return;
+        updateSessionTimer(); // show 00:00:00 immediately
+        sessionTimeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> updateSessionTimer()));
+        sessionTimeline.setCycleCount(Timeline.INDEFINITE);
+        sessionTimeline.play();
+
+        lblSessionTimer.sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene != null) {
+                newScene.windowProperty().addListener((o2, oldWin, newWin) -> {
+                    if (newWin != null) newWin.setOnHidden(ev -> stopSessionTimer());
+                });
+            }
+        });
+    }
+
+    /** writes the current elapsed session time into the header label. */
+    private void updateSessionTimer() {
+        UserSession s = UserSession.getInstance();
+        if (s != null && lblSessionTimer != null)
+            lblSessionTimer.setText("Session: " + s.getSessionDuration());
+    }
+
+    /** stops and releases the session-timer ticker if it's running. */
+    private void stopSessionTimer() {
+        if (sessionTimeline != null) {
+            sessionTimeline.stop();
+            sessionTimeline = null;
+        }
     }
 
     /**
@@ -428,6 +490,7 @@ public class VisitorController {
      */
     @FXML
     public void handleLogout(ActionEvent event) {
+        stopSessionTimer();   // stop before clearing the session so the clock doesn't tick on a null user
         NotificationCenter.clear();
         if (ClientUI.chat != null) ClientUI.chat.sendLogout();
         UserSession.clear();
@@ -447,7 +510,9 @@ public class VisitorController {
     public void start(Stage primaryStage) throws Exception {
         Parent root = FXMLLoader.load(getClass().getResource("/gui/VisitorFrame.fxml"));
         primaryStage.setTitle("GoNature — " + UserSession.getInstance().getRole());
-        primaryStage.setScene(new Scene(root));
+        Scene scene = new Scene(root);
+        ThemeManager.register(scene);   // apply the current light/dark theme to this screen
+        primaryStage.setScene(scene);
         primaryStage.show();
     }
 }

@@ -65,6 +65,17 @@
     -fx-font-weight: bold;
 }
 
+/* SESSION TIMER — monospace pill in the header showing elapsed login time. */
+.header-timer {
+    -fx-background-color: rgba(0,0,0,0.24);
+    -fx-text-fill: #E8F5E9;
+    -fx-background-radius: 20;
+    -fx-padding: 4 12;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-font-family: "Consolas", "Menlo", monospace;
+}
+
 
 /* ── Buttons — shared base ──────────────────────────────────── */
 .btn-primary, .btn-teal, .btn-blue, .btn-warning,
@@ -931,3 +942,108 @@
     -fx-font-size: 13px;
     -fx-text-fill: rgba(255,255,255,0.88);
 }
+
+
+/* ============================================================
+   DARK MODE
+   Activated by adding the `dark-mode` style class to a scene root
+   (handled at runtime by gui.ThemeManager). Only the base surfaces
+   and text are re-coloured — the green/teal/blue accent buttons and
+   the green header bar keep their colours so the brand stays intact.
+
+   Dark palette
+     Deep      : #1a1a2e  (screen background)
+     Surface   : #16213e  (cards / tables)
+     Surface-2 : #0f3460  (inputs / inset rows)
+     Text-high : #e0e0e0  (primary text)
+     Text-mid  : #a8b0c0  (secondary text)
+     Accent    : #2E7D32  (unchanged green)
+   ============================================================ */
+
+/* Root + screen background. Placed after .root/.screen-bg so it wins
+   on the root node (which carries both classes). */
+.dark-mode            { -fx-background-color: #1a1a2e; }
+.dark-mode.screen-bg  { -fx-background-color: #1a1a2e; }
+
+/* Generic fallback so any unclassed label stays readable on dark surfaces.
+   More specific rules below re-assert nicer shades for titles etc. */
+.dark-mode .label { -fx-text-fill: #e0e0e0; }
+
+/* Typography */
+.dark-mode .screen-title    { -fx-text-fill: #eceff4; }
+.dark-mode .screen-subtitle { -fx-text-fill: #a8b0c0; }
+.dark-mode .card-title      { -fx-text-fill: #9ccc9e; }
+.dark-mode .section-label   { -fx-text-fill: #81c784; }
+.dark-mode .field-label     { -fx-text-fill: #81c784; }
+.dark-mode .lbl-detail-key  { -fx-text-fill: #a8b0c0; }
+.dark-mode .lbl-hint        { -fx-text-fill: #8d97ad; }
+.dark-mode .empty-state     { -fx-text-fill: #7a8499; }
+.dark-mode .lbl-success     { -fx-text-fill: #81c784; }
+
+/* Cards / panels */
+.dark-mode .card {
+    -fx-background-color: #16213e;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.45), 20, 0, 0, 4);
+    -fx-border-color: #2E7D32 transparent transparent transparent;
+}
+
+/* Text fields / password / text area */
+.dark-mode .text-field,
+.dark-mode .password-field,
+.dark-mode .text-area {
+    -fx-background-color: #0f3460;
+    -fx-text-fill: #e0e0e0;
+    -fx-border-color: #2c3e6a;
+    -fx-prompt-text-fill: #7a8499;
+}
+.dark-mode .text-area .content { -fx-background-color: #0f3460; }
+.dark-mode .text-field:focused,
+.dark-mode .password-field:focused,
+.dark-mode .text-area:focused { -fx-border-color: #43A047; }
+
+/* ComboBox */
+.dark-mode .combo-box-base            { -fx-background-color: #0f3460; -fx-border-color: #2c3e6a; }
+.dark-mode .combo-box-base .list-cell { -fx-text-fill: #e0e0e0; }
+.dark-mode .combo-box-popup .list-cell {
+    -fx-background-color: #16213e;
+    -fx-text-fill: #e0e0e0;
+}
+.dark-mode .combo-box-popup .list-cell:hover {
+    -fx-background-color: #1f3a2a;
+    -fx-text-fill: #c8e6c9;
+}
+
+/* DatePicker */
+.dark-mode .date-picker             { -fx-background-color: #0f3460; -fx-border-color: #2c3e6a; }
+.dark-mode .date-picker .text-field { -fx-text-fill: #e0e0e0; }
+
+/* TableView */
+.dark-mode .table-view {
+    -fx-background-color: #16213e;
+    -fx-border-color: #2c3e6a;
+}
+.dark-mode .table-row-cell          { -fx-background-color: #16213e; -fx-border-color: #1f2a4a; }
+.dark-mode .table-row-cell:odd      { -fx-background-color: #1a2747; }
+.dark-mode .table-row-cell:hover    { -fx-background-color: #22345f; }
+.dark-mode .table-row-cell:selected { -fx-background-color: linear-gradient(to right, #2E7D32, #1B5E20); }
+.dark-mode .table-row-cell:selected .text { -fx-fill: white; }
+.dark-mode .table-row-cell .text    { -fx-fill: #d8dce8; }
+.dark-mode .table-view .placeholder .label { -fx-text-fill: #9aa3b8; }
+
+/* ListView / notifications */
+.dark-mode .list-cell { -fx-text-fill: #d0d4e0; }
+.dark-mode .notif-list .list-cell {
+    -fx-background-color: #1a2747;
+    -fx-border-color: #22345f;
+    -fx-text-fill: #d0d4e0;
+}
+.dark-mode .notif-list .list-cell:filled:hover {
+    -fx-background-color: #22345f;
+    -fx-border-color: #2E7D32;
+}
+
+/* Separators */
+.dark-mode .separator .line { -fx-border-color: #2c3e6a; }
+
+/* Keep the session-timer pill crisp on the (still-green) header. */
+.dark-mode .header-timer { -fx-text-fill: #E8F5E9; }
