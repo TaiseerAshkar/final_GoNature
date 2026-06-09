@@ -84,6 +84,16 @@ public class ReminderService {
                     "📧 Reminder sent → %s  |  %s  |  %s at %s  |  Order #%d",
                     o.email, o.parkName, o.visitDate, o.visitTime, o.id);
                 log(line);
+                EmailService.sendEmail(o.email,
+                    "GoNature — Visit Reminder (Order #" + o.id + ")",
+                    "Hello,\n\n" +
+                    "This is a friendly reminder about your visit tomorrow.\n\n" +
+                    "Order #: " + o.id + "\n" +
+                    "Park: " + o.parkName + "\n" +
+                    "Date: " + o.visitDate + " at " + o.visitTime + "\n\n" +
+                    "Please confirm your visit in the GoNature app within " + CONFIRM_WINDOW_HOURS +
+                    " hour(s), or your booking may be automatically cancelled.\n\n" +
+                    "— GoNature Parks");
                 popup.append("• ").append(o.email)
                      .append(" — ").append(o.parkName)
                      .append(" on ").append(o.visitDate)
@@ -128,6 +138,15 @@ public class ReminderService {
                 log(String.format(
                     "🚫 Order #%d auto-cancelled — notification sent to %s",
                     o.id, o.email));
+                EmailService.sendEmail(o.email,
+                    "GoNature — Booking Auto-Cancelled (Order #" + o.id + ")",
+                    "Hello,\n\n" +
+                    "Your booking was automatically cancelled because it wasn't confirmed in time.\n\n" +
+                    "Order #: " + o.id + "\n" +
+                    "Park: " + o.parkName + "\n" +
+                    "Date: " + o.visitDate + " at " + o.visitTime + "\n\n" +
+                    "You're welcome to book again any time on GoNature.\n\n" +
+                    "— GoNature Parks");
                 if (result.getNotifiedEmail() != null) {
                     log("📨 Waiting-list notification → " + result.getNotifiedEmail() +
                         " — you have 1 hour to confirm your spot");

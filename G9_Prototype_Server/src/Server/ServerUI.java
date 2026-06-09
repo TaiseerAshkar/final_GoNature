@@ -98,6 +98,7 @@ public class ServerUI extends Application {
         final int finalPort = port;
         Thread t = new Thread(() -> {
             EchoServer sv = new EchoServer(finalPort);
+            gui.ServerPortFrameController.setActiveServer(sv);
             try {
                 sv.listen();
             } catch (Exception ex) {

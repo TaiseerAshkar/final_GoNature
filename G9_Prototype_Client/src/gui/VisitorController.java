@@ -42,6 +42,7 @@ public class VisitorController {
     @FXML private Label           lblWelcome;
     @FXML private Label           lblRoleBadge;
     @FXML private Label           lblInfo;
+    @FXML private Label           lblUpcoming;
 
     // notification panel
     @FXML private Label           lblNotifBadge;
@@ -88,7 +89,30 @@ public class VisitorController {
         });
 
         checkUpcomingReminders();
+        updateUpcomingCount();
         refreshNotifications();
+    }
+
+    /**
+     * counts the visitor's active upcoming reservations (status PENDING or CONFIRMED
+     * with a visit date today or later) and shows a friendly summary on the home card.
+     * reuses the order list already fetched by {@link #checkUpcomingReminders()}.
+     */
+    private void updateUpcomingCount() {
+        if (lblUpcoming == null) return;
+        List<OrderDetail> orders = ChatClient.lastMyOrders;
+        if (orders == null) { lblUpcoming.setText("No upcoming reservations."); return; }
+
+        String today = LocalDate.now().format(DATE_FMT);
+        long count = orders.stream()
+            .filter(o -> ("PENDING".equals(o.getStatus()) || "CONFIRMED".equals(o.getStatus()))
+                && o.getVisitDate() != null
+                && o.getVisitDate().compareTo(today) >= 0)
+            .count();
+
+        lblUpcoming.setText(count == 0
+            ? "No upcoming reservations."
+            : "You have " + count + " upcoming reservation" + (count == 1 ? "" : "s") + ".");
     }
 
     // ── Notification panel ────────────────────────────────────────────────────
@@ -102,6 +126,7 @@ public class VisitorController {
     @FXML
     public void handleRefreshNotifications(ActionEvent event) {
         checkUpcomingReminders();
+        updateUpcomingCount();
         refreshNotifications();
     }
 

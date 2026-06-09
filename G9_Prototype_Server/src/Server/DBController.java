@@ -229,7 +229,12 @@ public class DBController {
      * @return the number of free visitor slots, or {@code -1} on DB error or unknown park
      */
     public int getAvailableSpots(int parkId, String visitDate, String visitTime) {
-        if (connection == null) return -1;
+        System.out.printf("[getAvailableSpots] parkId=%d  date=%s  time=%s%n",
+            parkId, visitDate, visitTime);
+        if (connection == null) {
+            System.out.println("[getAvailableSpots] ERROR — connection is null");
+            return -1;
+        }
         try {
             PreparedStatement st = connection.prepareStatement(
                 "SELECT p.capacity - COALESCE(SUM(o.num_visitors), 0) AS available " +
@@ -237,7 +242,7 @@ public class DBController {
                 "LEFT JOIN orders o " +
                 "       ON  o.park_id = p.id " +
                 "       AND o.visit_date = ? " +
-                "       AND o.status NOT IN ('no_show') " +
+                "       AND o.status NOT IN ('no_show', 'cancelled') " +
                 "       AND TIME(o.visit_time) < ADDTIME(TIME(?), SEC_TO_TIME(p.visit_duration_hours * 3600)) " +
                 "       AND ADDTIME(TIME(o.visit_time), SEC_TO_TIME(p.visit_duration_hours * 3600)) > TIME(?) " +
                 "WHERE p.id = ? " +
@@ -247,11 +252,53 @@ public class DBController {
             st.setString(3, visitTime);
             st.setInt(4, parkId);
             ResultSet rs = st.executeQuery();
-            if (rs.next()) return rs.getInt("available");
-            // No rows means park ID doesn't exist
+            if (rs.next()) {
+                int result = rs.getInt("available");
+                System.out.printf("[getAvailableSpots] result=%d%n", result);
+                return result;
+            }
+            // No rows means park ID doesn't exist in the parks table
+            System.out.printf("[getAvailableSpots] WARN — no row for parkId=%d (park not found)%n", parkId);
             return -1;
         } catch (SQLException e) {
-            System.out.println("getAvailableSpots error: " + e.getMessage());
+            System.out.println("[getAvailableSpots] SQL ERROR: " + e.getMessage());
+            return -1;
+        }
+    }
+
+    /**
+     * counts how many active orders overlap the requested park/date/time window.
+     * uses the same visit-duration overlap logic as {@link #getAvailableSpots}; orders with
+     * status {@code 'no_show'} or {@code 'cancelled'} are excluded since they no longer hold a slot.
+     * used to enforce the park's {@code max_orders} cap before confirming a new booking.
+     *
+     * @param parkId    the park's primary-key ID
+     * @param visitDate the requested visit date in {@code yyyy-MM-dd} format
+     * @param visitTime the requested visit time in {@code HH:mm} format
+     * @return the number of active overlapping orders, or {@code -1} on DB error
+     */
+    public int countActiveOrders(int parkId, String visitDate, String visitTime) {
+        if (connection == null) return -1;
+        try {
+            PreparedStatement st = connection.prepareStatement(
+                "SELECT COUNT(*) AS cnt " +
+                "FROM parks p " +
+                "JOIN orders o " +
+                "      ON  o.park_id = p.id " +
+                "      AND o.visit_date = ? " +
+                "      AND o.status NOT IN ('no_show', 'cancelled') " +
+                "      AND TIME(o.visit_time) < ADDTIME(TIME(?), SEC_TO_TIME(p.visit_duration_hours * 3600)) " +
+                "      AND ADDTIME(TIME(o.visit_time), SEC_TO_TIME(p.visit_duration_hours * 3600)) > TIME(?) " +
+                "WHERE p.id = ?");
+            st.setString(1, visitDate);
+            st.setString(2, visitTime);
+            st.setString(3, visitTime);
+            st.setInt(4, parkId);
+            ResultSet rs = st.executeQuery();
+            if (rs.next()) return rs.getInt("cnt");
+            return 0;
+        } catch (SQLException e) {
+            System.out.println("countActiveOrders error: " + e.getMessage());
             return -1;
         }
     }
@@ -381,12 +428,50 @@ public class DBController {
     }
 
     /**
+     * fetches a single order's display and contact details by ID.
+     * used to obtain the recipient email and visit details for notification emails.
+     *
+     * @param orderId the order's primary-key ID
+     * @return an {@link OrderDetail}, or {@code null} if the order doesn't exist or on DB error
+     */
+    public OrderDetail getOrderById(int orderId) {
+        if (connection == null) return null;
+        try {
+            PreparedStatement st = connection.prepareStatement(
+                "SELECT o.id, p.name AS park_name, o.visitor_id, " +
+                "       DATE_FORMAT(o.visit_date, '%Y-%m-%d')    AS visit_date, " +
+                "       TIME_FORMAT(o.visit_time, '%H:%i')        AS visit_time, " +
+                "       o.num_visitors, " +
+                "       CASE UPPER(o.order_type) WHEN 'INDIVIDUAL' THEN 'SOLO' WHEN 'SOLO' THEN 'SOLO' WHEN 'FAMILY' THEN 'FAMILY' WHEN 'GROUP' THEN 'GROUP' ELSE UPPER(o.order_type) END AS order_type, " +
+                "       UPPER(o.status)     AS status, " +
+                "       o.email, " +
+                "       DATE_FORMAT(o.created_at, '%Y-%m-%d %H:%i') AS created_at " +
+                "FROM orders o JOIN parks p ON p.id = o.park_id " +
+                "WHERE o.id = ?");
+            st.setInt(1, orderId);
+            ResultSet rs = st.executeQuery();
+            if (rs.next()) {
+                return new OrderDetail(
+                    rs.getInt("id"),            rs.getString("park_name"),
+                    rs.getString("visitor_id"), rs.getString("visit_date"),
+                    rs.getString("visit_time"), rs.getInt("num_visitors"),
+                    rs.getString("order_type"), rs.getString("status"),
+                    rs.getString("email"),      rs.getString("created_at"));
+            }
+        } catch (SQLException e) {
+            System.out.println("getOrderById error: " + e.getMessage());
+        }
+        return null;
+    }
+
+    /**
      * cancels an order and notifies the first waiting-list entry for the freed slot.
      * only pending/confirmed orders may be cancelled — completed/already-cancelled rows are rejected.
      *
-     * <p>cancellation does NOT free up capacity: the slot stays counted in
-     * {@link #getAvailableSpots} so no new booking can take the vacated position.
-     * no waiting-list notification is sent; cancellation is a record-keeping action only.
+     * <p>cancellation frees up capacity: the slot is excluded from
+     * {@link #getAvailableSpots} so a new booking can take the vacated position.
+     * no waiting-list notification is sent automatically; the freed slot simply
+     * becomes available again for new bookings.
      *
      * @param orderId the primary-key ID of the order to cancel
      * @return a {@link CancelResult} indicating success or failure
@@ -407,7 +492,7 @@ public class DBController {
             return new CancelResult(false, null);
         }
 
-        // capacity slot is NOT freed — no waiting-list query needed
+        // capacity slot is now freed (excluded from getAvailableSpots); no waiting-list notification sent here
         return new CancelResult(true, null);
     }
 
@@ -820,6 +905,43 @@ public class DBController {
         }
     }
 
+    // ── Visitor name lookup ───────────────────────────────────────────────────
+
+    /**
+     * returns the visitor's full name ({@code "First Last"}) for use in notification emails.
+     * checks the {@code guides} table first (guides may book group visits), then {@code visitors}.
+     * falls back to the raw ID string if neither table has the record or on DB error.
+     *
+     * @param visitorId the visitor's national ID number
+     * @return the full name, or the bare ID as a safe fallback
+     */
+    public String getVisitorDisplayName(String visitorId) {
+        if (connection == null || visitorId == null) return visitorId;
+        // Guides first (they log in with the same ID but are in a different table).
+        try {
+            PreparedStatement st = connection.prepareStatement(
+                "SELECT first_name, last_name FROM guides WHERE id_number = ? LIMIT 1");
+            st.setString(1, visitorId);
+            ResultSet rs = st.executeQuery();
+            if (rs.next())
+                return rs.getString("first_name") + " " + rs.getString("last_name");
+        } catch (SQLException e) {
+            System.out.println("getVisitorDisplayName (guides) error: " + e.getMessage());
+        }
+        // Regular visitors.
+        try {
+            PreparedStatement st = connection.prepareStatement(
+                "SELECT first_name, last_name FROM visitors WHERE id_number = ? LIMIT 1");
+            st.setString(1, visitorId);
+            ResultSet rs = st.executeQuery();
+            if (rs.next())
+                return rs.getString("first_name") + " " + rs.getString("last_name");
+        } catch (SQLException e) {
+            System.out.println("getVisitorDisplayName (visitors) error: " + e.getMessage());
+        }
+        return visitorId; // safe fallback — email is still sent, just without the name
+    }
+
     // ── Reports ───────────────────────────────────────────────────────────────
 
     /**
@@ -997,7 +1119,8 @@ public class DBController {
             return new RegisterResult(false,
                 "We can't reach the database right now. Please try again in a moment.", null);
 
-        // check for duplicate ID before inserting so the error message is user-friendly
+        // ── Duplicate-ID checks ─────────────────────────────────────────────────
+        // Check the visitors table first (most common path).
         try {
             PreparedStatement st = connection.prepareStatement(
                 "SELECT 1 FROM visitors WHERE id_number = ? LIMIT 1");
@@ -1006,9 +1129,25 @@ public class DBController {
                 return new RegisterResult(false,
                     "An account with this ID already exists. Please log in instead.", null);
         } catch (SQLException e) {
-            System.out.println("registerVisitor (check) error: " + e.getMessage());
+            System.out.println("registerVisitor (visitor-check) error: " + e.getMessage());
             return new RegisterResult(false,
                 "Something went wrong while creating your account. Please try again.", null);
+        }
+
+        // Also guard against a guide ID being re-used as a visitor account.
+        try {
+            PreparedStatement gst = connection.prepareStatement(
+                "SELECT 1 FROM guides WHERE id_number = ? LIMIT 1");
+            gst.setString(1, req.getIdNumber());
+            if (gst.executeQuery().next())
+                return new RegisterResult(false,
+                    "This ID is already registered as a guide. " +
+                    "Please use your guide credentials to log in.", null);
+        } catch (SQLException e) {
+            // If the guides check fails for any reason, log and continue — it's a
+            // best-effort guard; the unique constraint on visitors.id_number is the
+            // definitive safeguard.
+            System.out.println("registerVisitor (guide-check) error: " + e.getMessage());
         }
 
         try {
@@ -1022,6 +1161,16 @@ public class DBController {
             st.setString(5, req.getPhone());
             st.executeUpdate();
         } catch (SQLException e) {
+            // A duplicate-key violation means the SELECT check passed but two concurrent
+            // registrations raced, or the ID is in a table the check didn't cover.
+            // Surface a user-friendly message rather than the raw SQL error.
+            boolean isDuplicate =
+                (e instanceof java.sql.SQLIntegrityConstraintViolationException)
+                || (e.getMessage() != null && e.getMessage().toLowerCase().contains("duplicate"));
+            if (isDuplicate) {
+                return new RegisterResult(false,
+                    "An account with this ID already exists. Please log in instead.", null);
+            }
             System.out.println("registerVisitor (insert) error: " + e.getMessage());
             return new RegisterResult(false,
                 "Could not save your account. Please try again.", null);
@@ -1203,6 +1352,32 @@ public class DBController {
             System.out.println("getTodayOrders error: " + e.getMessage());
         }
         return list;
+    }
+
+    /**
+     * returns how many visitors are currently inside the park right now — i.e. visitors
+     * who have been checked in ({@code entry_time} set) but have not yet registered an exit
+     * ({@code exit_time} still null), for today's date.
+     *
+     * @param parkId the park's primary-key ID
+     * @return the total number of visitors currently inside, or {@code 0} on DB error
+     */
+    public int getCurrentOccupancy(int parkId) {
+        if (connection == null) return 0;
+        try {
+            PreparedStatement st = connection.prepareStatement(
+                "SELECT COALESCE(SUM(num_visitors), 0) AS inside " +
+                "FROM orders " +
+                "WHERE park_id = ? AND visit_date = CURDATE() " +
+                "  AND status = 'completed' AND entry_time IS NOT NULL AND exit_time IS NULL");
+            st.setInt(1, parkId);
+            ResultSet rs = st.executeQuery();
+            if (rs.next()) return rs.getInt("inside");
+            return 0;
+        } catch (SQLException e) {
+            System.out.println("getCurrentOccupancy error: " + e.getMessage());
+            return 0;
+        }
     }
 
     // ── Waiting list (Employee screen) ───────────────────────────────────────

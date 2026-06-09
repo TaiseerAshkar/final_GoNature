@@ -8,6 +8,7 @@ import logic.BookingResult;
 import logic.Message;
 import logic.Park;
 import logic.UserSession;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -15,6 +16,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
 import java.time.LocalDate;
@@ -39,6 +41,7 @@ public class BookingController {
     @FXML private ComboBox<String> cboOrderType;
     @FXML private TextField        txtVisitors;
     @FXML private Label            lblVisitorHint;
+    @FXML private Label            lblAvailability;
     @FXML private TextField        txtVisitorId;
     @FXML private TextField        txtEmail;
     @FXML private Label            lblPriceEstimate;
@@ -46,6 +49,9 @@ public class BookingController {
     @FXML private Button           btnSubmit;
 
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+    /** prevents concurrent GET_AVAILABLE_SPOTS requests when the user picks values quickly. */
+    private final AtomicBoolean availCheckInFlight = new AtomicBoolean(false);
 
     /**
      * loads parks, populates combo-boxes, pre-fills visitor ID/email from session,
@@ -118,8 +124,78 @@ public class BookingController {
             updateVisitorHint(val);
             updatePriceEstimate();
         });
-        cboPark.valueProperty().addListener((obs, old, val) -> updatePriceEstimate());
+        cboPark.valueProperty().addListener((obs, old, val) -> {
+            updatePriceEstimate();
+            updateAvailability();
+        });
         txtVisitors.textProperty().addListener((obs, old, val) -> updatePriceEstimate());
+        // refresh the live-availability badge whenever park, date, or time changes
+        dpDate.valueProperty().addListener((obs, old, val) -> updateAvailability());
+        cboTime.valueProperty().addListener((obs, old, val) -> updateAvailability());
+    }
+
+    /**
+     * queries the server for free slots once park, date, and time are all chosen, then
+     * shows "Available spots: X of Y" in green, or a full-slot notice in orange.
+     * stays blank until the visitor has picked all three fields.
+     *
+     * <p>runs the network call on a short-lived daemon thread so the JavaFX Application
+     * Thread is never blocked. an {@link AtomicBoolean} guard skips the request if a
+     * previous one is still in-flight (prevents concurrent ChatClient calls).
+     */
+    private void updateAvailability() {
+        if (lblAvailability == null) return;
+        Park   park = cboPark.getValue();
+        LocalDate date = dpDate.getValue();
+        String time = cboTime.getValue();
+        if (park == null || date == null || time == null || time.isEmpty()) {
+            lblAvailability.setText("");
+            return;
+        }
+        // Skip if a check is already running — the result from the previous pick
+        // will arrive and update the label momentarily.
+        if (!availCheckInFlight.compareAndSet(false, true)) return;
+
+        final String parkIdStr = String.valueOf(park.getId());
+        final String dateStr   = date.format(DATE_FMT);
+        final int    capacity  = park.getCapacity();
+
+        lblAvailability.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #546E7A;");
+        lblAvailability.setText("Checking availability…");
+
+        Thread worker = new Thread(() -> {
+            try {
+                ChatClient.lastAvailableSpots = null;
+                ClientUI.chat.accept(new Message("GET_AVAILABLE_SPOTS",
+                    new String[]{ parkIdStr, dateStr, time }));
+                final Integer available = ChatClient.lastAvailableSpots;
+
+                Platform.runLater(() -> {
+                    if (available == null) {
+                        // null = server never responded (15-second timeout or network error)
+                        lblAvailability.setStyle(
+                            "-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #546E7A;");
+                        lblAvailability.setText("Couldn't check availability right now.");
+                    } else if (available <= 0) {
+                        // 0  = park is exactly full
+                        // <0 = slight overbooking edge case — still treat as full
+                        lblAvailability.setStyle(
+                            "-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #E65100;");
+                        lblAvailability.setText(
+                            "This slot is fully booked — you may join the waiting list.");
+                    } else {
+                        lblAvailability.setStyle(
+                            "-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #1B5E20;");
+                        lblAvailability.setText(
+                            "Available spots: " + available + " of " + capacity);
+                    }
+                });
+            } finally {
+                availCheckInFlight.set(false); // release guard so the next change can fire
+            }
+        }, "availability-check");
+        worker.setDaemon(true);
+        worker.start();
     }
 
     /**

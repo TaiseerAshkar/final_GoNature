@@ -36,6 +36,11 @@
 
             <Label fx:id="lblInfo" styleClass="screen-subtitle" wrapText="true"/>
 
+            <Label fx:id="lblStats" wrapText="true"
+                   style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #0D47A1;
+                          -fx-background-color: #E3F2FD; -fx-background-radius: 8;
+                          -fx-padding: 10 14;" maxWidth="Infinity"/>
+
             <Separator/>
 
             <Button text="📅  View Today's Reservations" maxWidth="Infinity"

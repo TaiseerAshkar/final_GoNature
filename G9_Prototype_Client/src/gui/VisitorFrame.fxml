@@ -34,6 +34,10 @@
             <!-- Action card -->
             <VBox spacing="12" styleClass="card" maxWidth="440">
                 <Label fx:id="lblInfo" styleClass="screen-subtitle" wrapText="true"/>
+                <Label fx:id="lblUpcoming" wrapText="true"
+                       style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #1B5E20;
+                              -fx-background-color: #E8F5E9; -fx-background-radius: 8;
+                              -fx-padding: 8 14;" maxWidth="Infinity"/>
                 <Separator/>
                 <Button text="📋  View My Reservations" maxWidth="Infinity"
                         onAction="#handleViewOrders" styleClass="btn-teal"/>

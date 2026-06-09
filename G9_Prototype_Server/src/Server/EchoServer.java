@@ -110,6 +110,12 @@ public class EchoServer extends AbstractServer {
                 }
 
                 case "LOGIN_USER": {
+                    if (!(incoming.getData() instanceof String[])
+                            || ((String[]) incoming.getData()).length < 2) {
+                        client.sendToClient(new Message("LOGIN_FAIL",
+                            "We couldn't read your login details. Please try again."));
+                        break;
+                    }
                     String[] creds = (String[]) incoming.getData();
                     String username = creds[0];
                     // Reject if this username is already logged in on another connection
@@ -161,6 +167,17 @@ public class EchoServer extends AbstractServer {
                         client.sendToClient(new Message("BOOKING_FULL", null));
                         break;
                     }
+                    // Enforce the park's max_orders cap for this time slot — treat a full
+                    // booking table the same as full capacity (offer the waiting list).
+                    Park bookingPark = DBController.getInstance().getParkById(req.getParkId());
+                    if (bookingPark != null) {
+                        int activeOrders = DBController.getInstance()
+                            .countActiveOrders(req.getParkId(), req.getVisitDate(), req.getVisitTime());
+                        if (activeOrders >= 0 && activeOrders >= bookingPark.getMaxOrders()) {
+                            client.sendToClient(new Message("BOOKING_FULL", null));
+                            break;
+                        }
+                    }
                     int orderId;
                     try {
                         orderId = DBController.getInstance().createOrder(req);
@@ -181,11 +198,36 @@ public class EchoServer extends AbstractServer {
                             req.getNumVisitors(), req.getOrderType(), req.getEmail())));
 
                     // ── Booking confirmation notification — fires for EVERY successful booking ──
+                    // Look up the visitor's name for a personalised email.
+                    String bookingVisitorName =
+                        DBController.getInstance().getVisitorDisplayName(req.getVisitorId());
+
                     ServerPortFrameController.logSimulation(
-                        "📧 Booking confirmation sent → " + req.getEmail() +
+                        "📧 Booking confirmation → " + req.getEmail() +
                         "  |  " + req.getParkName() +
-                        "  |  " + req.getVisitDate() +
+                        "  |  " + req.getVisitDate() + " at " + req.getVisitTime() +
                         "  |  Order #" + orderId);
+                    System.out.println("[EchoServer] Sending booking-confirmation email"
+                        + "  to=" + req.getEmail()
+                        + "  order=" + orderId
+                        + "  visitor=" + bookingVisitorName);
+                    EmailService.sendEmail(
+                        req.getEmail(),
+                        "Your GoNature Booking is Confirmed! 🌿",
+                        "Hello " + bookingVisitorName + ",\n\n" +
+                        "Great news — your visit to " + req.getParkName() + " is confirmed!\n\n" +
+                        "─────────────────────────────\n" +
+                        "  Order #:   " + orderId + "\n" +
+                        "  Park:      " + req.getParkName() + "\n" +
+                        "  Date:      " + req.getVisitDate() + "\n" +
+                        "  Time:      " + req.getVisitTime() + "\n" +
+                        "  Visitors:  " + req.getNumVisitors() + "\n" +
+                        "  Type:      " + req.getOrderType() + "\n" +
+                        "─────────────────────────────\n\n" +
+                        "Please arrive 15 minutes before your scheduled time and\n" +
+                        "present your Order # " + orderId + " at the entrance.\n\n" +
+                        "We look forward to welcoming you!\n\n" +
+                        "— The GoNature Team 🌿");
 
                     // ── Day-before reminder — only fires when the visit is tomorrow ──
                     String tomorrow = LocalDate.now().plusDays(1)
@@ -242,6 +284,15 @@ public class EchoServer extends AbstractServer {
                         new BookingResult(waitId, "WAITING", req.getParkName(),
                             req.getVisitDate(), req.getVisitTime(),
                             req.getNumVisitors(), req.getOrderType(), req.getEmail())));
+                    EmailService.sendEmail(req.getEmail(),
+                        "GoNature — Added to Waiting List",
+                        "Hello,\n\n" +
+                        "You've been added to the waiting list for " + req.getParkName() + ".\n\n" +
+                        "Park: " + req.getParkName() + "\n" +
+                        "Date: " + req.getVisitDate() + " at " + req.getVisitTime() + "\n" +
+                        "Visitors: " + req.getNumVisitors() + "\n\n" +
+                        "We'll email you right away if a spot opens up.\n\n" +
+                        "— GoNature Parks");
                     break;
                 }
 
@@ -267,12 +318,25 @@ public class EchoServer extends AbstractServer {
                         client.sendToClient(new Message("CANCEL_FAIL", "We couldn't identify that order. Please refresh and try again."));
                         break;
                     }
+                    // capture contact details before cancelling so we can email the visitor
+                    OrderDetail cancelInfo = DBController.getInstance().getOrderById(orderId);
                     CancelResult result = DBController.getInstance().cancelOrder(orderId);
                     if (result.isSuccess()) {
                         client.sendToClient(new Message("CANCEL_SUCCESS", result));
                         // remove any pending reminder for this order from the simulation log
                         ServerPortFrameController.removeReminderForOrder(orderId);
-                        // capacity is NOT freed — no waiting-list notification is sent
+                        if (cancelInfo != null && cancelInfo.getEmail() != null) {
+                            EmailService.sendEmail(cancelInfo.getEmail(),
+                                "GoNature — Booking Cancelled (Order #" + orderId + ")",
+                                "Hello,\n\n" +
+                                "Your booking has been cancelled.\n\n" +
+                                "Order #: " + orderId + "\n" +
+                                "Park: " + cancelInfo.getParkName() + "\n" +
+                                "Date: " + cancelInfo.getVisitDate() + " at " + cancelInfo.getVisitTime() + "\n" +
+                                "Visitors: " + cancelInfo.getNumVisitors() + "\n\n" +
+                                "The slot has been released and is now available for other visitors.\n\n" +
+                                "— GoNature Parks");
+                        }
                     } else {
                         client.sendToClient(new Message("CANCEL_FAIL",
                             "Cannot cancel this order. It may already be cancelled or completed."));
@@ -423,6 +487,43 @@ public class EchoServer extends AbstractServer {
                     RegisterResult regResult = DBController.getInstance().registerVisitor(req);
                     if (regResult.isSuccess()) {
                         client.sendToClient(new Message("REGISTER_SUCCESS", regResult));
+
+                        // ── Welcome email ──────────────────────────────────────────────────
+                        String visitorFullName = req.getFirstName() + " " + req.getLastName();
+                        StringBuilder welcomeBody = new StringBuilder();
+                        welcomeBody.append("Hello ").append(visitorFullName).append(",\n\n");
+                        welcomeBody.append("Welcome to GoNature! Your account has been ")
+                                   .append("created successfully.\n\n");
+                        welcomeBody.append("─────────────────────────────\n");
+                        welcomeBody.append("  Your ID:  ").append(req.getIdNumber()).append("\n");
+                        if (regResult.getSubscriberId() != null) {
+                            welcomeBody.append("  Subscriber ID:  ")
+                                       .append(regResult.getSubscriberId()).append("\n");
+                        }
+                        welcomeBody.append("─────────────────────────────\n\n");
+                        if (req.isSubscriber()) {
+                            welcomeBody.append("As a Family Member Club subscriber, you enjoy a ")
+                                       .append("10% discount on all bookings!\n");
+                            if (regResult.getSubscriberId() != null) {
+                                welcomeBody.append("Please save your Subscriber ID ")
+                                           .append(regResult.getSubscriberId())
+                                           .append(" — you'll need it when booking.\n");
+                            }
+                            welcomeBody.append("\n");
+                        }
+                        welcomeBody.append("Log in any time with your ID number to explore ")
+                                   .append("our parks and book your next visit.\n\n");
+                        welcomeBody.append("See you in the parks!\n\n");
+                        welcomeBody.append("— The GoNature Team 🌿");
+
+                        System.out.println("[EchoServer] Sending welcome email"
+                            + "  to=" + req.getEmail()
+                            + "  visitor=" + visitorFullName
+                            + "  subscriber=" + req.isSubscriber());
+                        EmailService.sendEmail(
+                            req.getEmail(),
+                            "Welcome to GoNature! 🌿",
+                            welcomeBody.toString());
                     } else {
                         client.sendToClient(new Message("REGISTER_FAIL", regResult.getMessage()));
                     }
@@ -462,6 +563,11 @@ public class EchoServer extends AbstractServer {
                 }
 
                 case "UPDATE_ORDER": {
+                    if (!(incoming.getData() instanceof Order)) {
+                        client.sendToClient(new Message("UPDATE_FAIL",
+                            "We couldn't read the order details. Please try again."));
+                        break;
+                    }
                     Order o = (Order) incoming.getData();
                     String updateErr = DBController.getInstance()
                         .updateOrder(o.getOrderNumber(), o.getOrderDate(),
@@ -650,6 +756,11 @@ public class EchoServer extends AbstractServer {
                 }
 
                 case "APPROVE_GUIDE": {
+                    if (!(incoming.getData() instanceof String)) {
+                        client.sendToClient(new Message("GUIDE_APPROVE_FAIL",
+                            "We couldn't identify that guide. Please refresh and try again."));
+                        break;
+                    }
                     String approveId  = (String) incoming.getData();
                     String approveErr = DBController.getInstance().approveGuide(approveId);
                     if (approveErr == null)
@@ -660,12 +771,52 @@ public class EchoServer extends AbstractServer {
                 }
 
                 case "REJECT_GUIDE": {
+                    if (!(incoming.getData() instanceof String)) {
+                        client.sendToClient(new Message("GUIDE_REJECT_FAIL",
+                            "We couldn't identify that guide. Please refresh and try again."));
+                        break;
+                    }
                     String rejectId  = (String) incoming.getData();
                     String rejectErr = DBController.getInstance().rejectGuide(rejectId);
                     if (rejectErr == null)
                         client.sendToClient(new Message("GUIDE_REJECT_SUCCESS", rejectId));
                     else
                         client.sendToClient(new Message("GUIDE_REJECT_FAIL", rejectErr));
+                    break;
+                }
+
+                // ── Live capacity / occupancy lookups ────────────────────────────────
+
+                case "GET_PARK_OCCUPANCY": {
+                    if (!(incoming.getData() instanceof Integer)) {
+                        client.sendToClient(new Message("PARK_OCCUPANCY", 0));
+                        break;
+                    }
+                    int parkId = (Integer) incoming.getData();
+                    int inside = DBController.getInstance().getCurrentOccupancy(parkId);
+                    client.sendToClient(new Message("PARK_OCCUPANCY", inside));
+                    break;
+                }
+
+                case "GET_AVAILABLE_SPOTS": {
+                    // payload is String[]{ parkId, visitDate, visitTime }
+                    if (!(incoming.getData() instanceof String[])) {
+                        client.sendToClient(new Message("AVAILABLE_SPOTS", -1));
+                        break;
+                    }
+                    String[] p = (String[]) incoming.getData();
+                    if (p.length < 3) {
+                        client.sendToClient(new Message("AVAILABLE_SPOTS", -1));
+                        break;
+                    }
+                    int available;
+                    try {
+                        available = DBController.getInstance()
+                            .getAvailableSpots(Integer.parseInt(p[0]), p[1], p[2]);
+                    } catch (NumberFormatException e) {
+                        available = -1;
+                    }
+                    client.sendToClient(new Message("AVAILABLE_SPOTS", available));
                     break;
                 }
             }

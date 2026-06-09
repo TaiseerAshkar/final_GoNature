@@ -25,10 +25,16 @@
                  -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.10), 12, 0, 0, 3);
                  -fx-border-color: #A5D6A7; -fx-border-radius: 10; -fx-border-width: 1;">
 
-        <HBox style="-fx-background-color: linear-gradient(to right,#1B5E20,#2E7D32);
+        <HBox alignment="CENTER_LEFT"
+              style="-fx-background-color: linear-gradient(to right,#1B5E20,#2E7D32);
                      -fx-background-radius: 10 10 0 0; -fx-padding: 10 16;">
             <Label text="Server Configuration"
                    style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #C8E6C9;"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label fx:id="lblServerStatus" text="● Stopped"
+                   style="-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #FFCDD2;
+                          -fx-background-color: rgba(0,0,0,0.18); -fx-background-radius: 20;
+                          -fx-padding: 3 12;"/>
         </HBox>
 
         <HBox spacing="10" alignment="CENTER_LEFT"
@@ -38,11 +44,17 @@
             <TextField fx:id="portxt" prefWidth="100"
                        style="-fx-background-radius: 6; -fx-border-color: #C8E6C9;
                               -fx-border-radius: 6; -fx-padding: 6;"/>
-            <Button text="▶  Start Server" onAction="#Done"
+            <Button fx:id="btnStart" text="▶  Start Server" onAction="#Done"
                     style="-fx-background-color: linear-gradient(to bottom, #43A047, #2E7D32);
                            -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 13px;
                            -fx-background-radius: 7; -fx-padding: 8 20;
                            -fx-effect: dropshadow(gaussian, rgba(46,125,50,0.35), 5, 0, 0, 2);
+                           -fx-cursor: hand;"/>
+            <Button fx:id="btnStop" text="⏹  Stop Server" onAction="#stopServer" disable="true"
+                    style="-fx-background-color: linear-gradient(to bottom, #FB8C00, #E65100);
+                           -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 13px;
+                           -fx-background-radius: 7; -fx-padding: 8 20;
+                           -fx-effect: dropshadow(gaussian, rgba(230,81,0,0.30), 5, 0, 0, 2);
                            -fx-cursor: hand;"/>
             <Region HBox.hgrow="ALWAYS"/>
             <Button text="✖  Exit" onAction="#getExitBtn"

@@ -1,7 +1,14 @@
 package gui;
 
+import client.ChatClient;
 import client.ClientUI;
+import logic.Message;
+import logic.OrderDetail;
+import logic.Park;
 import logic.UserSession;
+import java.util.List;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -14,6 +21,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
 /**
  * controller for the park employee / manager home screen ({@code EmployeeFrame.fxml}).
@@ -32,8 +40,12 @@ public class EmployeeController {
     @FXML private Label  lblRoleBadge;
     @FXML private Label  lblParkBadge;
     @FXML private Label  lblInfo;
+    @FXML private Label  lblStats;
     @FXML private Button btnReports;
     @FXML private Button btnParkSettings;
+
+    /** background ticker that refreshes the live stats strip every 30 seconds. */
+    private Timeline statsTimeline;
 
     /**
      * populates welcome/role/park labels and enables the Reports button only for PARK_MANAGER.
@@ -57,6 +69,86 @@ public class EmployeeController {
                 "handle the waiting list, and process daily reservations.");
             // btnReports is disabled by default in FXML — employees can't access reports
         }
+
+        loadStats();
+        startStatsAutoRefresh();
+    }
+
+    /**
+     * starts a 30-second background ticker that re-runs {@link #loadStats()} so the live
+     * stats strip stays current without a logout/login. the {@link Timeline} runs on the
+     * JavaFX application thread, and is stopped on logout, exit, or window close via
+     * {@link #stopStatsTimeline()}.
+     */
+    private void startStatsAutoRefresh() {
+        if (lblStats == null) return;
+        statsTimeline = new Timeline(new KeyFrame(Duration.seconds(30), e -> loadStats()));
+        statsTimeline.setCycleCount(Timeline.INDEFINITE);
+        statsTimeline.play();
+
+        // stop the ticker if the window is closed outright (logout/exit handle the other cases)
+        lblStats.sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene != null) {
+                newScene.windowProperty().addListener((o2, oldWin, newWin) -> {
+                    if (newWin != null) newWin.setOnHidden(ev -> stopStatsTimeline());
+                });
+            }
+        });
+    }
+
+    /** stops and releases the stats auto-refresh ticker if it's running. */
+    private void stopStatsTimeline() {
+        if (statsTimeline != null) {
+            statsTimeline.stop();
+            statsTimeline = null;
+        }
+    }
+
+    /**
+     * fetches a compact live snapshot for the employee's assigned park and renders it
+     * in the stats strip: today's booking count, visitors currently inside, and the
+     * resulting capacity utilisation percentage. hides the strip if no park is assigned
+     * or the data can't be loaded.
+     */
+    private void loadStats() {
+        if (lblStats == null) return;
+        UserSession s = UserSession.getInstance();
+        Integer parkId = (s != null) ? s.getParkId() : null;
+        if (parkId == null) { hideStats(); return; }
+
+        // 1) today's bookings for this park
+        ChatClient.lastTodayOrders = null;
+        ClientUI.chat.accept(new Message("GET_TODAY_ORDERS", parkId));
+        List<OrderDetail> today = ChatClient.lastTodayOrders;
+        int todayCount = (today != null) ? today.size() : 0;
+
+        // 2) visitors currently inside (checked-in, not yet exited)
+        ChatClient.lastParkOccupancy = null;
+        ClientUI.chat.accept(new Message("GET_PARK_OCCUPANCY", parkId));
+        int inside = (ChatClient.lastParkOccupancy != null) ? ChatClient.lastParkOccupancy : 0;
+
+        // 3) park capacity (from the parks list) to compute utilisation
+        int capacity = 0;
+        ChatClient.lastParkList = null;
+        ClientUI.chat.accept(new Message("GET_PARKS", null));
+        List<Park> parks = ChatClient.lastParkList;
+        if (parks != null) {
+            for (Park p : parks) {
+                if (p.getId() == parkId) { capacity = p.getCapacity(); break; }
+            }
+        }
+
+        int pct = (capacity > 0) ? (int) Math.round(inside * 100.0 / capacity) : 0;
+        lblStats.setText(
+            "📅 Today's bookings: " + todayCount
+            + "      👥 Currently inside: " + inside
+            + "      🏕 Capacity: " + pct + "%");
+    }
+
+    /** collapses the stats strip when there's nothing meaningful to show. */
+    private void hideStats() {
+        lblStats.setVisible(false);
+        lblStats.setManaged(false);
     }
 
     // ── Button handlers ───────────────────────────────────────────────────────
@@ -136,6 +228,7 @@ public class EmployeeController {
     /** @param event the button-click event */
     @FXML
     public void handleExit(ActionEvent event) {
+        stopStatsTimeline();
         if (ClientUI.chat != null) ClientUI.chat.disconnect();
         Platform.exit();
     }
@@ -218,6 +311,7 @@ public class EmployeeController {
      */
     @FXML
     public void handleLogout(ActionEvent event) {
+        stopStatsTimeline();
         if (ClientUI.chat != null) ClientUI.chat.sendLogout();
         UserSession.clear();
         Stage stage = (Stage) lblWelcome.getScene().getWindow();

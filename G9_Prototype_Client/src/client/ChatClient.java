@@ -32,8 +32,12 @@ public class ChatClient extends AbstractClient {
 
     private final ChatIF clientUI;
 
-    /** set to {@code true} before sending; cleared by the response handler to unblock the GUI. */
-    public static boolean awaitResponse = false;
+    /**
+     * set to {@code true} before sending; cleared by the response handler to unblock the GUI.
+     * declared {@code volatile} so the OCSF reader thread's write is immediately visible to the
+     * JavaFX/background thread that is polling it in {@link #handleMessageFromClientUI}.
+     */
+    public static volatile boolean awaitResponse = false;
 
     // ── Order update result ───────────────────────────────────────────────────
     public static String lastResult = "";
@@ -72,6 +76,12 @@ public class ChatClient extends AbstractClient {
     public static List<OrderDetail> lastTodayOrders = null;
     public static List<OrderDetail> lastWaitingList  = null;
     public static List<OrderDetail> lastLiveOrders   = null;
+
+    // ── Live capacity / occupancy lookups ─────────────────────────────────────
+    /** visitors currently inside a park (checked-in, not yet exited); {@code null} until a reply arrives. */
+    public static Integer lastParkOccupancy  = null;
+    /** free slots for a park/date/time; {@code -1} on error, {@code null} until a reply arrives. */
+    public static Integer lastAvailableSpots = null;
 
     // ── Visit confirmation ────────────────────────────────────────────────────
     public static Boolean lastConfirmVisitOk    = null;
@@ -117,8 +127,13 @@ public class ChatClient extends AbstractClient {
     @Override
     @SuppressWarnings("unchecked")
     public void handleMessageFromServer(Object msg) {
-        awaitResponse = false;
-        if (!(msg instanceof Message)) return;
+        // awaitResponse is cleared AFTER all field assignments at the bottom of this method.
+        // Clearing it here (before assignments) was a race: the waiting thread could read a
+        // field before the OCSF reader thread had written it.
+        if (!(msg instanceof Message)) {
+            awaitResponse = false;   // non-Message still unblocks the caller
+            return;
+        }
         Message m = (Message) msg;
 
         switch (m.getType()) {
@@ -207,6 +222,12 @@ public class ChatClient extends AbstractClient {
                 lastLiveOrders = (List<OrderDetail>) m.getData();
                 lastResult     = "Loaded " + lastLiveOrders.size() + " orders.";
                 break;
+            case "PARK_OCCUPANCY":
+                lastParkOccupancy = (m.getData() instanceof Integer) ? (Integer) m.getData() : 0;
+                break;
+            case "AVAILABLE_SPOTS":
+                lastAvailableSpots = (m.getData() instanceof Integer) ? (Integer) m.getData() : -1;
+                break;
             case "PARK_SETTINGS_DATA":
                 lastParkSettings      = (Park) m.getData();
                 lastParkSettingsError = null;
@@ -280,6 +301,8 @@ public class ChatClient extends AbstractClient {
                 lastSettingsActionFail    = (String) m.getData();
                 break;
         }
+        // All field assignments above are complete — NOW unblock the waiting thread.
+        awaitResponse = false;
     }
 
     /**
@@ -292,7 +315,15 @@ public class ChatClient extends AbstractClient {
             openConnection();
             awaitResponse = true;
             sendToServer(message);
+            // 15-second safety timeout so the UI recovers if the server never replies
+            long deadline = System.currentTimeMillis() + 15_000;
             while (awaitResponse) {
+                if (System.currentTimeMillis() > deadline) {
+                    awaitResponse = false; // stop blocking — recover instead of hanging forever
+                    lastResult = "No response from server — please try again";
+                    clientUI.display("No response from server — please try again");
+                    break;
+                }
                 try { Thread.sleep(100); } catch (InterruptedException e) { e.printStackTrace(); }
             }
         } catch (IOException e) {

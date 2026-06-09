@@ -10,6 +10,8 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
@@ -27,6 +29,9 @@ import javafx.stage.Stage;
 public class ServerPortFrameController {
 
     @FXML private TextField   portxt;
+    @FXML private Label       lblServerStatus;
+    @FXML private Button      btnStart;
+    @FXML private Button      btnStop;
     @FXML private TextArea    txtLog;
     @FXML private TextArea    txtSimLog;
     @FXML private TableView<String[]>             clientTable;
@@ -36,6 +41,9 @@ public class ServerPortFrameController {
 
     /** singleton reference used by static helpers to reach the FXML-injected fields. */
     private static ServerPortFrameController instance;
+
+    /** the running EchoServer; null when the server is stopped. */
+    private static Server.EchoServer activeServer;
 
     /** observable backing list for the connected-clients table. */
     private static final ObservableList<String[]> clientList =
@@ -204,6 +212,66 @@ public class ServerPortFrameController {
         String p = portxt.getText().trim();
         if (p.isEmpty()) { System.out.println("Enter a port!"); return; }
         ServerUI.runServer(p);
+        setRunning(p);
+    }
+
+    /**
+     * flips the status badge to the green "running" state, locks the port field, and
+     * disables further start clicks (the server is already up). safe to call repeatedly.
+     *
+     * @param port the port the server is now listening on
+     */
+    private void setRunning(String port) {
+        if (lblServerStatus == null) return;
+        lblServerStatus.setText("● Running on port " + port);
+        lblServerStatus.setStyle(
+            "-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #B9F6CA;" +
+            "-fx-background-color: rgba(0,0,0,0.18); -fx-background-radius: 20;" +
+            "-fx-padding: 3 12;");
+        portxt.setDisable(true);
+        if (btnStart != null) btnStart.setDisable(true);
+        if (btnStop  != null) btnStop.setDisable(false);
+    }
+
+    private void setStopped() {
+        if (lblServerStatus == null) return;
+        lblServerStatus.setText("● Stopped");
+        lblServerStatus.setStyle(
+            "-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #FFCDD2;" +
+            "-fx-background-color: rgba(0,0,0,0.18); -fx-background-radius: 20;" +
+            "-fx-padding: 3 12;");
+        portxt.setDisable(false);
+        if (btnStart != null) btnStart.setDisable(false);
+        if (btnStop  != null) btnStop.setDisable(true);
+        clientList.clear();
+    }
+
+    /**
+     * stores the running EchoServer so it can be stopped later.
+     * called by {@link ServerUI} after starting the server thread.
+     */
+    public static void setActiveServer(Server.EchoServer server) {
+        activeServer = server;
+    }
+
+    /**
+     * stops the running server, clears the client table, and resets the UI to the
+     * stopped state so the operator can start again on a different port.
+     */
+    public void stopServer(ActionEvent event) {
+        if (activeServer != null) {
+            try {
+                activeServer.stopListening();
+                activeServer.close();
+            } catch (Exception e) {
+                System.out.println("[ServerUI] Error stopping server: " + e.getMessage());
+            }
+            activeServer = null;
+        }
+        if (instance != null) {
+            Platform.runLater(instance::setStopped);
+        }
+        System.out.println("[ServerUI] Server stopped.");
     }
 
     /**

@@ -5,8 +5,8 @@ import java.io.Serializable;
 /**
  * result returned by the server after a cancellation attempt.
  *
- * <p>cancellation marks the order as cancelled but does NOT free up capacity —
- * the slot stays counted in {@code getAvailableSpots()} so no new booking can
+ * <p>cancellation marks the order as cancelled and frees up its capacity —
+ * the slot is excluded from {@code getAvailableSpots()} so a new booking can
  * replace it. {@link #getNotifiedEmail()} always returns {@code null}.
  */
 public class CancelResult implements Serializable {
@@ -14,7 +14,7 @@ public class CancelResult implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private final boolean success;
-    /** always {@code null} — capacity is not freed, so no waiting-list notification is sent. */
+    /** always {@code null} — no waiting-list notification is sent automatically on cancellation. */
     private final String  notifiedEmail;
 
     /**

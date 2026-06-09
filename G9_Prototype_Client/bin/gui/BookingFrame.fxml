@@ -40,6 +40,8 @@
                                      -fx-border-width: 1.5;
                                      -fx-font-size: 13px;
                                      -fx-padding: 4 2;"/>
+                    <Label fx:id="lblAvailability" wrapText="true"
+                           style="-fx-font-size: 12px; -fx-font-weight: bold;"/>
                 </VBox>
 
                 <!-- Date + Time row -->
