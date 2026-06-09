@@ -79,7 +79,7 @@
                            GridPane.columnIndex="0" GridPane.rowIndex="0"/>
                     <TextField fx:id="txtOrderNum" promptText="Enter order ID"
                                style="-fx-background-radius:8; -fx-border-radius:8;
-                                      -fx-border-color:#B0BEC5; -fx-border-width:1.5;
+                                      -fx-border-color:-park-border; -fx-border-width:1.5;
                                       -fx-padding:8 10; -fx-font-size:13px;"
                                GridPane.columnIndex="1" GridPane.rowIndex="0"/>
 
@@ -87,7 +87,7 @@
                            GridPane.columnIndex="0" GridPane.rowIndex="1"/>
                     <TextField fx:id="txtNewDate" promptText="e.g. 2026-07-15"
                                style="-fx-background-radius:8; -fx-border-radius:8;
-                                      -fx-border-color:#B0BEC5; -fx-border-width:1.5;
+                                      -fx-border-color:-park-border; -fx-border-width:1.5;
                                       -fx-padding:8 10; -fx-font-size:13px;"
                                GridPane.columnIndex="1" GridPane.rowIndex="1"/>
 
@@ -95,7 +95,7 @@
                            GridPane.columnIndex="0" GridPane.rowIndex="2"/>
                     <TextField fx:id="txtNewVisitors" promptText="1–15"
                                style="-fx-background-radius:8; -fx-border-radius:8;
-                                      -fx-border-color:#B0BEC5; -fx-border-width:1.5;
+                                      -fx-border-color:-park-border; -fx-border-width:1.5;
                                       -fx-padding:8 10; -fx-font-size:13px;"
                                GridPane.columnIndex="1" GridPane.rowIndex="2"/>
 

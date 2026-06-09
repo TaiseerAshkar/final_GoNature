@@ -60,7 +60,10 @@ public class BookingConfirmationController {
     public void populate(BookingResult r) {
         boolean isWaiting = "WAITING".equals(r.getStatus());
         if (isWaiting) {
-            bannerBox.setStyle(bannerBox.getStyle().replace("#2e7d32", "#e65100"));
+            // swap the banner from the confirmed (pine) to the waiting (gold) style class
+            bannerBox.getStyleClass().remove("banner-confirmed");
+            if (!bannerBox.getStyleClass().contains("banner-waiting"))
+                bannerBox.getStyleClass().add("banner-waiting");
             lblStatusIcon.setText("⏳");
             lblStatusTitle.setText("Added to Waiting List");
             lblBookingId.setText("Waiting List Reference: #" + r.getId());

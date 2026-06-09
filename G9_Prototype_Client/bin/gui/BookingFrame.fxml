@@ -33,9 +33,9 @@
                     <Label text="Park *" styleClass="field-label"/>
                     <ComboBox fx:id="cboPark" maxWidth="Infinity"
                               promptText="Select a park…"
-                              style="-fx-background-color: white;
+                              style="-fx-background-color: -park-surface;
                                      -fx-background-radius: 8;
-                                     -fx-border-color: #B0BEC5;
+                                     -fx-border-color: -park-border;
                                      -fx-border-radius: 8;
                                      -fx-border-width: 1.5;
                                      -fx-font-size: 13px;
@@ -49,9 +49,9 @@
                     <VBox spacing="6" HBox.hgrow="ALWAYS">
                         <Label text="Visit Date *" styleClass="field-label"/>
                         <DatePicker fx:id="dpDate" maxWidth="Infinity"
-                                    style="-fx-background-color: white;
+                                    style="-fx-background-color: -park-surface;
                                            -fx-background-radius: 8;
-                                           -fx-border-color: #B0BEC5;
+                                           -fx-border-color: -park-border;
                                            -fx-border-radius: 8;
                                            -fx-border-width: 1.5;"/>
                     </VBox>
@@ -59,9 +59,9 @@
                         <Label text="Visit Time *" styleClass="field-label"/>
                         <ComboBox fx:id="cboTime" maxWidth="Infinity"
                                   promptText="Select time…"
-                                  style="-fx-background-color: white;
+                                  style="-fx-background-color: -park-surface;
                                          -fx-background-radius: 8;
-                                         -fx-border-color: #B0BEC5;
+                                         -fx-border-color: -park-border;
                                          -fx-border-radius: 8;
                                          -fx-border-width: 1.5;
                                          -fx-font-size: 13px;
@@ -74,9 +74,9 @@
                     <VBox spacing="6" HBox.hgrow="ALWAYS">
                         <Label text="Visit Type *" styleClass="field-label"/>
                         <ComboBox fx:id="cboOrderType" maxWidth="Infinity"
-                                  style="-fx-background-color: white;
+                                  style="-fx-background-color: -park-surface;
                                          -fx-background-radius: 8;
-                                         -fx-border-color: #B0BEC5;
+                                         -fx-border-color: -park-border;
                                          -fx-border-radius: 8;
                                          -fx-border-width: 1.5;
                                          -fx-font-size: 13px;
@@ -85,9 +85,9 @@
                     <VBox spacing="6" HBox.hgrow="ALWAYS">
                         <Label text="Number of Visitors *" styleClass="field-label"/>
                         <TextField fx:id="txtVisitors" promptText="e.g. 1"
-                                   style="-fx-background-color: white;
+                                   style="-fx-background-color: -park-surface;
                                           -fx-background-radius: 8;
-                                          -fx-border-color: #B0BEC5;
+                                          -fx-border-color: -park-border;
                                           -fx-border-radius: 8;
                                           -fx-border-width: 1.5;
                                           -fx-padding: 8 10; -fx-font-size: 13px;"/>
@@ -105,13 +105,13 @@
                 <VBox spacing="6">
                     <Label text="Visitor ID" styleClass="field-label"/>
                     <TextField fx:id="txtVisitorId" editable="false"
-                               style="-fx-background-color: #F5F5F5;
+                               style="-fx-background-color: -park-surface-2;
                                       -fx-background-radius: 8;
-                                      -fx-border-color: #E0E0E0;
+                                      -fx-border-color: -park-border;
                                       -fx-border-radius: 8;
                                       -fx-border-width: 1.5;
                                       -fx-padding: 8 10; -fx-font-size: 13px;
-                                      -fx-text-fill: #546E7A;"/>
+                                      -fx-text-fill: -park-text-mid;"/>
                     <Label text="Filled automatically from your login session."
                            styleClass="lbl-hint"/>
                 </VBox>
@@ -120,9 +120,9 @@
                 <VBox spacing="6">
                     <Label text="Confirmation Email *" styleClass="field-label"/>
                     <TextField fx:id="txtEmail" promptText="your@email.com"
-                               style="-fx-background-color: white;
+                               style="-fx-background-color: -park-surface;
                                       -fx-background-radius: 8;
-                                      -fx-border-color: #B0BEC5;
+                                      -fx-border-color: -park-border;
                                       -fx-border-radius: 8;
                                       -fx-border-width: 1.5;
                                       -fx-padding: 8 10; -fx-font-size: 13px;"/>
