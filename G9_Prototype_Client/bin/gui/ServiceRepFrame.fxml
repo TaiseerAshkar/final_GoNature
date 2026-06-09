@@ -19,8 +19,7 @@
         <Region HBox.hgrow="ALWAYS"/>
         <Label fx:id="lblSessionTimer" styleClass="header-timer" text="Session: 00:00:00"/>
         <Label fx:id="lblUserName" styleClass="header-subtitle"/>
-        <Label text="SERVICE REP" styleClass="header-badge"
-               style="-fx-background-color: #0277BD;"/>
+        <Label text="SERVICE REP" styleClass="header-badge"/>
         <Button fx:id="btnTheme" text="🌙" onAction="#handleToggleTheme" styleClass="btn-outline"/>
         <Button text="Help ?" onAction="#handleHelp" styleClass="btn-outline"/>
         <Button text="Logout" onAction="#handleLogout"
@@ -41,8 +40,7 @@
                 <Button text="👤  Register New Visitor"   onAction="#handleRegisterVisitor"
                         styleClass="btn-primary" style="-fx-padding:9 18;"/>
                 <Button text="🧭  Register New Guide"     onAction="#handleRegisterGuide"
-                        style="-fx-background-color:#6a1b9a; -fx-text-fill:white;
-                               -fx-font-weight:bold; -fx-background-radius:4; -fx-padding:9 18;"/>
+                        styleClass="btn-marker" style="-fx-padding:9 18;"/>
                 <Button text="📊  View Reports Dashboard" onAction="#handleViewReports"
                         styleClass="btn-teal" style="-fx-padding:9 18;"/>
             </HBox>
