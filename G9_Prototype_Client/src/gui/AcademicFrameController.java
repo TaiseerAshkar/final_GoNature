@@ -103,6 +103,7 @@ public class AcademicFrameController {
             new SimpleStringProperty(d.getValue().getOrderType()));
         colStatus.setCellValueFactory(d ->
             new SimpleStringProperty(d.getValue().getStatus()));
+        UiCells.applyStatusChip(colStatus);
         colBookedOn.setCellValueFactory(d ->
             new SimpleStringProperty(d.getValue().getCreatedAt()));
 
@@ -704,5 +705,6 @@ public class AcademicFrameController {
         primaryStage.setTitle("GoNature — Management Dashboard");
         primaryStage.setScene(scene);
         primaryStage.show();
+        Animations.introduce(root);     // subtle fade-and-rise on load
     }
 }

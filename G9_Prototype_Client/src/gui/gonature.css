@@ -1018,6 +1018,39 @@
     -fx-tick-label-fill: -park-text-mid;
 }
 
+/* Chart series — earthy palette for bars, lines, symbols and legend swatches. */
+.chart-bar.default-color0 { -fx-bar-fill: -park-pine;  }
+.chart-bar.default-color1 { -fx-bar-fill: -park-gold;  }
+.chart-bar.default-color2 { -fx-bar-fill: -park-lake;  }
+.chart-bar.default-color3 { -fx-bar-fill: -park-olive; }
+.chart-bar.default-color4 { -fx-bar-fill: -park-rust;  }
+.chart-bar.default-color5 { -fx-bar-fill: -park-amber; }
+
+.default-color0.chart-series-line { -fx-stroke: -park-pine;  }
+.default-color1.chart-series-line { -fx-stroke: -park-gold;  }
+.default-color2.chart-series-line { -fx-stroke: -park-lake;  }
+.default-color3.chart-series-line { -fx-stroke: -park-olive; }
+.default-color4.chart-series-line { -fx-stroke: -park-rust;  }
+.default-color5.chart-series-line { -fx-stroke: -park-amber; }
+
+.default-color0.chart-line-symbol { -fx-background-color: -park-pine,  white; }
+.default-color1.chart-line-symbol { -fx-background-color: -park-gold,  white; }
+.default-color2.chart-line-symbol { -fx-background-color: -park-lake,  white; }
+.default-color3.chart-line-symbol { -fx-background-color: -park-olive, white; }
+.default-color4.chart-line-symbol { -fx-background-color: -park-rust,  white; }
+.default-color5.chart-line-symbol { -fx-background-color: -park-amber, white; }
+
+.chart-legend-item-symbol.default-color0 { -fx-background-color: -park-pine;  }
+.chart-legend-item-symbol.default-color1 { -fx-background-color: -park-gold;  }
+.chart-legend-item-symbol.default-color2 { -fx-background-color: -park-lake;  }
+.chart-legend-item-symbol.default-color3 { -fx-background-color: -park-olive; }
+.chart-legend-item-symbol.default-color4 { -fx-background-color: -park-rust;  }
+.chart-legend-item-symbol.default-color5 { -fx-background-color: -park-amber; }
+
+.chart-legend      { -fx-background-color: transparent; }
+.chart-legend-item { -fx-text-fill: -park-text-mid; }
+.dark-mode .chart-legend-item { -fx-text-fill: -park-text-mid; }
+
 
 /* ── Confirmation banners ────────────────────────────────────── */
 .banner-confirmed {

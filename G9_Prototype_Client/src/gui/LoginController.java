@@ -240,5 +240,6 @@ public class LoginController {
         ThemeManager.register(scene);   // keep the chosen light/dark theme across logout
         primaryStage.setScene(scene);
         primaryStage.show();
+        Animations.introduce(root);     // subtle fade-and-rise on load
     }
 }

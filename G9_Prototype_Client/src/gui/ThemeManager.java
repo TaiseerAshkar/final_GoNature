@@ -57,7 +57,10 @@ public final class ThemeManager {
     public static void toggle() {
         darkMode = !darkMode;
         // iterate a snapshot so the weak set can't be mutated underneath us
-        for (Scene s : new ArrayList<>(scenes)) applyTo(s);
+        for (Scene s : new ArrayList<>(scenes)) {
+            applyTo(s);
+            if (s.getRoot() != null) Animations.themeFlash(s.getRoot());  // signal the switch
+        }
     }
 
     /**

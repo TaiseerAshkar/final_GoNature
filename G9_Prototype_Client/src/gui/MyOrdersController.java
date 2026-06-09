@@ -79,24 +79,10 @@ public class MyOrdersController {
         colCreated.setCellValueFactory(cell ->
             new SimpleStringProperty(cell.getValue().getCreatedAt()));
 
-        // colour-code status cells so the user can scan status at a glance
+        // render status as a colour-coded chip so the user can scan status at a glance
         colStatus.setCellValueFactory(cell ->
             new SimpleStringProperty(cell.getValue().getStatus()));
-        colStatus.setCellFactory(col -> new TableCell<OrderDetail, String>() {
-            @Override
-            protected void updateItem(String status, boolean empty) {
-                super.updateItem(status, empty);
-                if (empty || status == null) { setText(null); setStyle(""); return; }
-                setText(status);
-                switch (status) {
-                    case "PENDING":   setStyle("-fx-text-fill: #e65100; -fx-font-weight: bold;"); break;
-                    case "CONFIRMED": setStyle("-fx-text-fill: #1b5e20; -fx-font-weight: bold;"); break;
-                    case "CANCELLED": setStyle("-fx-text-fill: #b71c1c; -fx-font-weight: bold;"); break;
-                    case "COMPLETED": setStyle("-fx-text-fill: #546e7a;"); break;
-                    default:          setStyle(""); break;
-                }
-            }
-        });
+        UiCells.applyStatusChip(colStatus);
 
         // only active orders can be cancelled or shown as QR;
         // only tomorrow's active orders can be confirmed

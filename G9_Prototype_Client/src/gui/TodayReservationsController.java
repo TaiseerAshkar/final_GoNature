@@ -64,6 +64,7 @@ public class TodayReservationsController {
             new SimpleStringProperty(d.getValue().getOrderType()));
         colStatus.setCellValueFactory(d ->
             new SimpleStringProperty(d.getValue().getStatus()));
+        UiCells.applyStatusChip(colStatus);
         colEmail.setCellValueFactory(d ->
             new SimpleStringProperty(d.getValue().getEmail()));
 

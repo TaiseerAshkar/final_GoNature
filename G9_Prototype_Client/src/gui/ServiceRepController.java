@@ -93,6 +93,7 @@ public class ServiceRepController {
             new SimpleStringProperty(d.getValue().getOrderType()));
         colStatus.setCellValueFactory(d ->
             new SimpleStringProperty(d.getValue().getStatus()));
+        UiCells.applyStatusChip(colStatus);
         colBookedOn.setCellValueFactory(d ->
             new SimpleStringProperty(d.getValue().getCreatedAt()));
     }
@@ -400,5 +401,6 @@ public class ServiceRepController {
         ThemeManager.register(scene);   // apply the current light/dark theme to this screen
         primaryStage.setScene(scene);
         primaryStage.show();
+        Animations.introduce(root);     // subtle fade-and-rise on load
     }
 }
