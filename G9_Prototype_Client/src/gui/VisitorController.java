@@ -14,15 +14,24 @@ import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Insets;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonBar;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.ChoiceDialog;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.DialogPane;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.control.Separator;
 import javafx.scene.control.TextArea;
+import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Duration;
@@ -386,32 +395,103 @@ public class VisitorController {
             return;
         }
 
-        // ChoiceDialog uses Park.toString() which returns the park name — no converter needed
-        ChoiceDialog<Park> dlg = new ChoiceDialog<>(parks.get(0), parks);
+        Park park = showParkExitPicker(parks);
+        if (park == null) return;   // visitor cancelled
+
+        UserSession s = UserSession.getInstance();
+        if (s == null || s.getUserId() == null) return;
+
+        ChatClient.lastExitSuccess = false;
+        ChatClient.lastExitError   = null;
+        ClientUI.chat.accept(new Message("REGISTER_EXIT",
+            new ExitRequest(s.getUserId(), park.getId())));
+
+        if (ChatClient.lastExitSuccess) {
+            NotificationCenter.add("🚗",
+                "Exit from " + park.getName() + " registered — thank you for visiting! Have a great day.");
+        } else {
+            String reason = ChatClient.lastExitError != null
+                ? ChatClient.lastExitError
+                : "No active check-in found for today at " + park.getName() + ".";
+            NotificationCenter.add("⚠️", "Exit registration failed — " + reason);
+        }
+        refreshNotifications();
+    }
+
+    /**
+     * shows a GoNature-themed park picker for registering an exit. unlike the plain
+     * {@code ChoiceDialog} it replaces, the content sits on an elevated card (drop shadow +
+     * green accent border), uses a styled park selector with location pins, themed buttons,
+     * and honours the current light/dark theme.
+     *
+     * @param parks the non-empty list of parks the visitor can choose from
+     * @return the selected park, or {@code null} if the visitor cancelled
+     */
+    private Park showParkExitPicker(List<Park> parks) {
+        Dialog<Park> dlg = new Dialog<>();
         dlg.setTitle("Register My Exit");
-        dlg.setHeaderText("🚗  Leaving a Park");
-        dlg.setContentText("Select the park you are leaving:");
+        dlg.initModality(Modality.WINDOW_MODAL);
+        if (lblWelcome.getScene() != null)
+            dlg.initOwner(lblWelcome.getScene().getWindow());
 
-        dlg.showAndWait().ifPresent(park -> {
-            UserSession s = UserSession.getInstance();
-            if (s == null || s.getUserId() == null) return;
+        DialogPane pane = dlg.getDialogPane();
+        pane.getStylesheets().add(getClass().getResource("/gui/gonature.css").toExternalForm());
+        pane.setPrefWidth(400);
+        // keep the picker consistent with the app's current light/dark theme
+        pane.sceneProperty().addListener((o, ov, sc) -> { if (sc != null) ThemeManager.register(sc); });
 
-            ChatClient.lastExitSuccess = false;
-            ChatClient.lastExitError   = null;
-            ClientUI.chat.accept(new Message("REGISTER_EXIT",
-                new ExitRequest(s.getUserId(), park.getId())));
+        ButtonType confirmType = new ButtonType("Register Exit", ButtonBar.ButtonData.OK_DONE);
+        pane.getButtonTypes().addAll(confirmType, ButtonType.CANCEL);
 
-            if (ChatClient.lastExitSuccess) {
-                NotificationCenter.add("🚗",
-                    "Exit from " + park.getName() + " registered — thank you for visiting! Have a great day.");
-            } else {
-                String reason = ChatClient.lastExitError != null
-                    ? ChatClient.lastExitError
-                    : "No active check-in found for today at " + park.getName() + ".";
-                NotificationCenter.add("⚠️", "Exit registration failed — " + reason);
+        // ── elevated content card ──────────────────────────────────────────────
+        Label title = new Label("🚗  Leaving a Park");
+        title.getStyleClass().add("card-title");
+
+        Label hint = new Label("Select the park you're leaving and we'll log your exit time.");
+        hint.getStyleClass().add("screen-subtitle");
+        hint.setWrapText(true);
+
+        Label pickLbl = new Label("PARK");
+        pickLbl.getStyleClass().add("section-label");
+
+        ComboBox<Park> combo = new ComboBox<>();
+        combo.getItems().setAll(parks);
+        combo.getSelectionModel().selectFirst();
+        combo.setMaxWidth(Double.MAX_VALUE);
+        combo.setPromptText("Choose a park…");
+        combo.setCellFactory(lv -> new ListCell<>() {
+            @Override protected void updateItem(Park p, boolean empty) {
+                super.updateItem(p, empty);
+                setText(empty || p == null ? null : "📍  " + p.getName());
             }
-            refreshNotifications();
         });
+        combo.setButtonCell(new ListCell<>() {
+            @Override protected void updateItem(Park p, boolean empty) {
+                super.updateItem(p, empty);
+                setText(empty || p == null ? null : "📍  " + p.getName());
+            }
+        });
+
+        VBox card = new VBox(12, title, new Separator(), hint, pickLbl, combo);
+        card.getStyleClass().add("card");          // .card supplies the drop-shadow elevation
+        card.setFillWidth(true);
+
+        // a little breathing room around the card so its shadow is visible against the pane
+        VBox wrap = new VBox(card);
+        wrap.setPadding(new Insets(8, 6, 4, 6));
+        pane.setContent(wrap);
+
+        // ── themed buttons ─────────────────────────────────────────────────────
+        Node ok = pane.lookupButton(confirmType);
+        ok.getStyleClass().add("btn-primary");
+        Node cancel = pane.lookupButton(ButtonType.CANCEL);
+        cancel.getStyleClass().add("btn-secondary");
+
+        ok.setDisable(combo.getValue() == null);
+        combo.valueProperty().addListener((o, a, b) -> ok.setDisable(b == null));
+
+        dlg.setResultConverter(bt -> bt == confirmType ? combo.getValue() : null);
+        return dlg.showAndWait().orElse(null);
     }
 
     /**
