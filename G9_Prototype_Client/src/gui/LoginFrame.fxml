@@ -1,155 +1,148 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<?import java.lang.Double?>
 <?import java.net.URL?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.*?>
 
 <!--
-  LoginFrame.fxml — GoNature redesigned login screen
-  All fx:id, onAction, and styleClass references are unchanged.
-  Only layout, spacing, and inline-style polish has been added.
+  LoginFrame.fxml — GoNature login screen (Topographic / NPS theme)
+  All fx:id, onAction, and styleClass references are unchanged from the
+  original; only the visual treatment (ridgeline hero + style classes) changed.
 -->
 <VBox xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="gui.LoginController"
+      styleClass="screen-bg"
       alignment="CENTER" spacing="0"
-      prefWidth="480" prefHeight="640"
-      style="-fx-background-color: linear-gradient(to bottom, #E8F5E9 0%, #F0F4F0 42%);">
+      prefWidth="480" prefHeight="740">
 
     <stylesheets>
         <URL value="@gonature.css"/>
     </stylesheets>
 
-    <!-- ── Brand hero ─────────────────────────────────────────── -->
-    <VBox alignment="CENTER" spacing="4"
-          style="-fx-padding: 52 40 30 40;">
+    <!-- Theme toggle -->
+    <HBox alignment="CENTER_RIGHT" maxWidth="Infinity" style="-fx-padding: 10 14 0 14;">
+        <Button fx:id="btnTheme" text="🌙" styleClass="btn-ghost"/>
+    </HBox>
 
-        <!-- Leaf logo mark -->
-        <Label text="🌿"
-               style="-fx-font-size: 54px; -fx-effect: dropshadow(gaussian, rgba(46,125,50,0.22), 8, 0, 0, 2);"/>
+    <!-- ── Topographic ridgeline hero ─────────────────────────── -->
+    <StackPane prefHeight="210" maxWidth="Infinity">
 
-        <!-- App name -->
-        <Label text="GoNature" styleClass="login-title"
-               style="-fx-font-size: 40px; -fx-font-weight: bold;
-                      -fx-text-fill: #1B5E20;
-                      -fx-effect: dropshadow(gaussian, rgba(46,125,50,0.16), 3, 0, 0, 1);"/>
+        <!-- layered mountains, pinned to the bottom of the hero -->
+        <Pane prefWidth="480" prefHeight="124" maxHeight="124"
+              StackPane.alignment="BOTTOM_CENTER">
 
-        <!-- App subtitle -->
-        <Label text="National Park Reservation System"
-               style="-fx-font-size: 13px; -fx-text-fill: #546E7A;
-                      -fx-padding: 2 0 0 0;"/>
-    </VBox>
+            <!-- trail-marker sun -->
+            <Circle centerX="372" centerY="46" radius="22" fill="#C8962E" opacity="0.85"/>
+
+            <!-- back ridge (olive) -->
+            <Polygon fill="#6B7C41" opacity="0.95">
+                <points>
+                    <Double fx:value="0"/>   <Double fx:value="124"/>
+                    <Double fx:value="0"/>   <Double fx:value="74"/>
+                    <Double fx:value="64"/>  <Double fx:value="44"/>
+                    <Double fx:value="150"/> <Double fx:value="70"/>
+                    <Double fx:value="232"/> <Double fx:value="36"/>
+                    <Double fx:value="320"/> <Double fx:value="72"/>
+                    <Double fx:value="392"/> <Double fx:value="42"/>
+                    <Double fx:value="452"/> <Double fx:value="68"/>
+                    <Double fx:value="480"/> <Double fx:value="54"/>
+                    <Double fx:value="480"/> <Double fx:value="124"/>
+                </points>
+            </Polygon>
+
+            <!-- front ridge (pine) -->
+            <Polygon fill="#2E6B40">
+                <points>
+                    <Double fx:value="0"/>   <Double fx:value="124"/>
+                    <Double fx:value="0"/>   <Double fx:value="98"/>
+                    <Double fx:value="58"/>  <Double fx:value="76"/>
+                    <Double fx:value="132"/> <Double fx:value="94"/>
+                    <Double fx:value="206"/> <Double fx:value="66"/>
+                    <Double fx:value="286"/> <Double fx:value="98"/>
+                    <Double fx:value="360"/> <Double fx:value="74"/>
+                    <Double fx:value="430"/> <Double fx:value="96"/>
+                    <Double fx:value="480"/> <Double fx:value="82"/>
+                    <Double fx:value="480"/> <Double fx:value="124"/>
+                </points>
+            </Polygon>
+        </Pane>
+
+        <!-- brand sits above the ridgeline -->
+        <VBox alignment="TOP_CENTER" spacing="2" StackPane.alignment="TOP_CENTER"
+              style="-fx-padding: 30 0 0 0;">
+            <Label text="GoNature" styleClass="login-title"/>
+            <Label text="NATIONAL PARK RESERVATION SYSTEM" styleClass="hero-tagline"
+                   style="-fx-font-weight: bold;"/>
+        </VBox>
+    </StackPane>
 
     <!-- ── Login card ─────────────────────────────────────────── -->
-    <VBox spacing="0" styleClass="login-card" maxWidth="400"
-          style="-fx-background-radius: 20;
-                 -fx-border-radius: 20 20 0 0;
-                 -fx-padding: 28 32 32 32;
-                 -fx-effect: dropshadow(gaussian, rgba(46,125,50,0.18), 32, 0, 0, 8);
-                 -fx-border-width: 4 0 0 0;
-                 -fx-border-color: #2E7D32 transparent transparent transparent;">
+    <VBox spacing="0" styleClass="login-card" maxWidth="400">
 
         <!-- Card heading -->
-        <VBox spacing="3" style="-fx-padding: 0 0 18 0;">
-            <Label text="Welcome back 👋"
-                   style="-fx-font-size: 20px; -fx-font-weight: bold;
-                          -fx-text-fill: #1B5E20;"/>
-            <Label text="Sign in to manage your reservations."
-                   style="-fx-font-size: 12px; -fx-text-fill: #90A4AE;"/>
+        <VBox spacing="3" style="-fx-padding: 0 0 16 0;">
+            <Label text="Welcome back" styleClass="login-card-title"/>
+            <Label text="Sign in to manage your reservations." styleClass="lbl-hint"/>
         </VBox>
 
-        <Separator style="-fx-padding: 0 0 18 0; -fx-opacity: 0.6;"/>
-
-        <!-- Spacer below separator -->
+        <Separator style="-fx-opacity: 0.6;"/>
         <Region prefHeight="16"/>
 
         <!-- ID / Username -->
         <VBox spacing="5" style="-fx-padding: 0 0 14 0;">
-            <Label text="ID Number or Username"
-                   style="-fx-font-size: 12px; -fx-font-weight: bold;
-                          -fx-text-fill: #2E7D32;"/>
-            <TextField fx:id="txtIdentifier"
-                       promptText="Visitor: enter ID  ·  Staff: enter username"
-                       style="-fx-font-size: 13px; -fx-padding: 10 12;
-                              -fx-background-color: #FAFAFA;
-                              -fx-background-radius: 9; -fx-border-radius: 9;
-                              -fx-border-color: #CFD8DC; -fx-border-width: 1.5;
-                              -fx-prompt-text-fill: #B0BEC5;"/>
+            <Label text="ID Number or Username" styleClass="field-label"/>
+            <TextField fx:id="txtIdentifier" styleClass="text-field"
+                       promptText="Visitor: enter ID  ·  Staff: enter username"/>
         </VBox>
 
         <!-- Password -->
         <VBox spacing="5" style="-fx-padding: 0 0 6 0;">
-            <Label text="Password"
-                   style="-fx-font-size: 12px; -fx-font-weight: bold;
-                          -fx-text-fill: #2E7D32;"/>
+            <Label text="Password" styleClass="field-label"/>
             <!-- Hidden password (default) -->
-            <PasswordField fx:id="txtPassword"
-                           promptText="Staff only — leave blank if you are a visitor"
-                           style="-fx-font-size: 13px; -fx-padding: 10 12;
-                                  -fx-background-color: #FAFAFA;
-                                  -fx-background-radius: 9; -fx-border-radius: 9;
-                                  -fx-border-color: #CFD8DC; -fx-border-width: 1.5;
-                                  -fx-prompt-text-fill: #B0BEC5;"/>
+            <PasswordField fx:id="txtPassword" styleClass="password-field"
+                           promptText="Staff only — leave blank if you are a visitor"/>
             <!-- Visible password (shown when checkbox is ticked) -->
-            <TextField fx:id="txtPasswordVisible"
+            <TextField fx:id="txtPasswordVisible" styleClass="text-field"
                        promptText="Staff only — leave blank if you are a visitor"
-                       visible="false" managed="false"
-                       style="-fx-font-size: 13px; -fx-padding: 10 12;
-                              -fx-background-color: #FAFAFA;
-                              -fx-background-radius: 9; -fx-border-radius: 9;
-                              -fx-border-color: #CFD8DC; -fx-border-width: 1.5;
-                              -fx-prompt-text-fill: #B0BEC5;"/>
+                       visible="false" managed="false"/>
             <!-- Show / hide toggle -->
             <CheckBox fx:id="chkShowPassword" text="Show password"
                       onAction="#handleShowPassword"
-                      style="-fx-font-size: 11px; -fx-text-fill: #546E7A;
-                             -fx-cursor: hand; -fx-padding: 2 0 0 2;"/>
+                      style="-fx-font-size: 11px; -fx-cursor: hand; -fx-padding: 2 0 0 2;"/>
             <Label text="Visitors and guides: enter your ID and leave the password blank."
-                   styleClass="lbl-hint" wrapText="true"
-                   style="-fx-font-size: 11px; -fx-text-fill: #78909C;
-                          -fx-padding: 2 0 0 2;"/>
+                   styleClass="lbl-hint" wrapText="true" style="-fx-padding: 2 0 0 2;"/>
         </VBox>
 
         <!-- Error message -->
         <Label fx:id="lblError" text="" styleClass="lbl-error" wrapText="true"
-               style="-fx-padding: 4 0 0 0; -fx-font-size: 12px;"/>
+               style="-fx-padding: 4 0 0 0;"/>
 
-        <!-- Spacer -->
         <Region prefHeight="10"/>
 
         <!-- Login button -->
         <Button fx:id="btnLogin" text="Sign In" onAction="#handleLogin"
                 styleClass="btn-primary" maxWidth="Infinity"
-                style="-fx-font-size: 14px; -fx-font-weight: bold;
-                       -fx-padding: 11 22; -fx-background-radius: 10;
-                       -fx-cursor: hand;"/>
+                style="-fx-font-size: 14px; -fx-padding: 11 22; -fx-background-radius: 10;"/>
 
         <!-- Sign-up row -->
-        <HBox alignment="CENTER" spacing="4"
-              style="-fx-padding: 14 0 10 0;">
-            <Label text="New to GoNature?"
-                   style="-fx-font-size: 12px; -fx-text-fill: #78909C;"/>
-            <Button text="Create an Account" onAction="#handleSignUp"
-                    styleClass="btn-link"
-                    style="-fx-font-size: 12px;"/>
+        <HBox alignment="CENTER" spacing="4" style="-fx-padding: 14 0 10 0;">
+            <Label text="New to GoNature?" styleClass="lbl-hint"/>
+            <Button text="Create an Account" onAction="#handleSignUp" styleClass="btn-link"/>
         </HBox>
 
         <Separator style="-fx-opacity: 0.45;"/>
-
-        <!-- Spacer -->
         <Region prefHeight="12"/>
 
         <!-- Exit button — subordinate styling -->
         <Button text="Exit Application" onAction="#handleExit"
                 styleClass="btn-secondary" maxWidth="Infinity"
-                style="-fx-font-size: 12px; -fx-padding: 8 22;
-                       -fx-opacity: 0.78; -fx-background-radius: 9;
-                       -fx-cursor: hand;"/>
-
+                style="-fx-font-size: 12px; -fx-padding: 8 22; -fx-opacity: 0.82;
+                       -fx-background-radius: 9;"/>
     </VBox>
 
     <!-- Help link -->
-    <Label text="Need help?"
-           onMouseClicked="#handleHelp" styleClass="help-link"
-           style="-fx-padding: 18 0 24 0; -fx-font-size: 12px;
-                  -fx-text-fill: #00796B; -fx-underline: true; -fx-cursor: hand;"/>
+    <Label text="Need help?" onMouseClicked="#handleHelp" styleClass="help-link"
+           style="-fx-padding: 18 0 24 0; -fx-font-size: 12px;"/>
 
 </VBox>

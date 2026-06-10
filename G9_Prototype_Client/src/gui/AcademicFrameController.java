@@ -8,6 +8,8 @@ import logic.Message;
 import logic.Order;
 import logic.OrderDetail;
 import logic.UserSession;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -24,6 +26,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -41,6 +44,13 @@ public class AcademicFrameController {
 
     @FXML private Label lblUserName;
     @FXML private Label lblUserRole;
+
+    // header controls
+    @FXML private Label  lblSessionTimer;
+    @FXML private Button btnTheme;
+
+    /** ticks once a second to refresh the logged-in-duration label in the header. */
+    private Timeline sessionTimeline;
 
     // ── live-orders table ─────────────────────────────────────────────────────
     @FXML private TableView<OrderDetail>            tableOrders;
@@ -74,6 +84,9 @@ public class AcademicFrameController {
             lblUserRole.setText(session.getRole());
         }
 
+        ThemeManager.installToggle(btnTheme);
+        startSessionTimer();
+
         colId.setCellValueFactory(d ->
             new SimpleIntegerProperty(d.getValue().getId()).asObject());
         colPark.setCellValueFactory(d ->
@@ -90,6 +103,7 @@ public class AcademicFrameController {
             new SimpleStringProperty(d.getValue().getOrderType()));
         colStatus.setCellValueFactory(d ->
             new SimpleStringProperty(d.getValue().getStatus()));
+        UiCells.applyStatusChip(colStatus);
         colBookedOn.setCellValueFactory(d ->
             new SimpleStringProperty(d.getValue().getCreatedAt()));
 
@@ -115,6 +129,54 @@ public class AcademicFrameController {
                     cboNewOrderType.setValue("SOLO");
                 lblResult.setText("");
             });
+    }
+
+    // ── Header: theme toggle + session timer ──────────────────────────────────
+
+    /**
+     * flips the whole app between light and dark mode and updates this button's icon.
+     *
+     * @param event the button-click event
+     */
+    @FXML
+    public void handleToggleTheme(ActionEvent event) {
+        ThemeManager.toggle();
+        if (btnTheme != null) btnTheme.setText(ThemeManager.iconText());
+    }
+
+    /**
+     * starts a 1-second ticker that keeps the "Session: HH:MM:SS" label current, and stops
+     * it automatically if the window is closed.
+     */
+    private void startSessionTimer() {
+        if (lblSessionTimer == null) return;
+        updateSessionTimer(); // show 00:00:00 immediately
+        sessionTimeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> updateSessionTimer()));
+        sessionTimeline.setCycleCount(Timeline.INDEFINITE);
+        sessionTimeline.play();
+
+        lblSessionTimer.sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene != null) {
+                newScene.windowProperty().addListener((o2, oldWin, newWin) -> {
+                    if (newWin != null) newWin.setOnHidden(ev -> stopSessionTimer());
+                });
+            }
+        });
+    }
+
+    /** writes the current elapsed session time into the header label. */
+    private void updateSessionTimer() {
+        UserSession s = UserSession.getInstance();
+        if (s != null && lblSessionTimer != null)
+            lblSessionTimer.setText("Session: " + s.getSessionDuration());
+    }
+
+    /** stops and releases the session-timer ticker if it's running. */
+    private void stopSessionTimer() {
+        if (sessionTimeline != null) {
+            sessionTimeline.stop();
+            sessionTimeline = null;
+        }
     }
 
     /** Locks/unlocks the visitors field and resets its value when the type changes. */
@@ -613,6 +675,7 @@ public class AcademicFrameController {
      */
     @FXML
     public void handleLogout(ActionEvent event) {
+        stopSessionTimer();   // stop before clearing the session so the clock doesn't tick on a null user
         if (ClientUI.chat != null) ClientUI.chat.sendLogout();
         UserSession.clear();
         Stage stage = (Stage) lblUserName.getScene().getWindow();
@@ -626,6 +689,7 @@ public class AcademicFrameController {
 
     /** @param event the button-click event */
     public void getExitBtn(ActionEvent event) {
+        stopSessionTimer();
         if (ClientUI.chat != null) ClientUI.chat.disconnect();
         Platform.exit();
     }
@@ -637,8 +701,10 @@ public class AcademicFrameController {
     public void start(Stage primaryStage) throws Exception {
         Parent root = FXMLLoader.load(getClass().getResource("/gui/AcademicFrame.fxml"));
         Scene scene = new Scene(root);
+        ThemeManager.register(scene);   // apply the current light/dark theme to this screen
         primaryStage.setTitle("GoNature — Management Dashboard");
         primaryStage.setScene(scene);
         primaryStage.show();
+        Animations.introduce(root);     // subtle fade-and-rise on load
     }
 }

@@ -30,6 +30,13 @@ public class LoginController {
     @FXML private CheckBox      chkShowPassword;
     @FXML private Label         lblError;
     @FXML private Button        btnLogin;
+    @FXML private Button        btnTheme;
+
+    /** wires the dark-mode toggle so the theme can be switched from the login screen too. */
+    @FXML
+    public void initialize() {
+        ThemeManager.installToggle(btnTheme);
+    }
 
     /**
      * routes to visitor or staff login based on whether a password was supplied.
@@ -236,7 +243,10 @@ public class LoginController {
     public void start(Stage primaryStage) throws Exception {
         Parent root = FXMLLoader.load(getClass().getResource("/gui/LoginFrame.fxml"));
         primaryStage.setTitle("GoNature — Login");
-        primaryStage.setScene(new Scene(root));
+        Scene scene = new Scene(root);
+        ThemeManager.register(scene);   // keep the chosen light/dark theme across logout
+        primaryStage.setScene(scene);
         primaryStage.show();
+        Animations.introduce(root);     // subtle fade-and-rise on load
     }
 }

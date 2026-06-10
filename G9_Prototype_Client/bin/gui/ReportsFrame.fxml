@@ -19,6 +19,7 @@
         <Label text="🌿 GoNature — Reports Dashboard" styleClass="header-logo"/>
         <Region HBox.hgrow="ALWAYS"/>
         <Label fx:id="lblManagerName" styleClass="header-subtitle"/>
+        <Button fx:id="btnTheme" text="🌙" styleClass="btn-outline"/>
         <Button text="Close" onAction="#handleClose" styleClass="btn-outline"/>
     </HBox>
 
@@ -34,9 +35,9 @@
                       style="-fx-padding: 12 16;">
                     <Label text="Park:" styleClass="field-label"/>
                     <ComboBox fx:id="cboVisitorPark" prefWidth="230"
-                              style="-fx-background-color:white;
+                              style="-fx-background-color:-park-surface;
                                      -fx-background-radius:8;
-                                     -fx-border-color:#B0BEC5;
+                                     -fx-border-color:-park-border;
                                      -fx-border-radius:8;
                                      -fx-border-width:1.5;
                                      -fx-font-size:13px;
@@ -72,9 +73,9 @@
                       style="-fx-padding: 12 16;">
                     <Label text="Park:" styleClass="field-label"/>
                     <ComboBox fx:id="cboCancelPark" prefWidth="230"
-                              style="-fx-background-color:white;
+                              style="-fx-background-color:-park-surface;
                                      -fx-background-radius:8;
-                                     -fx-border-color:#B0BEC5;
+                                     -fx-border-color:-park-border;
                                      -fx-border-radius:8;
                                      -fx-border-width:1.5;
                                      -fx-font-size:13px;

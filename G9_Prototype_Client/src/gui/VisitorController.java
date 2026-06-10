@@ -8,20 +8,33 @@ import logic.Message;
 import logic.OrderDetail;
 import logic.Park;
 import logic.UserSession;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Insets;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonBar;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.ChoiceDialog;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.DialogPane;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.control.Separator;
 import javafx.scene.control.TextArea;
+import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -44,10 +57,17 @@ public class VisitorController {
     @FXML private Label           lblInfo;
     @FXML private Label           lblUpcoming;
 
+    // header controls
+    @FXML private Label           lblSessionTimer;
+    @FXML private Button          btnTheme;
+
     // notification panel
     @FXML private Label           lblNotifBadge;
     @FXML private Label           lblNoNotif;
     @FXML private ListView<String> lstNotifications;
+
+    /** ticks once a second to refresh the logged-in-duration label in the header. */
+    private Timeline sessionTimeline;
 
     private static final DateTimeFormatter DATE_FMT =
         DateTimeFormatter.ofPattern("yyyy-MM-dd");
@@ -88,9 +108,60 @@ public class VisitorController {
             }
         });
 
+        ThemeManager.installToggle(btnTheme);
+        startSessionTimer();
+
         checkUpcomingReminders();
         updateUpcomingCount();
         refreshNotifications();
+    }
+
+    // ── Header: theme toggle + session timer ──────────────────────────────────
+
+    /**
+     * flips the whole app between light and dark mode and updates this button's icon.
+     *
+     * @param event the button-click event
+     */
+    @FXML
+    public void handleToggleTheme(ActionEvent event) {
+        ThemeManager.toggle();
+        if (btnTheme != null) btnTheme.setText(ThemeManager.iconText());
+    }
+
+    /**
+     * starts a 1-second ticker that keeps the "Session: HH:MM:SS" label current, and stops
+     * it automatically if the window is closed.
+     */
+    private void startSessionTimer() {
+        if (lblSessionTimer == null) return;
+        updateSessionTimer(); // show 00:00:00 immediately
+        sessionTimeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> updateSessionTimer()));
+        sessionTimeline.setCycleCount(Timeline.INDEFINITE);
+        sessionTimeline.play();
+
+        lblSessionTimer.sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene != null) {
+                newScene.windowProperty().addListener((o2, oldWin, newWin) -> {
+                    if (newWin != null) newWin.setOnHidden(ev -> stopSessionTimer());
+                });
+            }
+        });
+    }
+
+    /** writes the current elapsed session time into the header label. */
+    private void updateSessionTimer() {
+        UserSession s = UserSession.getInstance();
+        if (s != null && lblSessionTimer != null)
+            lblSessionTimer.setText("Session: " + s.getSessionDuration());
+    }
+
+    /** stops and releases the session-timer ticker if it's running. */
+    private void stopSessionTimer() {
+        if (sessionTimeline != null) {
+            sessionTimeline.stop();
+            sessionTimeline = null;
+        }
     }
 
     /**
@@ -324,32 +395,103 @@ public class VisitorController {
             return;
         }
 
-        // ChoiceDialog uses Park.toString() which returns the park name — no converter needed
-        ChoiceDialog<Park> dlg = new ChoiceDialog<>(parks.get(0), parks);
+        Park park = showParkExitPicker(parks);
+        if (park == null) return;   // visitor cancelled
+
+        UserSession s = UserSession.getInstance();
+        if (s == null || s.getUserId() == null) return;
+
+        ChatClient.lastExitSuccess = false;
+        ChatClient.lastExitError   = null;
+        ClientUI.chat.accept(new Message("REGISTER_EXIT",
+            new ExitRequest(s.getUserId(), park.getId())));
+
+        if (ChatClient.lastExitSuccess) {
+            NotificationCenter.add("🚗",
+                "Exit from " + park.getName() + " registered — thank you for visiting! Have a great day.");
+        } else {
+            String reason = ChatClient.lastExitError != null
+                ? ChatClient.lastExitError
+                : "No active check-in found for today at " + park.getName() + ".";
+            NotificationCenter.add("⚠️", "Exit registration failed — " + reason);
+        }
+        refreshNotifications();
+    }
+
+    /**
+     * shows a GoNature-themed park picker for registering an exit. unlike the plain
+     * {@code ChoiceDialog} it replaces, the content sits on an elevated card (drop shadow +
+     * green accent border), uses a styled park selector with location pins, themed buttons,
+     * and honours the current light/dark theme.
+     *
+     * @param parks the non-empty list of parks the visitor can choose from
+     * @return the selected park, or {@code null} if the visitor cancelled
+     */
+    private Park showParkExitPicker(List<Park> parks) {
+        Dialog<Park> dlg = new Dialog<>();
         dlg.setTitle("Register My Exit");
-        dlg.setHeaderText("🚗  Leaving a Park");
-        dlg.setContentText("Select the park you are leaving:");
+        dlg.initModality(Modality.WINDOW_MODAL);
+        if (lblWelcome.getScene() != null)
+            dlg.initOwner(lblWelcome.getScene().getWindow());
 
-        dlg.showAndWait().ifPresent(park -> {
-            UserSession s = UserSession.getInstance();
-            if (s == null || s.getUserId() == null) return;
+        DialogPane pane = dlg.getDialogPane();
+        pane.getStylesheets().add(getClass().getResource("/gui/gonature.css").toExternalForm());
+        pane.setPrefWidth(400);
+        // keep the picker consistent with the app's current light/dark theme
+        pane.sceneProperty().addListener((o, ov, sc) -> { if (sc != null) ThemeManager.register(sc); });
 
-            ChatClient.lastExitSuccess = false;
-            ChatClient.lastExitError   = null;
-            ClientUI.chat.accept(new Message("REGISTER_EXIT",
-                new ExitRequest(s.getUserId(), park.getId())));
+        ButtonType confirmType = new ButtonType("Register Exit", ButtonBar.ButtonData.OK_DONE);
+        pane.getButtonTypes().addAll(confirmType, ButtonType.CANCEL);
 
-            if (ChatClient.lastExitSuccess) {
-                NotificationCenter.add("🚗",
-                    "Exit from " + park.getName() + " registered — thank you for visiting! Have a great day.");
-            } else {
-                String reason = ChatClient.lastExitError != null
-                    ? ChatClient.lastExitError
-                    : "No active check-in found for today at " + park.getName() + ".";
-                NotificationCenter.add("⚠️", "Exit registration failed — " + reason);
+        // ── elevated content card ──────────────────────────────────────────────
+        Label title = new Label("🚗  Leaving a Park");
+        title.getStyleClass().add("card-title");
+
+        Label hint = new Label("Select the park you're leaving and we'll log your exit time.");
+        hint.getStyleClass().add("screen-subtitle");
+        hint.setWrapText(true);
+
+        Label pickLbl = new Label("PARK");
+        pickLbl.getStyleClass().add("section-label");
+
+        ComboBox<Park> combo = new ComboBox<>();
+        combo.getItems().setAll(parks);
+        combo.getSelectionModel().selectFirst();
+        combo.setMaxWidth(Double.MAX_VALUE);
+        combo.setPromptText("Choose a park…");
+        combo.setCellFactory(lv -> new ListCell<>() {
+            @Override protected void updateItem(Park p, boolean empty) {
+                super.updateItem(p, empty);
+                setText(empty || p == null ? null : "📍  " + p.getName());
             }
-            refreshNotifications();
         });
+        combo.setButtonCell(new ListCell<>() {
+            @Override protected void updateItem(Park p, boolean empty) {
+                super.updateItem(p, empty);
+                setText(empty || p == null ? null : "📍  " + p.getName());
+            }
+        });
+
+        VBox card = new VBox(12, title, new Separator(), hint, pickLbl, combo);
+        card.getStyleClass().add("card");          // .card supplies the drop-shadow elevation
+        card.setFillWidth(true);
+
+        // a little breathing room around the card so its shadow is visible against the pane
+        VBox wrap = new VBox(card);
+        wrap.setPadding(new Insets(8, 6, 4, 6));
+        pane.setContent(wrap);
+
+        // ── themed buttons ─────────────────────────────────────────────────────
+        Node ok = pane.lookupButton(confirmType);
+        ok.getStyleClass().add("btn-primary");
+        Node cancel = pane.lookupButton(ButtonType.CANCEL);
+        cancel.getStyleClass().add("btn-secondary");
+
+        ok.setDisable(combo.getValue() == null);
+        combo.valueProperty().addListener((o, a, b) -> ok.setDisable(b == null));
+
+        dlg.setResultConverter(bt -> bt == confirmType ? combo.getValue() : null);
+        return dlg.showAndWait().orElse(null);
     }
 
     /**
@@ -428,6 +570,7 @@ public class VisitorController {
      */
     @FXML
     public void handleLogout(ActionEvent event) {
+        stopSessionTimer();   // stop before clearing the session so the clock doesn't tick on a null user
         NotificationCenter.clear();
         if (ClientUI.chat != null) ClientUI.chat.sendLogout();
         UserSession.clear();
@@ -447,7 +590,10 @@ public class VisitorController {
     public void start(Stage primaryStage) throws Exception {
         Parent root = FXMLLoader.load(getClass().getResource("/gui/VisitorFrame.fxml"));
         primaryStage.setTitle("GoNature — " + UserSession.getInstance().getRole());
-        primaryStage.setScene(new Scene(root));
+        Scene scene = new Scene(root);
+        ThemeManager.register(scene);   // apply the current light/dark theme to this screen
+        primaryStage.setScene(scene);
         primaryStage.show();
+        Animations.introduce(root);     // subtle fade-and-rise on load
     }
 }

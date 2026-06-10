@@ -44,8 +44,15 @@ public class EmployeeController {
     @FXML private Button btnReports;
     @FXML private Button btnParkSettings;
 
+    // header controls
+    @FXML private Label  lblSessionTimer;
+    @FXML private Button btnTheme;
+
     /** background ticker that refreshes the live stats strip every 30 seconds. */
     private Timeline statsTimeline;
+
+    /** ticks once a second to refresh the logged-in-duration label in the header. */
+    private Timeline sessionTimeline;
 
     /**
      * populates welcome/role/park labels and enables the Reports button only for PARK_MANAGER.
@@ -70,8 +77,52 @@ public class EmployeeController {
             // btnReports is disabled by default in FXML — employees can't access reports
         }
 
+        ThemeManager.installToggle(btnTheme);
+        startSessionTimer();
+
         loadStats();
         startStatsAutoRefresh();
+    }
+
+    // ── Header: theme toggle + session timer ──────────────────────────────────
+
+    /**
+     * flips the whole app between light and dark mode and updates this button's icon.
+     *
+     * @param event the button-click event
+     */
+    @FXML
+    public void handleToggleTheme(ActionEvent event) {
+        ThemeManager.toggle();
+        if (btnTheme != null) btnTheme.setText(ThemeManager.iconText());
+    }
+
+    /**
+     * starts a 1-second ticker that keeps the "Session: HH:MM:SS" header label current.
+     * the window-close handler installed by {@link #startStatsAutoRefresh()} stops this
+     * ticker along with the stats ticker.
+     */
+    private void startSessionTimer() {
+        if (lblSessionTimer == null) return;
+        updateSessionTimer(); // show 00:00:00 immediately
+        sessionTimeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> updateSessionTimer()));
+        sessionTimeline.setCycleCount(Timeline.INDEFINITE);
+        sessionTimeline.play();
+    }
+
+    /** writes the current elapsed session time into the header label. */
+    private void updateSessionTimer() {
+        UserSession s = UserSession.getInstance();
+        if (s != null && lblSessionTimer != null)
+            lblSessionTimer.setText("Session: " + s.getSessionDuration());
+    }
+
+    /** stops and releases the session-timer ticker if it's running. */
+    private void stopSessionTimer() {
+        if (sessionTimeline != null) {
+            sessionTimeline.stop();
+            sessionTimeline = null;
+        }
     }
 
     /**
@@ -86,11 +137,14 @@ public class EmployeeController {
         statsTimeline.setCycleCount(Timeline.INDEFINITE);
         statsTimeline.play();
 
-        // stop the ticker if the window is closed outright (logout/exit handle the other cases)
+        // stop both tickers if the window is closed outright (logout/exit handle the other cases)
         lblStats.sceneProperty().addListener((obs, oldScene, newScene) -> {
             if (newScene != null) {
                 newScene.windowProperty().addListener((o2, oldWin, newWin) -> {
-                    if (newWin != null) newWin.setOnHidden(ev -> stopStatsTimeline());
+                    if (newWin != null) newWin.setOnHidden(ev -> {
+                        stopStatsTimeline();
+                        stopSessionTimer();
+                    });
                 });
             }
         });
@@ -229,6 +283,7 @@ public class EmployeeController {
     @FXML
     public void handleExit(ActionEvent event) {
         stopStatsTimeline();
+        stopSessionTimer();
         if (ClientUI.chat != null) ClientUI.chat.disconnect();
         Platform.exit();
     }
@@ -312,6 +367,7 @@ public class EmployeeController {
     @FXML
     public void handleLogout(ActionEvent event) {
         stopStatsTimeline();
+        stopSessionTimer();   // stop before clearing the session so the clock doesn't tick on a null user
         if (ClientUI.chat != null) ClientUI.chat.sendLogout();
         UserSession.clear();
         Stage stage = (Stage) lblWelcome.getScene().getWindow();
@@ -330,7 +386,10 @@ public class EmployeeController {
     public void start(Stage primaryStage) throws Exception {
         Parent root = FXMLLoader.load(getClass().getResource("/gui/EmployeeFrame.fxml"));
         primaryStage.setTitle("GoNature — " + UserSession.getInstance().getRole());
-        primaryStage.setScene(new Scene(root));
+        Scene scene = new Scene(root);
+        ThemeManager.register(scene);   // apply the current light/dark theme to this screen
+        primaryStage.setScene(scene);
         primaryStage.show();
+        Animations.introduce(root);     // subtle fade-and-rise on load
     }
 }

@@ -50,6 +50,7 @@ public class ReportsController {
     private String  myParkName = null;  // display name of the locked park, used to filter the usage chart
 
     @FXML private Label lblManagerName;
+    @FXML private Button btnTheme;
 
     // ── Tab 1: Visitor Report ────────────────────────────────────────────────
     @FXML private ComboBox<Park>           cboVisitorPark;
@@ -83,6 +84,7 @@ public class ReportsController {
      */
     @FXML
     public void initialize() {
+        ThemeManager.installToggle(btnTheme);
         // clear the static lock immediately so the next open (from the management dashboard) is unrestricted
         myParkId      = lockedParkId;
         lockedParkId  = null;
@@ -126,17 +128,7 @@ public class ReportsController {
 
         colCancelStatus.setCellValueFactory(c ->
             new SimpleStringProperty(c.getValue().getStatus()));
-        colCancelStatus.setCellFactory(col -> new TableCell<ReportCancelRow, String>() {
-            @Override
-            protected void updateItem(String status, boolean empty) {
-                super.updateItem(status, empty);
-                if (empty || status == null) { setText(null); setStyle(""); return; }
-                setText(status);
-                setStyle("CANCELLED".equals(status)
-                    ? "-fx-text-fill: #b71c1c; -fx-font-weight: bold;"
-                    : "-fx-text-fill: #e65100; -fx-font-weight: bold;");
-            }
-        });
+        UiCells.applyStatusChip(colCancelStatus);
     }
 
     /**
@@ -351,7 +343,9 @@ public class ReportsController {
     public void start(Stage stage) throws Exception {
         Parent root = FXMLLoader.load(getClass().getResource("/gui/ReportsFrame.fxml"));
         stage.setTitle("GoNature — Reports Dashboard");
-        stage.setScene(new Scene(root));
+        Scene scene = new Scene(root);
+        ThemeManager.register(scene);
+        stage.setScene(scene);
         stage.show();
     }
 }

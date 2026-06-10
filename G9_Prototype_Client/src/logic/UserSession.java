@@ -18,6 +18,9 @@ public class UserSession {
     private String  userId;
     private Integer parkId;
 
+    /** epoch-millis timestamp captured the moment this session was populated by a login. */
+    private long    loginTime;
+
     /** use {@link #getInstance()} or {@link #set(LoginResult)}, not new. */
     private UserSession() {}
 
@@ -44,6 +47,7 @@ public class UserSession {
         s.email     = r.getEmail();
         s.userId    = r.getUserId();
         s.parkId    = r.getParkId();
+        s.loginTime = System.currentTimeMillis();   // start the session clock now
     }
 
     /** nulls out the instance so the next login gets a clean slate. */
@@ -69,4 +73,20 @@ public class UserSession {
 
     /** @return the user's full name in "First Last" format */
     public String  getFullName()  { return firstName + " " + lastName; }
+
+    /** @return the epoch-millis timestamp captured when the user logged in */
+    public long    getLoginTime() { return loginTime; }
+
+    /**
+     * formats how long the user has been logged in as {@code HH:MM:SS}.
+     *
+     * @return the elapsed session time since login, never negative
+     */
+    public String getSessionDuration() {
+        long secs = Math.max(0, (System.currentTimeMillis() - loginTime) / 1000);
+        long hours   = secs / 3600;
+        long minutes = (secs % 3600) / 60;
+        long seconds = secs % 60;
+        return String.format("%02d:%02d:%02d", hours, minutes, seconds);
+    }
 }

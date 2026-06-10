@@ -18,6 +18,7 @@
         <Label text="🌿 GoNature — Entry Control" styleClass="header-logo"/>
         <Region HBox.hgrow="ALWAYS"/>
         <Label fx:id="lblParkName" styleClass="header-badge"/>
+        <Button fx:id="btnTheme" text="🌙" styleClass="btn-outline"/>
         <Button text="Close" onAction="#handleClose" styleClass="btn-outline"/>
     </HBox>
 
@@ -41,16 +42,16 @@
                                 <TextField fx:id="txtVisitorId" prefWidth="160"
                                            promptText="Government ID"
                                            style="-fx-background-radius:8; -fx-border-radius:8;
-                                                  -fx-border-color:#B0BEC5; -fx-border-width:1.5;
+                                                  -fx-border-color:-park-border; -fx-border-width:1.5;
                                                   -fx-padding:8 10; -fx-font-size:13px;"/>
                             </VBox>
                             <VBox spacing="6">
                                 <Label text="Park *" styleClass="field-label"/>
                                 <ComboBox fx:id="cboPark" prefWidth="190"
                                           promptText="Select park…"
-                                          style="-fx-background-color:white;
+                                          style="-fx-background-color:-park-surface;
                                                  -fx-background-radius:8;
-                                                 -fx-border-color:#B0BEC5;
+                                                 -fx-border-color:-park-border;
                                                  -fx-border-radius:8;
                                                  -fx-border-width:1.5;
                                                  -fx-font-size:13px;
@@ -60,15 +61,15 @@
                                 <Label text="Visitors" styleClass="field-label"/>
                                 <TextField fx:id="txtWalkInVisitors" prefWidth="68" text="1"
                                            style="-fx-background-radius:8; -fx-border-radius:8;
-                                                  -fx-border-color:#B0BEC5; -fx-border-width:1.5;
+                                                  -fx-border-color:-park-border; -fx-border-width:1.5;
                                                   -fx-padding:8 10; -fx-font-size:13px;"/>
                             </VBox>
                             <VBox spacing="6">
                                 <Label text="Visit Type" styleClass="field-label"/>
                                 <ComboBox fx:id="cboOrderType" prefWidth="140"
-                                          style="-fx-background-color:white;
+                                          style="-fx-background-color:-park-surface;
                                                  -fx-background-radius:8;
-                                                 -fx-border-color:#B0BEC5;
+                                                 -fx-border-color:-park-border;
                                                  -fx-border-radius:8;
                                                  -fx-border-width:1.5;
                                                  -fx-font-size:13px;
@@ -122,31 +123,31 @@
                             <Label text="Order #:"    styleClass="lbl-detail-key"
                                    GridPane.rowIndex="0" GridPane.columnIndex="0"/>
                             <Label fx:id="lblResultOrderId"
-                                   style="-fx-font-size:13px; -fx-text-fill:#1A1A1A;"
+                                   style="-fx-font-size:13px; -fx-text-fill:-park-text;"
                                    GridPane.rowIndex="0" GridPane.columnIndex="1"/>
 
                             <Label text="Visitor ID:" styleClass="lbl-detail-key"
                                    GridPane.rowIndex="1" GridPane.columnIndex="0"/>
                             <Label fx:id="lblResultVisitorId"
-                                   style="-fx-font-size:13px; -fx-text-fill:#1A1A1A;"
+                                   style="-fx-font-size:13px; -fx-text-fill:-park-text;"
                                    GridPane.rowIndex="1" GridPane.columnIndex="1"/>
 
                             <Label text="Park:"       styleClass="lbl-detail-key"
                                    GridPane.rowIndex="2" GridPane.columnIndex="0"/>
                             <Label fx:id="lblResultPark"
-                                   style="-fx-font-size:13px; -fx-text-fill:#1A1A1A;"
+                                   style="-fx-font-size:13px; -fx-text-fill:-park-text;"
                                    GridPane.rowIndex="2" GridPane.columnIndex="1"/>
 
                             <Label text="Visitors:"   styleClass="lbl-detail-key"
                                    GridPane.rowIndex="3" GridPane.columnIndex="0"/>
                             <Label fx:id="lblResultVisitors"
-                                   style="-fx-font-size:13px; -fx-text-fill:#1A1A1A;"
+                                   style="-fx-font-size:13px; -fx-text-fill:-park-text;"
                                    GridPane.rowIndex="3" GridPane.columnIndex="1"/>
 
                             <Label text="Order Type:" styleClass="lbl-detail-key"
                                    GridPane.rowIndex="4" GridPane.columnIndex="0"/>
                             <Label fx:id="lblResultType"
-                                   style="-fx-font-size:13px; -fx-text-fill:#1A1A1A;"
+                                   style="-fx-font-size:13px; -fx-text-fill:-park-text;"
                                    GridPane.rowIndex="4" GridPane.columnIndex="1"/>
                         </GridPane>
 
@@ -154,9 +155,9 @@
 
                         <HBox spacing="12" alignment="CENTER_LEFT">
                             <Label text="Payment Due:"
-                                   style="-fx-font-weight:bold; -fx-font-size:14px; -fx-text-fill:#212121;"/>
+                                   style="-fx-font-weight:bold; -fx-font-size:14px; -fx-text-fill:-park-text;"/>
                             <Label fx:id="lblResultPayment"
-                                   style="-fx-font-size:24px; -fx-font-weight:bold; -fx-text-fill:#2E7D32;"/>
+                                   style="-fx-font-size:24px; -fx-font-weight:bold; -fx-text-fill:-park-pine;"/>
                         </HBox>
                         <Label fx:id="lblResultNote" styleClass="lbl-hint" wrapText="true"/>
                     </VBox>
@@ -179,16 +180,16 @@
                             <TextField fx:id="txtExitVisitorId" prefWidth="200"
                                        promptText="Government ID"
                                        style="-fx-background-radius:8; -fx-border-radius:8;
-                                              -fx-border-color:#B0BEC5; -fx-border-width:1.5;
+                                              -fx-border-color:-park-border; -fx-border-width:1.5;
                                               -fx-padding:8 10; -fx-font-size:13px;"/>
                         </VBox>
                         <VBox spacing="6">
                             <Label text="Park *" styleClass="field-label"/>
                             <ComboBox fx:id="cboExitPark" prefWidth="200"
                                       promptText="Select park…"
-                                      style="-fx-background-color:white;
+                                      style="-fx-background-color:-park-surface;
                                              -fx-background-radius:8;
-                                             -fx-border-color:#B0BEC5;
+                                             -fx-border-color:-park-border;
                                              -fx-border-radius:8;
                                              -fx-border-width:1.5;
                                              -fx-font-size:13px;

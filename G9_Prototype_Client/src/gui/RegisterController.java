@@ -33,6 +33,13 @@ public class RegisterController {
     @FXML private TextField txtFamilySize;
     @FXML private TextField txtCreditCard;
     @FXML private Label     lblError;
+    @FXML private Button    btnTheme;
+
+    /** wires the header dark-mode toggle so the theme can be switched from this screen too. */
+    @FXML
+    public void initialize() {
+        ThemeManager.installToggle(btnTheme);
+    }
 
     /**
      * shows/hides the subscriber fields when the Family Member Club checkbox is toggled.
@@ -179,7 +186,9 @@ public class RegisterController {
     public void start(Stage stage) throws Exception {
         Parent root = FXMLLoader.load(getClass().getResource("/gui/RegisterFrame.fxml"));
         stage.setTitle("GoNature — Create Account");
-        stage.setScene(new Scene(root));
+        Scene scene = new Scene(root);
+        ThemeManager.register(scene);
+        stage.setScene(scene);
         stage.show();
     }
 }

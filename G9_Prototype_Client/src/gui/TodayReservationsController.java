@@ -31,6 +31,7 @@ public class TodayReservationsController {
     @FXML private Label lblDate;
     @FXML private Label lblCount;
     @FXML private Label lblError;
+    @FXML private Button btnTheme;
 
     @FXML private TableView<OrderDetail>            tableOrders;
     @FXML private TableColumn<OrderDetail, Integer> colId;
@@ -46,6 +47,7 @@ public class TodayReservationsController {
      */
     @FXML
     public void initialize() {
+        ThemeManager.installToggle(btnTheme);
         UserSession s = UserSession.getInstance();
         Integer parkId = s != null ? s.getParkId() : null;
         lblParkName.setText(parkId != null ? "Park #" + parkId : "No Park Assigned");
@@ -64,6 +66,7 @@ public class TodayReservationsController {
             new SimpleStringProperty(d.getValue().getOrderType()));
         colStatus.setCellValueFactory(d ->
             new SimpleStringProperty(d.getValue().getStatus()));
+        UiCells.applyStatusChip(colStatus);
         colEmail.setCellValueFactory(d ->
             new SimpleStringProperty(d.getValue().getEmail()));
 
@@ -115,7 +118,9 @@ public class TodayReservationsController {
         Parent root = FXMLLoader.load(
             getClass().getResource("/gui/TodayReservationsFrame.fxml"));
         stage.setTitle("GoNature — Today's Reservations");
-        stage.setScene(new Scene(root));
+        Scene scene = new Scene(root);
+        ThemeManager.register(scene);
+        stage.setScene(scene);
         stage.show();
     }
 }

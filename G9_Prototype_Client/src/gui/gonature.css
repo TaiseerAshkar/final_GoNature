@@ -1,181 +1,249 @@
 /* ============================================================
-   GoNature — Application Stylesheet  v3  (Modern Redesign)
+   GoNature — Application Stylesheet  v4  (Topographic / NPS Wayfinding)
 
-   Palette
-     Green-900  : #1B5E20   (darkest — pressed, accents)
-     Green-800  : #2E7D32   (primary anchor)
-     Green-700  : #388E3C   (hover on primary)
-     Green-600  : #43A047   (gradient high-end)
-     Teal-700   : #00796B   (navigation / view)
-     Teal-600   : #00897B   (teal hover)
-     Blue-800   : #1565C0   (info / refresh)
-     Blue-700   : #1976D2   (blue hover)
-     Amber-700  : #E65100   (warning / check-in)
-     Red-800    : #C62828   (danger / cancel)
-     Red-700    : #D32F2F   (danger hover)
-     Slate      : #546E7A   (secondary / detail keys)
-     Background : #F0F4F0   (warm off-white screen)
-     Surface    : #FFFFFF   (cards / panels)
-     Text-high  : #1A1A1A   (primary text)
-     Text-mid   : #424242   (secondary text)
-     Text-muted : #78909C   (hints / placeholders)
-     Border     : #E0E0E0   (subtle dividers)
+   Concept: vintage national-park trail map + park signage.
+     • Warm parchment surfaces, faint contour-line borders
+     • Deep pine headers with a trail-marker gold accent line
+     • Signage-style condensed headings (Bahnschrift)
+     • Earthy semantic colours (pine / olive / gold / lake / rust)
 
-   Note: JavaFX CSS does not support `transition`. State changes
-   (hover, pressed, focused) are handled via pseudo-class rules.
+   Colour tokens are defined once on .root as JavaFX "looked-up
+   colours" and referenced everywhere below, so the whole palette
+   can be retuned from a single place.
+
+   Note: JavaFX CSS has no `transition`; hover/pressed/focus states
+   are handled with pseudo-class rules (and Java animations elsewhere).
    ============================================================ */
 
 
-/* ── Global / Root ──────────────────────────────────────────── */
+/* ── Global / Root + colour tokens ──────────────────────────── */
 .root {
-    -fx-font-family: "Segoe UI", "Arial", sans-serif;
+    /* surfaces */
+    -park-parchment:    #F3EFE3;   /* screen background (warm paper) */
+    -park-parchment-2:  #E9E2CF;   /* gradient low-end */
+    -park-surface:      #FCFBF6;   /* cards / panels (warm white) */
+    -park-surface-2:    #F4F0E4;   /* inset rows / subtle fills */
+
+    /* greens */
+    -park-pine:         #2E6B40;   /* primary anchor */
+    -park-pine-700:     #36794A;   /* primary hover */
+    -park-pine-900:     #16301F;   /* primary pressed */
+    -park-pine-dark:    #1F3D2B;   /* header bar / dark pine */
+    -park-olive:        #5B6B36;   /* secondary / neutral-earth */
+    -park-olive-700:    #6B7C41;
+    -park-sage:         #DCE5CE;   /* selection tint */
+    -park-sage-2:       #C9D6B3;
+
+    /* accents */
+    -park-gold:         #C8962E;   /* trail-marker accent */
+    -park-gold-700:     #B6841F;
+    -park-gold-900:     #8F6815;
+    -park-lake:         #2B6E8F;   /* info / navigation (muted lake blue) */
+    -park-lake-700:     #246080;
+    -park-lake-900:     #1A4860;
+    -park-rust:         #A23B23;   /* danger (earthy red) */
+    -park-rust-700:     #8C311C;
+    -park-rust-900:     #6E2514;
+    -park-amber:        #B5791F;   /* warning */
+    -park-amber-700:    #9E6717;
+
+    /* lines + text */
+    -park-line:         #E4DDC9;   /* contour line / soft divider */
+    -park-border:       #D9D2BE;   /* card / field borders */
+    -park-text:         #20271F;   /* primary text (warm near-black) */
+    -park-text-mid:     #4F5A4A;   /* secondary text (olive-grey) */
+    -park-text-muted:   #8A8F7E;   /* hints / placeholders */
+
+    /* typography */
+    -park-font-body:    "Segoe UI", "Inter", "Arial", sans-serif;
+    -park-font-display: "Bahnschrift SemiBold", "Bahnschrift",
+                        "Segoe UI Semibold", "Arial Narrow", sans-serif;
+
+    -fx-font-family: -park-font-body;
     -fx-font-size: 13px;
-    -fx-background-color: #F0F4F0;
+    -fx-background-color: -park-parchment;
 }
 
 .screen-bg {
-    -fx-background-color: #F0F4F0;
+    -fx-background-color:
+        linear-gradient(to bottom right, -park-parchment 0%, -park-parchment-2 100%);
 }
 
 
 /* ── Header bar ─────────────────────────────────────────────── */
 .header-bar {
-    -fx-background-color: linear-gradient(to right, #1B5E20, #2E7D32, #388E3C);
+    -fx-background-color: linear-gradient(to right, -park-pine-dark, #25492F, -park-pine);
     -fx-padding: 13 22;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.30), 10, 0, 0, 3);
+    /* trail-marker gold accent line under the bar */
+    -fx-border-color: transparent transparent -park-gold transparent;
+    -fx-border-width: 0 0 3 0;
+    -fx-effect: dropshadow(gaussian, rgba(20,32,24,0.34), 12, 0, 0, 3);
 }
 
 .header-logo {
-    -fx-font-size: 17px;
+    -fx-font-family: -park-font-display;
+    -fx-font-size: 19px;
     -fx-font-weight: bold;
-    -fx-text-fill: white;
+    -fx-text-fill: #F5F1E4;
 }
 
 .header-subtitle {
     -fx-font-size: 12px;
-    -fx-text-fill: rgba(255,255,255,0.72);
+    -fx-text-fill: rgba(245,241,228,0.74);
 }
 
+/* canvas "field tag" pill */
 .header-badge {
-    -fx-background-color: rgba(0,0,0,0.24);
-    -fx-text-fill: #C8E6C9;
-    -fx-background-radius: 20;
+    -fx-background-color: rgba(0,0,0,0.26);
+    -fx-text-fill: #EBDFA8;
+    -fx-background-radius: 6;
     -fx-padding: 4 12;
     -fx-font-size: 11px;
     -fx-font-weight: bold;
+    -fx-border-color: rgba(200,150,46,0.55);
+    -fx-border-radius: 6;
+    -fx-border-width: 1;
+}
+
+/* SESSION TIMER — field-gauge pill in the header showing elapsed login time. */
+.header-timer {
+    -fx-background-color: rgba(0,0,0,0.26);
+    -fx-text-fill: #E9E2CF;
+    -fx-background-radius: 6;
+    -fx-padding: 4 12;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-font-family: "Consolas", "Menlo", monospace;
+    -fx-border-color: rgba(255,255,255,0.14);
+    -fx-border-radius: 6;
+    -fx-border-width: 1;
 }
 
 
 /* ── Buttons — shared base ──────────────────────────────────── */
 .btn-primary, .btn-teal, .btn-blue, .btn-warning,
-.btn-danger, .btn-secondary, .btn-action {
+.btn-danger, .btn-secondary, .btn-action, .btn-marker {
     -fx-font-weight: bold;
     -fx-font-size: 13px;
-    -fx-background-radius: 9;
+    -fx-background-radius: 8;
     -fx-padding: 9 22;
     -fx-cursor: hand;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 5, 0, 0, 2);
+    -fx-effect: dropshadow(gaussian, rgba(31,61,43,0.20), 5, 0, 0, 2);
 }
 
-/* PRIMARY — green (Book, Login, Confirm) */
+/* PRIMARY — pine (Book, Login, Confirm) */
 .btn-primary {
-    -fx-background-color: #2E7D32;
+    -fx-background-color: -park-pine;
     -fx-text-fill: white;
-    -fx-effect: dropshadow(gaussian, rgba(46,125,50,0.38), 7, 0, 0, 2);
+    -fx-effect: dropshadow(gaussian, rgba(46,107,64,0.40), 7, 0, 0, 2);
 }
 .btn-primary:hover {
-    -fx-background-color: #388E3C;
-    -fx-effect: dropshadow(gaussian, rgba(46,125,50,0.55), 12, 0, 0, 3);
+    -fx-background-color: -park-pine-700;
+    -fx-effect: dropshadow(gaussian, rgba(46,107,64,0.55), 12, 0, 0, 3);
 }
 .btn-primary:pressed {
-    -fx-background-color: #1B5E20;
+    -fx-background-color: -park-pine-900;
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 3, 0, 0, 1);
 }
 .btn-primary:focused {
-    -fx-effect: dropshadow(gaussian, rgba(46,125,50,0.70), 10, 0, 0, 0);
+    -fx-effect: dropshadow(gaussian, rgba(200,150,46,0.70), 10, 0, 0, 0);
 }
 
-/* TEAL — view / navigation */
+/* TEAL slot — repurposed to olive (view / navigation) */
 .btn-teal {
-    -fx-background-color: #00796B;
+    -fx-background-color: -park-olive;
     -fx-text-fill: white;
-    -fx-effect: dropshadow(gaussian, rgba(0,121,107,0.35), 7, 0, 0, 2);
+    -fx-effect: dropshadow(gaussian, rgba(91,107,54,0.36), 7, 0, 0, 2);
 }
 .btn-teal:hover {
-    -fx-background-color: #00897B;
-    -fx-effect: dropshadow(gaussian, rgba(0,121,107,0.52), 12, 0, 0, 3);
+    -fx-background-color: -park-olive-700;
+    -fx-effect: dropshadow(gaussian, rgba(91,107,54,0.52), 12, 0, 0, 3);
 }
 .btn-teal:pressed {
-    -fx-background-color: #004D40;
+    -fx-background-color: #46541F;
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 3, 0, 0, 1);
 }
 
-/* BLUE — refresh / load / info */
+/* BLUE slot — lake blue (refresh / load / info) */
 .btn-blue {
-    -fx-background-color: #1565C0;
+    -fx-background-color: -park-lake;
     -fx-text-fill: white;
-    -fx-effect: dropshadow(gaussian, rgba(21,101,192,0.35), 7, 0, 0, 2);
+    -fx-effect: dropshadow(gaussian, rgba(43,110,143,0.36), 7, 0, 0, 2);
 }
 .btn-blue:hover {
-    -fx-background-color: #1976D2;
-    -fx-effect: dropshadow(gaussian, rgba(21,101,192,0.52), 12, 0, 0, 3);
+    -fx-background-color: #3180A2;
+    -fx-effect: dropshadow(gaussian, rgba(43,110,143,0.52), 12, 0, 0, 3);
 }
 .btn-blue:pressed {
-    -fx-background-color: #0D47A1;
+    -fx-background-color: -park-lake-900;
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 3, 0, 0, 1);
 }
 
-/* WARNING — check-in / update */
+/* WARNING — amber (check-in / update) */
 .btn-warning {
-    -fx-background-color: #E65100;
+    -fx-background-color: -park-amber;
     -fx-text-fill: white;
-    -fx-effect: dropshadow(gaussian, rgba(230,81,0,0.35), 7, 0, 0, 2);
+    -fx-effect: dropshadow(gaussian, rgba(181,121,31,0.36), 7, 0, 0, 2);
 }
 .btn-warning:hover {
-    -fx-background-color: #F57C00;
-    -fx-effect: dropshadow(gaussian, rgba(230,81,0,0.52), 12, 0, 0, 3);
+    -fx-background-color: #CB8A2A;
+    -fx-effect: dropshadow(gaussian, rgba(181,121,31,0.52), 12, 0, 0, 3);
 }
 .btn-warning:pressed {
-    -fx-background-color: #BF360C;
+    -fx-background-color: -park-amber-700;
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 3, 0, 0, 1);
 }
 
-/* DANGER — cancel / exit / delete */
+/* MARKER — trail-marker gold (highlight CTAs) */
+.btn-marker {
+    -fx-background-color: -park-gold;
+    -fx-text-fill: #2A2410;
+    -fx-effect: dropshadow(gaussian, rgba(200,150,46,0.42), 7, 0, 0, 2);
+}
+.btn-marker:hover {
+    -fx-background-color: #D9A63B;
+    -fx-effect: dropshadow(gaussian, rgba(200,150,46,0.58), 12, 0, 0, 3);
+}
+.btn-marker:pressed {
+    -fx-background-color: -park-gold-700;
+}
+
+/* DANGER — rust (cancel / exit / delete) */
 .btn-danger {
-    -fx-background-color: #C62828;
+    -fx-background-color: -park-rust;
     -fx-text-fill: white;
-    -fx-effect: dropshadow(gaussian, rgba(198,40,40,0.35), 7, 0, 0, 2);
+    -fx-effect: dropshadow(gaussian, rgba(162,59,35,0.36), 7, 0, 0, 2);
 }
 .btn-danger:hover {
-    -fx-background-color: #D32F2F;
-    -fx-effect: dropshadow(gaussian, rgba(198,40,40,0.52), 12, 0, 0, 3);
+    -fx-background-color: #B8472C;
+    -fx-effect: dropshadow(gaussian, rgba(162,59,35,0.52), 12, 0, 0, 3);
 }
 .btn-danger:pressed {
-    -fx-background-color: #B71C1C;
+    -fx-background-color: -park-rust-900;
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 3, 0, 0, 1);
 }
 
-/* SECONDARY — neutral / close / done */
+/* SECONDARY — bark/olive-grey (neutral / close / done) */
 .btn-secondary {
-    -fx-background-color: #546E7A;
+    -fx-background-color: #6B6A52;
     -fx-text-fill: white;
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.22), 6, 0, 0, 2);
 }
 .btn-secondary:hover {
-    -fx-background-color: #607D8B;
+    -fx-background-color: #7B795E;
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.34), 10, 0, 0, 3);
 }
 .btn-secondary:pressed {
-    -fx-background-color: #37474F;
+    -fx-background-color: #54533F;
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.14), 3, 0, 0, 1);
 }
 
 /* OUTLINE — transparent, used in header */
 .btn-outline {
     -fx-background-color: transparent;
-    -fx-text-fill: rgba(255,255,255,0.88);
-    -fx-border-color: rgba(200,230,201,0.65);
-    -fx-border-radius: 7;
+    -fx-text-fill: rgba(245,241,228,0.90);
+    -fx-border-color: rgba(200,150,46,0.65);
+    -fx-border-radius: 6;
     -fx-border-width: 1.5;
     -fx-font-weight: bold;
     -fx-font-size: 12px;
@@ -183,18 +251,18 @@
     -fx-cursor: hand;
 }
 .btn-outline:hover {
-    -fx-background-color: rgba(255,255,255,0.15);
-    -fx-border-color: rgba(255,255,255,0.90);
-    -fx-text-fill: white;
+    -fx-background-color: rgba(200,150,46,0.18);
+    -fx-border-color: -park-gold;
+    -fx-text-fill: #FBF3DD;
 }
 .btn-outline:pressed {
-    -fx-background-color: rgba(255,255,255,0.08);
+    -fx-background-color: rgba(0,0,0,0.10);
 }
 
 /* LINK */
 .btn-link {
     -fx-background-color: transparent;
-    -fx-text-fill: #2E7D32;
+    -fx-text-fill: -park-pine;
     -fx-font-weight: bold;
     -fx-font-size: 12px;
     -fx-underline: true;
@@ -204,35 +272,33 @@
     -fx-effect: none;
 }
 .btn-link:hover {
-    -fx-text-fill: #1B5E20;
+    -fx-text-fill: -park-gold-900;
 }
 
-/* SMALL ACTION */
+/* SMALL ACTION — lake */
 .btn-action {
-    -fx-background-color: #1565C0;
+    -fx-background-color: -park-lake;
     -fx-text-fill: white;
     -fx-font-size: 12px;
-    -fx-background-radius: 7;
+    -fx-background-radius: 6;
     -fx-padding: 7 18;
-    -fx-effect: dropshadow(gaussian, rgba(21,101,192,0.30), 5, 0, 0, 2);
+    -fx-effect: dropshadow(gaussian, rgba(43,110,143,0.30), 5, 0, 0, 2);
 }
 .btn-action:hover {
-    -fx-background-color: #1976D2;
-    -fx-effect: dropshadow(gaussian, rgba(21,101,192,0.48), 9, 0, 0, 3);
+    -fx-background-color: #3180A2;
+    -fx-effect: dropshadow(gaussian, rgba(43,110,143,0.48), 9, 0, 0, 3);
 }
 .btn-action:pressed {
-    -fx-background-color: #0D47A1;
+    -fx-background-color: -park-lake-900;
 }
 
-/* GHOST — subtle green outline that stays legible on white / light card
-   backgrounds, where .btn-outline (white text, for the green header) would be
-   invisible. Use for small secondary actions inside cards, e.g. a Refresh button. */
+/* GHOST — subtle pine outline for small actions inside cards. */
 .btn-ghost {
     -fx-background-color: transparent;
-    -fx-text-fill: #2E7D32;
-    -fx-border-color: #A5D6A7;
-    -fx-border-radius: 7;
-    -fx-background-radius: 7;
+    -fx-text-fill: -park-pine;
+    -fx-border-color: -park-sage-2;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
     -fx-border-width: 1.5;
     -fx-font-weight: bold;
     -fx-font-size: 11px;
@@ -240,17 +306,17 @@
     -fx-cursor: hand;
 }
 .btn-ghost:hover {
-    -fx-background-color: #E8F5E9;
-    -fx-border-color: #2E7D32;
+    -fx-background-color: -park-sage;
+    -fx-border-color: -park-pine;
 }
 .btn-ghost:pressed {
-    -fx-background-color: #C8E6C9;
+    -fx-background-color: -park-sage-2;
 }
 
 /* Disabled state for all button types */
 .btn-primary:disabled, .btn-teal:disabled, .btn-blue:disabled,
 .btn-warning:disabled, .btn-danger:disabled, .btn-secondary:disabled,
-.btn-action:disabled, .btn-ghost:disabled {
+.btn-action:disabled, .btn-ghost:disabled, .btn-marker:disabled {
     -fx-opacity: 0.42;
     -fx-effect: none;
 }
@@ -258,21 +324,22 @@
 
 /* ── Cards / panels ─────────────────────────────────────────── */
 .card {
-    -fx-background-color: white;
-    -fx-background-radius: 14;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.10), 20, 0, 0, 4);
+    -fx-background-color: -park-surface;
+    -fx-background-radius: 16;
+    -fx-effect: dropshadow(gaussian, rgba(31,61,43,0.12), 20, 0, 0, 5);
     -fx-padding: 20;
-    -fx-border-color: #2E7D32 transparent transparent transparent;
-    -fx-border-width: 3.5 0 0 0;
-    -fx-border-radius: 14 14 0 0;
+    /* trail-blaze gold accent down the left edge */
+    -fx-border-color: transparent transparent transparent -park-gold;
+    -fx-border-width: 0 0 0 4;
+    -fx-border-radius: 16 0 0 16;
 }
 
 .login-card {
-    -fx-background-color: white;
+    -fx-background-color: -park-surface;
     -fx-background-radius: 18;
-    -fx-effect: dropshadow(gaussian, rgba(46,125,50,0.18), 34, 0, 0, 8);
+    -fx-effect: dropshadow(gaussian, rgba(31,61,43,0.20), 34, 0, 0, 10);
     -fx-padding: 36;
-    -fx-border-color: #2E7D32 transparent transparent transparent;
+    -fx-border-color: -park-pine transparent transparent transparent;
     -fx-border-width: 4 0 0 0;
     -fx-border-radius: 18 18 0 0;
 }
@@ -280,116 +347,119 @@
 
 /* ── Typography ─────────────────────────────────────────────── */
 .login-title {
-    -fx-font-size: 38px;
+    -fx-font-family: -park-font-display;
+    -fx-font-size: 40px;
     -fx-font-weight: bold;
-    -fx-text-fill: #2E7D32;
-    -fx-effect: dropshadow(gaussian, rgba(46,125,50,0.18), 2, 0, 0, 1);
+    -fx-text-fill: -park-pine-dark;
+    -fx-effect: dropshadow(gaussian, rgba(31,61,43,0.18), 2, 0, 0, 1);
 }
 
 .login-subtitle {
     -fx-font-size: 13px;
-    -fx-text-fill: #607D8B;
+    -fx-text-fill: -park-text-mid;
 }
 
 .login-card-title {
-    -fx-font-size: 20px;
+    -fx-font-family: -park-font-display;
+    -fx-font-size: 21px;
     -fx-font-weight: bold;
-    -fx-text-fill: #1B5E20;
+    -fx-text-fill: -park-pine-dark;
 }
 
 .screen-title {
-    -fx-font-size: 22px;
+    -fx-font-family: -park-font-display;
+    -fx-font-size: 24px;
     -fx-font-weight: bold;
-    -fx-text-fill: #1B5E20;
+    -fx-text-fill: -park-pine-dark;
 }
 
 .screen-subtitle {
     -fx-font-size: 13px;
-    -fx-text-fill: #546E7A;
+    -fx-text-fill: -park-text-mid;
     -fx-line-spacing: 3;
 }
 
 .card-title {
-    -fx-font-size: 15px;
+    -fx-font-family: -park-font-display;
+    -fx-font-size: 16px;
     -fx-font-weight: bold;
-    -fx-text-fill: #1B5E20;
+    -fx-text-fill: -park-pine-dark;
 }
 
 .section-label {
-    -fx-font-size: 12px;
+    -fx-font-size: 11px;
     -fx-font-weight: bold;
-    -fx-text-fill: #2E7D32;
+    -fx-text-fill: -park-gold-900;
 }
 
 
 /* ── Form fields ─────────────────────────────────────────────── */
 .field-label {
     -fx-font-weight: bold;
-    -fx-text-fill: #2E7D32;
+    -fx-text-fill: -park-pine;
     -fx-font-size: 12px;
 }
 
 .text-field {
-    -fx-background-color: white;
+    -fx-background-color: -park-surface;
     -fx-background-radius: 8;
-    -fx-border-color: #CFD8DC;
+    -fx-border-color: -park-border;
     -fx-border-radius: 8;
     -fx-border-width: 1.5;
     -fx-padding: 8 10;
     -fx-font-size: 13px;
-    -fx-prompt-text-fill: #B0BEC5;
+    -fx-text-fill: -park-text;
+    -fx-prompt-text-fill: -park-text-muted;
 }
 .text-field:focused {
-    -fx-border-color: #2E7D32;
-    -fx-effect: dropshadow(gaussian, rgba(46,125,50,0.24), 8, 0, 0, 0);
+    -fx-border-color: -park-gold;
+    -fx-effect: dropshadow(gaussian, rgba(200,150,46,0.28), 8, 0, 0, 0);
 }
 .text-field:hover {
-    -fx-border-color: #90A4AE;
+    -fx-border-color: #BFB79E;
 }
 
 .password-field {
-    -fx-background-color: white;
+    -fx-background-color: -park-surface;
     -fx-background-radius: 8;
-    -fx-border-color: #CFD8DC;
+    -fx-border-color: -park-border;
     -fx-border-radius: 8;
     -fx-border-width: 1.5;
     -fx-padding: 8 10;
     -fx-font-size: 13px;
-    -fx-prompt-text-fill: #B0BEC5;
+    -fx-text-fill: -park-text;
+    -fx-prompt-text-fill: -park-text-muted;
 }
 .password-field:focused {
-    -fx-border-color: #2E7D32;
-    -fx-effect: dropshadow(gaussian, rgba(46,125,50,0.24), 8, 0, 0, 0);
+    -fx-border-color: -park-gold;
+    -fx-effect: dropshadow(gaussian, rgba(200,150,46,0.28), 8, 0, 0, 0);
 }
 .password-field:hover {
-    -fx-border-color: #90A4AE;
+    -fx-border-color: #BFB79E;
 }
 
 
 /* ── Status / feedback labels ───────────────────────────────── */
 .lbl-error {
-    -fx-text-fill: #C62828;
+    -fx-text-fill: -park-rust;
     -fx-font-size: 12px;
     -fx-font-weight: bold;
 }
 
 .lbl-success {
-    -fx-text-fill: #2E7D32;
+    -fx-text-fill: -park-pine;
     -fx-font-weight: bold;
     -fx-font-size: 12px;
 }
 
-/* WARNING — orange. Completes the success / error / warning trio so every
-   status message in the app draws from the same three colours. */
 .lbl-warning {
-    -fx-text-fill: #E65100;
+    -fx-text-fill: -park-amber;
     -fx-font-weight: bold;
     -fx-font-size: 12px;
 }
 
-/* LOADING — muted teal italic, shown while a request is in flight ("Loading…"). */
 .lbl-loading {
-    -fx-text-fill: #00796B;
+    -fx-text-fill: -park-lake;
     -fx-font-weight: bold;
     -fx-font-size: 12px;
     -fx-font-style: italic;
@@ -397,12 +467,12 @@
 
 .lbl-hint {
     -fx-font-size: 11px;
-    -fx-text-fill: #78909C;
+    -fx-text-fill: -park-text-muted;
 }
 
 /* EMPTY STATE — friendly centred message shown when a table or list has no rows. */
 .empty-state {
-    -fx-text-fill: #90A4AE;
+    -fx-text-fill: -park-text-muted;
     -fx-font-size: 13px;
     -fx-font-style: italic;
     -fx-alignment: center;
@@ -413,54 +483,97 @@
 .lbl-price {
     -fx-font-size: 14px;
     -fx-font-weight: bold;
-    -fx-text-fill: #00796B;
+    -fx-text-fill: -park-gold-900;
 }
 
 .lbl-detail-key {
-    -fx-text-fill: #546E7A;
+    -fx-text-fill: -park-text-mid;
     -fx-font-weight: bold;
     -fx-font-size: 12px;
+}
+
+
+/* ── Status chips (dot-style pills for order states) ─────────── */
+.chip {
+    -fx-background-radius: 20;
+    -fx-padding: 3 11;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+}
+.chip-confirmed { -fx-background-color: -park-sage;  -fx-text-fill: -park-pine;       }
+.chip-pending   { -fx-background-color: #F3E6C8;     -fx-text-fill: #8A6516;          }
+.chip-completed { -fx-background-color: #E4E1D4;     -fx-text-fill: -park-olive;      }
+.chip-cancelled { -fx-background-color: #ECD6CE;     -fx-text-fill: -park-rust;       }
+.chip-waiting   { -fx-background-color: #D6E4EA;     -fx-text-fill: -park-lake-900;   }
+
+
+/* ── Info strips (home-screen summary banners) ───────────────── */
+/* PINE strip — "upcoming reservations" on the visitor home. */
+.info-strip {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -park-pine;
+    -fx-background-color: -park-sage;
+    -fx-background-radius: 8;
+    -fx-padding: 8 14;
+}
+/* LAKE strip — live "today's stats" on the employee home. */
+.stat-strip {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -park-lake-900;
+    -fx-background-color: #DCEAF0;
+    -fx-background-radius: 8;
+    -fx-padding: 10 14;
+}
+.dark-mode .info-strip {
+    -fx-text-fill: #BFE0C2;
+    -fx-background-color: -park-sage;
+}
+.dark-mode .stat-strip {
+    -fx-text-fill: #B7D7E4;
+    -fx-background-color: #1F3340;
 }
 
 
 /* ── Help link ───────────────────────────────────────────────── */
 .help-link {
     -fx-font-size: 11px;
-    -fx-text-fill: #00796B;
+    -fx-text-fill: -park-lake;
     -fx-underline: true;
     -fx-cursor: hand;
     -fx-padding: 4 0 0 0;
 }
 .help-link:hover {
-    -fx-text-fill: #004D40;
+    -fx-text-fill: -park-lake-900;
 }
 
 
 /* ── Table view ──────────────────────────────────────────────── */
 .table-view {
-    -fx-background-color: white;
+    -fx-background-color: -park-surface;
     -fx-background-radius: 12;
-    -fx-border-color: #E0E0E0;
+    -fx-border-color: -park-border;
     -fx-border-radius: 12;
     -fx-border-width: 1;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 12, 0, 0, 3);
+    -fx-effect: dropshadow(gaussian, rgba(31,61,43,0.09), 12, 0, 0, 3);
 }
 
 .table-view .column-header-background {
-    -fx-background-color: linear-gradient(to right, #1B5E20, #2E7D32, #388E3C);
+    -fx-background-color: linear-gradient(to right, -park-pine-dark, #25492F, -park-pine);
     -fx-background-radius: 12 12 0 0;
 }
 
 .table-view .column-header,
 .table-view .filler {
     -fx-background-color: transparent;
-    -fx-border-color: rgba(255,255,255,0.18);
+    -fx-border-color: rgba(255,255,255,0.16);
     -fx-border-width: 0 1 0 0;
     -fx-size: 40;
 }
 
 .table-view .column-header .label {
-    -fx-text-fill: white;
+    -fx-text-fill: #F5F1E4;
     -fx-font-weight: bold;
     -fx-font-size: 12px;
     -fx-alignment: CENTER_LEFT;
@@ -471,31 +584,31 @@
 }
 
 .table-row-cell {
-    -fx-background-color: white;
-    -fx-border-color: #F5F5F5;
+    -fx-background-color: -park-surface;
+    -fx-border-color: #EFEADC;
     -fx-border-width: 0 0 1 0;
     -fx-cell-size: 38px;
 }
 
 .table-row-cell:odd {
-    -fx-background-color: #F7FAF7;
+    -fx-background-color: -park-surface-2;
 }
 
 .table-row-cell:hover {
-    -fx-background-color: #E8F5E9;
+    -fx-background-color: -park-sage;
 }
 
 .table-row-cell:selected {
-    -fx-background-color: linear-gradient(to right, #A5D6A7, #C8E6C9);
+    -fx-background-color: linear-gradient(to right, -park-sage-2, -park-sage);
 }
 
 .table-row-cell:selected .text {
-    -fx-fill: #1B5E20;
+    -fx-fill: -park-pine-dark;
     -fx-font-weight: bold;
 }
 
 .table-view .placeholder .label {
-    -fx-text-fill: #9E9E9E;
+    -fx-text-fill: -park-text-muted;
     -fx-font-style: italic;
     -fx-font-size: 12px;
 }
@@ -512,8 +625,8 @@
     -fx-background-color: transparent;
     -fx-padding: 8 6;
     -fx-font-size: 12px;
-    -fx-text-fill: #424242;
-    -fx-border-color: transparent transparent #EEF2EE transparent;
+    -fx-text-fill: -park-text-mid;
+    -fx-border-color: transparent transparent #EDE7D7 transparent;
     -fx-border-width: 0 0 1 0;
 }
 
@@ -522,13 +635,13 @@
 }
 
 .list-cell:hover {
-    -fx-background-color: #E8F5E9;
+    -fx-background-color: -park-sage;
     -fx-background-radius: 6;
 }
 
 .list-cell:selected {
-    -fx-background-color: linear-gradient(to right, #C8E6C9, #DCEDC8);
-    -fx-text-fill: #1B5E20;
+    -fx-background-color: linear-gradient(to right, -park-sage, #E7EDD8);
+    -fx-text-fill: -park-pine-dark;
     -fx-background-radius: 6;
 }
 
@@ -539,8 +652,6 @@
 
 
 /* ── Notification inbox ──────────────────────────────────────── */
-/* Each notification renders as its own soft card row so the inbox reads as a
-   tidy stack of messages rather than a plain bulleted list. */
 .notif-list {
     -fx-background-color: transparent;
     -fx-border-color: transparent;
@@ -548,19 +659,19 @@
 }
 
 .notif-list .list-cell {
-    -fx-background-color: #F7FAF7;
+    -fx-background-color: -park-surface-2;
     -fx-background-radius: 9;
-    -fx-border-color: #E8F5E9;
+    -fx-border-color: -park-line;
     -fx-border-radius: 9;
     -fx-border-width: 1;
     -fx-padding: 10 13;
     -fx-font-size: 12px;
-    -fx-text-fill: #37474F;
+    -fx-text-fill: -park-text-mid;
 }
 
 .notif-list .list-cell:filled:hover {
-    -fx-background-color: #E8F5E9;
-    -fx-border-color: #A5D6A7;
+    -fx-background-color: -park-sage;
+    -fx-border-color: -park-sage-2;
 }
 
 .notif-list .list-cell:empty {
@@ -571,67 +682,67 @@
 
 /* ── TextArea ────────────────────────────────────────────────── */
 .text-area {
-    -fx-background-color: white;
+    -fx-background-color: -park-surface;
     -fx-background-radius: 8;
-    -fx-border-color: #CFD8DC;
+    -fx-border-color: -park-border;
     -fx-border-radius: 8;
     -fx-border-width: 1.5;
     -fx-font-size: 12px;
     -fx-padding: 6;
 }
 .text-area:focused {
-    -fx-border-color: #2E7D32;
-    -fx-effect: dropshadow(gaussian, rgba(46,125,50,0.20), 7, 0, 0, 0);
+    -fx-border-color: -park-gold;
+    -fx-effect: dropshadow(gaussian, rgba(200,150,46,0.24), 7, 0, 0, 0);
 }
 .text-area .content {
-    -fx-background-color: white;
+    -fx-background-color: -park-surface;
     -fx-background-radius: 7;
 }
 
 
 /* ── Tab pane ────────────────────────────────────────────────── */
 .tab-pane {
-    -fx-background-color: #F0F4F0;
+    -fx-background-color: -park-parchment;
 }
 
 .tab-pane .tab-header-area {
-    -fx-background-color: #E8F5E9;
+    -fx-background-color: -park-surface-2;
     -fx-padding: 6 0 0 8;
 }
 
 .tab-pane .tab-header-background {
-    -fx-background-color: #E8F5E9;
+    -fx-background-color: -park-surface-2;
 }
 
 .tab-pane .tab {
-    -fx-background-color: #C8E6C9;
+    -fx-background-color: #E5DEC9;
     -fx-background-radius: 9 9 0 0;
     -fx-padding: 7 22;
     -fx-cursor: hand;
 }
 
 .tab-pane .tab:hover {
-    -fx-background-color: #B2DFDB;
+    -fx-background-color: -park-sage;
 }
 
 .tab-pane .tab:selected {
-    -fx-background-color: white;
-    -fx-effect: dropshadow(gaussian, rgba(46,125,50,0.12), 5, 0, 0, -1);
+    -fx-background-color: -park-surface;
+    -fx-effect: dropshadow(gaussian, rgba(31,61,43,0.12), 5, 0, 0, -1);
 }
 
 .tab-pane .tab .tab-label {
-    -fx-text-fill: #546E7A;
+    -fx-text-fill: -park-text-mid;
     -fx-font-size: 12px;
     -fx-font-weight: bold;
 }
 
 .tab-pane .tab:selected .tab-label {
-    -fx-text-fill: #1B5E20;
+    -fx-text-fill: -park-pine-dark;
 }
 
 .tab-pane .tab-content-area {
-    -fx-background-color: #F0F4F0;
-    -fx-border-color: #E0E0E0;
+    -fx-background-color: -park-parchment;
+    -fx-border-color: -park-border;
     -fx-border-width: 1 0 0 0;
 }
 
@@ -651,25 +762,25 @@
 /* ── ScrollBar ───────────────────────────────────────────────── */
 .scroll-bar:vertical .track,
 .scroll-bar:horizontal .track {
-    -fx-background-color: #EEEEEE;
+    -fx-background-color: #E9E2CF;
     -fx-background-radius: 4;
     -fx-border-color: transparent;
 }
 
 .scroll-bar:vertical .thumb,
 .scroll-bar:horizontal .thumb {
-    -fx-background-color: #BDBDBD;
+    -fx-background-color: #C3BBA1;
     -fx-background-radius: 4;
 }
 
 .scroll-bar:vertical .thumb:hover,
 .scroll-bar:horizontal .thumb:hover {
-    -fx-background-color: #9E9E9E;
+    -fx-background-color: #A99F80;
 }
 
 .scroll-bar:vertical .thumb:pressed,
 .scroll-bar:horizontal .thumb:pressed {
-    -fx-background-color: #757575;
+    -fx-background-color: -park-olive;
 }
 
 .scroll-bar .increment-button,
@@ -680,80 +791,78 @@
 
 .scroll-bar .increment-arrow,
 .scroll-bar .decrement-arrow {
-    -fx-background-color: #9E9E9E;
+    -fx-background-color: #A99F80;
 }
 
 
 /* ── ComboBox ────────────────────────────────────────────────── */
 .combo-box-base {
-    -fx-background-color: white;
+    -fx-background-color: -park-surface;
     -fx-background-radius: 8;
-    -fx-border-color: #CFD8DC;
+    -fx-border-color: -park-border;
     -fx-border-radius: 8;
     -fx-border-width: 1.5;
     -fx-padding: 2;
 }
 
 .combo-box-base:focused {
-    -fx-border-color: #2E7D32;
-    -fx-effect: dropshadow(gaussian, rgba(46,125,50,0.20), 6, 0, 0, 0);
+    -fx-border-color: -park-gold;
+    -fx-effect: dropshadow(gaussian, rgba(200,150,46,0.22), 6, 0, 0, 0);
 }
 
 .combo-box-base:hover {
-    -fx-border-color: #90A4AE;
+    -fx-border-color: #BFB79E;
 }
 
 .combo-box-base .arrow-button {
     -fx-background-color: transparent;
 }
 
-/* Selected-value display cell inside the button area */
 .combo-box-base .list-cell {
     -fx-padding: 5 8;
     -fx-background-color: transparent;
-    -fx-text-fill: #1A1A1A;
+    -fx-text-fill: -park-text;
     -fx-font-size: 13px;
 }
 
-/* Dropdown popup list cells */
 .combo-box-popup .list-cell {
     -fx-padding: 7 10;
-    -fx-background-color: white;
-    -fx-text-fill: #1A1A1A;
+    -fx-background-color: -park-surface;
+    -fx-text-fill: -park-text;
     -fx-font-size: 13px;
 }
 .combo-box-popup .list-cell:hover {
-    -fx-background-color: #E8F5E9;
-    -fx-text-fill: #1B5E20;
+    -fx-background-color: -park-sage;
+    -fx-text-fill: -park-pine-dark;
 }
 .combo-box-popup .list-cell:selected {
-    -fx-background-color: #C8E6C9;
-    -fx-text-fill: #1B5E20;
+    -fx-background-color: -park-sage-2;
+    -fx-text-fill: -park-pine-dark;
     -fx-font-weight: bold;
 }
 
 
 /* ── DatePicker ─────────────────────────────────────────────── */
 .date-picker {
-    -fx-background-color: white;
+    -fx-background-color: -park-surface;
     -fx-background-radius: 8;
-    -fx-border-color: #CFD8DC;
+    -fx-border-color: -park-border;
     -fx-border-radius: 8;
     -fx-border-width: 1.5;
 }
 
 .date-picker:focused {
-    -fx-border-color: #2E7D32;
-    -fx-effect: dropshadow(gaussian, rgba(46,125,50,0.20), 6, 0, 0, 0);
+    -fx-border-color: -park-gold;
+    -fx-effect: dropshadow(gaussian, rgba(200,150,46,0.22), 6, 0, 0, 0);
 }
 
 .date-picker:hover {
-    -fx-border-color: #90A4AE;
+    -fx-border-color: #BFB79E;
 }
 
 .date-picker .text-field {
     -fx-background-color: transparent;
-    -fx-text-fill: #1A1A1A;
+    -fx-text-fill: -park-text;
     -fx-font-size: 13px;
     -fx-padding: 6 8;
     -fx-border-color: transparent;
@@ -762,13 +871,13 @@
 
 /* DatePicker popup calendar */
 .date-picker-popup {
-    -fx-background-color: white;
+    -fx-background-color: -park-surface;
     -fx-background-radius: 12;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 18, 0, 0, 4);
+    -fx-effect: dropshadow(gaussian, rgba(31,61,43,0.20), 18, 0, 0, 4);
 }
 
 .date-picker-popup .month-year-pane {
-    -fx-background-color: #2E7D32;
+    -fx-background-color: -park-pine;
     -fx-background-radius: 12 12 0 0;
     -fx-padding: 6 10;
 }
@@ -790,42 +899,42 @@
 }
 
 .date-picker-popup .calendar-grid {
-    -fx-background-color: white;
+    -fx-background-color: -park-surface;
     -fx-padding: 4 8 8 8;
 }
 
 .date-picker-popup .day-cell {
     -fx-background-color: transparent;
     -fx-background-radius: 20;
-    -fx-text-fill: #424242;
+    -fx-text-fill: -park-text-mid;
     -fx-font-size: 12px;
     -fx-padding: 4;
 }
 
 .date-picker-popup .day-cell:hover {
-    -fx-background-color: #E8F5E9;
-    -fx-text-fill: #1B5E20;
+    -fx-background-color: -park-sage;
+    -fx-text-fill: -park-pine-dark;
 }
 
 .date-picker-popup .today .day-cell-label {
     -fx-font-weight: bold;
-    -fx-text-fill: #2E7D32;
+    -fx-text-fill: -park-gold-900;
 }
 
 .date-picker-popup .selected .day-cell-label {
-    -fx-background-color: #2E7D32;
+    -fx-background-color: -park-pine;
     -fx-background-radius: 20;
     -fx-text-fill: white;
     -fx-font-weight: bold;
 }
 
 .date-picker-popup .week-number-cell {
-    -fx-text-fill: #B0BEC5;
+    -fx-text-fill: #BFB79E;
     -fx-font-size: 10px;
 }
 
 .date-picker-popup .day-name-cell {
-    -fx-text-fill: #78909C;
+    -fx-text-fill: -park-text-muted;
     -fx-font-size: 11px;
     -fx-font-weight: bold;
 }
@@ -833,26 +942,26 @@
 
 /* ── Separator ───────────────────────────────────────────────── */
 .separator .line {
-    -fx-border-color: #E8F5E9;
+    -fx-border-color: -park-line;
     -fx-border-width: 1;
 }
 
 
 /* ── CheckBox ────────────────────────────────────────────────── */
 .check-box .box {
-    -fx-border-color: #B0BEC5;
+    -fx-border-color: #BCB39A;
     -fx-border-radius: 4;
     -fx-background-radius: 4;
-    -fx-background-color: white;
+    -fx-background-color: -park-surface;
 }
 
 .check-box:hover .box {
-    -fx-border-color: #2E7D32;
+    -fx-border-color: -park-pine;
 }
 
 .check-box:selected .box {
-    -fx-background-color: #2E7D32;
-    -fx-border-color: #2E7D32;
+    -fx-background-color: -park-pine;
+    -fx-border-color: -park-pine;
 }
 
 .check-box:selected .mark {
@@ -862,72 +971,172 @@
 
 /* ── RadioButton ─────────────────────────────────────────────── */
 .radio-button .radio {
-    -fx-border-color: #B0BEC5;
-    -fx-background-color: white;
+    -fx-border-color: #BCB39A;
+    -fx-background-color: -park-surface;
 }
 
 .radio-button:hover .radio {
-    -fx-border-color: #2E7D32;
+    -fx-border-color: -park-pine;
 }
 
 .radio-button:selected .radio {
-    -fx-border-color: #2E7D32;
+    -fx-border-color: -park-pine;
 }
 
 .radio-button:selected .dot {
-    -fx-background-color: #2E7D32;
+    -fx-background-color: -park-pine;
 }
 
 
 /* ── Charts ──────────────────────────────────────────────────── */
 .chart {
-    -fx-background-color: white;
+    -fx-background-color: -park-surface;
     -fx-background-radius: 12;
     -fx-padding: 14;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.07), 10, 0, 0, 2);
+    -fx-effect: dropshadow(gaussian, rgba(31,61,43,0.08), 10, 0, 0, 2);
 }
 
 .chart-plot-background {
-    -fx-background-color: #FAFFFE;
+    -fx-background-color: #FBFAF4;
 }
 
 .chart-vertical-grid-lines {
-    -fx-stroke: #ECEFF1;
+    -fx-stroke: #ECE6D5;
 }
 
 .chart-horizontal-grid-lines {
-    -fx-stroke: #ECEFF1;
+    -fx-stroke: #ECE6D5;
 }
 
 .axis-label {
-    -fx-text-fill: #546E7A;
+    -fx-text-fill: -park-text-mid;
     -fx-font-size: 11px;
     -fx-font-weight: bold;
 }
 
+.axis {
+    -fx-tick-label-fill: -park-text-mid;
+}
+
+/* Chart series — earthy palette for bars, lines, symbols and legend swatches. */
+.chart-bar.default-color0 { -fx-bar-fill: -park-pine;  }
+.chart-bar.default-color1 { -fx-bar-fill: -park-gold;  }
+.chart-bar.default-color2 { -fx-bar-fill: -park-lake;  }
+.chart-bar.default-color3 { -fx-bar-fill: -park-olive; }
+.chart-bar.default-color4 { -fx-bar-fill: -park-rust;  }
+.chart-bar.default-color5 { -fx-bar-fill: -park-amber; }
+
+.default-color0.chart-series-line { -fx-stroke: -park-pine;  }
+.default-color1.chart-series-line { -fx-stroke: -park-gold;  }
+.default-color2.chart-series-line { -fx-stroke: -park-lake;  }
+.default-color3.chart-series-line { -fx-stroke: -park-olive; }
+.default-color4.chart-series-line { -fx-stroke: -park-rust;  }
+.default-color5.chart-series-line { -fx-stroke: -park-amber; }
+
+.default-color0.chart-line-symbol { -fx-background-color: -park-pine,  white; }
+.default-color1.chart-line-symbol { -fx-background-color: -park-gold,  white; }
+.default-color2.chart-line-symbol { -fx-background-color: -park-lake,  white; }
+.default-color3.chart-line-symbol { -fx-background-color: -park-olive, white; }
+.default-color4.chart-line-symbol { -fx-background-color: -park-rust,  white; }
+.default-color5.chart-line-symbol { -fx-background-color: -park-amber, white; }
+
+.chart-legend-item-symbol.default-color0 { -fx-background-color: -park-pine;  }
+.chart-legend-item-symbol.default-color1 { -fx-background-color: -park-gold;  }
+.chart-legend-item-symbol.default-color2 { -fx-background-color: -park-lake;  }
+.chart-legend-item-symbol.default-color3 { -fx-background-color: -park-olive; }
+.chart-legend-item-symbol.default-color4 { -fx-background-color: -park-rust;  }
+.chart-legend-item-symbol.default-color5 { -fx-background-color: -park-amber; }
+
+.chart-legend      { -fx-background-color: transparent; }
+.chart-legend-item { -fx-text-fill: -park-text-mid; }
+.dark-mode .chart-legend-item { -fx-text-fill: -park-text-mid; }
+
 
 /* ── Confirmation banners ────────────────────────────────────── */
 .banner-confirmed {
-    -fx-background-color: linear-gradient(to bottom right, #43A047, #1B5E20);
+    -fx-background-color: linear-gradient(to bottom right, -park-pine-700, -park-pine-dark);
     -fx-background-radius: 14;
     -fx-padding: 22;
-    -fx-effect: dropshadow(gaussian, rgba(46,125,50,0.34), 14, 0, 0, 5);
+    -fx-effect: dropshadow(gaussian, rgba(31,61,43,0.36), 14, 0, 0, 5);
 }
 
 .banner-waiting {
-    -fx-background-color: linear-gradient(to bottom right, #FB8C00, #E65100);
+    -fx-background-color: linear-gradient(to bottom right, #D9A63B, -park-gold-700);
     -fx-background-radius: 14;
     -fx-padding: 22;
-    -fx-effect: dropshadow(gaussian, rgba(230,81,0,0.34), 14, 0, 0, 5);
+    -fx-effect: dropshadow(gaussian, rgba(181,121,31,0.36), 14, 0, 0, 5);
 }
 
 .banner-text {
-    -fx-font-size: 19px;
+    -fx-font-family: -park-font-display;
+    -fx-font-size: 20px;
     -fx-font-weight: bold;
     -fx-text-fill: white;
 }
 
 .banner-subtext {
     -fx-font-size: 13px;
-    -fx-text-fill: rgba(255,255,255,0.88);
+    -fx-text-fill: rgba(255,255,255,0.90);
 }
+
+
+/* ── Login hero (topographic ridgeline) ──────────────────────── */
+.hero-tagline {
+    -fx-font-size: 13px;
+    -fx-text-fill: -park-text-mid;
+    -fx-padding: 2 0 0 0;
+}
+
+
+/* ============================================================
+   DARK MODE  ("Night Trail")
+   Activated by adding the `dark-mode` style class to a scene root
+   (handled at runtime by gui.ThemeManager). Re-tunes the tokens to
+   a deep charcoal-green so every surface follows automatically,
+   while the pine header and gold/lake/rust accents stay intact.
+   ============================================================ */
+.dark-mode {
+    -park-parchment:    #141E18;
+    -park-parchment-2:  #10180F;
+    -park-surface:      #1D2A22;
+    -park-surface-2:    #243228;
+    -park-line:         #2C3A2F;
+    -park-border:       #33422F;
+    -park-text:         #E7E2D3;
+    -park-text-mid:     #B6BCA8;
+    -park-text-muted:   #8A917D;
+    -park-sage:         #2A3B2C;
+    -park-sage-2:       #34492F;
+    -fx-background-color: #141E18;
+}
+.dark-mode.screen-bg {
+    -fx-background-color:
+        linear-gradient(to bottom right, #141E18 0%, #10180F 100%);
+}
+
+/* Generic fallback so any unclassed label stays readable on dark surfaces. */
+.dark-mode .label { -fx-text-fill: -park-text; }
+
+/* Re-assert nicer shades for titles / accents over the fallback. */
+.dark-mode .screen-title,
+.dark-mode .card-title,
+.dark-mode .login-card-title { -fx-text-fill: #BFE0C2; }
+.dark-mode .login-title      { -fx-text-fill: #CDEBCF; }
+.dark-mode .screen-subtitle,
+.dark-mode .hero-tagline      { -fx-text-fill: -park-text-mid; }
+.dark-mode .section-label     { -fx-text-fill: -park-gold; }
+.dark-mode .field-label       { -fx-text-fill: #9CCBA4; }
+.dark-mode .lbl-detail-key    { -fx-text-fill: -park-text-mid; }
+.dark-mode .lbl-hint          { -fx-text-fill: -park-text-muted; }
+.dark-mode .empty-state       { -fx-text-fill: -park-text-muted; }
+.dark-mode .lbl-success       { -fx-text-fill: #81c784; }
+
+/* Card shadow needs to be heavier on dark. */
+.dark-mode .card {
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.45), 20, 0, 0, 5);
+}
+.dark-mode .text-area .content { -fx-background-color: -park-surface; }
+
+/* Keep header tags crisp on the (still-pine) header. */
+.dark-mode .header-timer { -fx-text-fill: #E9E2CF; }
+.dark-mode .header-badge { -fx-text-fill: #EBDFA8; }

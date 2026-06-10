@@ -17,6 +17,8 @@
     <HBox styleClass="header-bar" alignment="CENTER_LEFT" spacing="12">
         <Label text="🌿 GoNature" styleClass="header-logo"/>
         <Label text="—  Create Account" styleClass="header-subtitle"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button fx:id="btnTheme" text="🌙" styleClass="btn-outline"/>
     </HBox>
 
     <!-- Scrollable form body -->
@@ -39,7 +41,7 @@
                            GridPane.columnIndex="0" GridPane.rowIndex="0"/>
                     <TextField fx:id="txtIdNumber" promptText="5–15 digit government ID"
                                style="-fx-background-radius:8; -fx-border-radius:8;
-                                      -fx-border-color:#B0BEC5; -fx-border-width:1.5;
+                                      -fx-border-color:-park-border; -fx-border-width:1.5;
                                       -fx-padding:8 10; -fx-font-size:13px;"
                                GridPane.columnIndex="1" GridPane.rowIndex="0"/>
 
@@ -47,7 +49,7 @@
                            GridPane.columnIndex="0" GridPane.rowIndex="1"/>
                     <TextField fx:id="txtFirstName" promptText="First name"
                                style="-fx-background-radius:8; -fx-border-radius:8;
-                                      -fx-border-color:#B0BEC5; -fx-border-width:1.5;
+                                      -fx-border-color:-park-border; -fx-border-width:1.5;
                                       -fx-padding:8 10; -fx-font-size:13px;"
                                GridPane.columnIndex="1" GridPane.rowIndex="1"/>
 
@@ -55,7 +57,7 @@
                            GridPane.columnIndex="0" GridPane.rowIndex="2"/>
                     <TextField fx:id="txtLastName" promptText="Last name"
                                style="-fx-background-radius:8; -fx-border-radius:8;
-                                      -fx-border-color:#B0BEC5; -fx-border-width:1.5;
+                                      -fx-border-color:-park-border; -fx-border-width:1.5;
                                       -fx-padding:8 10; -fx-font-size:13px;"
                                GridPane.columnIndex="1" GridPane.rowIndex="2"/>
 
@@ -63,7 +65,7 @@
                            GridPane.columnIndex="0" GridPane.rowIndex="3"/>
                     <TextField fx:id="txtEmail" promptText="your@email.com"
                                style="-fx-background-radius:8; -fx-border-radius:8;
-                                      -fx-border-color:#B0BEC5; -fx-border-width:1.5;
+                                      -fx-border-color:-park-border; -fx-border-width:1.5;
                                       -fx-padding:8 10; -fx-font-size:13px;"
                                GridPane.columnIndex="1" GridPane.rowIndex="3"/>
 
@@ -71,7 +73,7 @@
                            GridPane.columnIndex="0" GridPane.rowIndex="4"/>
                     <TextField fx:id="txtPhone" promptText="9–15 digits"
                                style="-fx-background-radius:8; -fx-border-radius:8;
-                                      -fx-border-color:#B0BEC5; -fx-border-width:1.5;
+                                      -fx-border-color:-park-border; -fx-border-width:1.5;
                                       -fx-padding:8 10; -fx-font-size:13px;"
                                GridPane.columnIndex="1" GridPane.rowIndex="4"/>
                 </GridPane>
@@ -83,7 +85,7 @@
                 <CheckBox fx:id="chkSubscriber"
                           text="Join the Family Member Club (Subscriber)"
                           style="-fx-font-size: 13px; -fx-font-weight: bold;
-                                 -fx-text-fill: #2E7D32;"
+                                 -fx-text-fill: -park-pine;"
                           onAction="#onSubscriberToggle"/>
 
                 <VBox fx:id="subscriberFields" spacing="12"
@@ -103,7 +105,7 @@
                         <TextField fx:id="txtFamilySize"
                                    promptText="Number of family members (1–10)"
                                    style="-fx-background-radius:8; -fx-border-radius:8;
-                                          -fx-border-color:#B0BEC5; -fx-border-width:1.5;
+                                          -fx-border-color:-park-border; -fx-border-width:1.5;
                                           -fx-padding:8 10; -fx-font-size:13px;"
                                    GridPane.columnIndex="1" GridPane.rowIndex="0"/>
 
@@ -112,7 +114,7 @@
                         <TextField fx:id="txtCreditCard"
                                    promptText="16-digit card number (optional)"
                                    style="-fx-background-radius:8; -fx-border-radius:8;
-                                          -fx-border-color:#B0BEC5; -fx-border-width:1.5;
+                                          -fx-border-color:-park-border; -fx-border-width:1.5;
                                           -fx-padding:8 10; -fx-font-size:13px;"
                                    GridPane.columnIndex="1" GridPane.rowIndex="1"/>
                     </GridPane>

@@ -47,6 +47,7 @@ public class BookingController {
     @FXML private Label            lblPriceEstimate;
     @FXML private Label            lblError;
     @FXML private Button           btnSubmit;
+    @FXML private Button           btnTheme;
 
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
@@ -59,6 +60,7 @@ public class BookingController {
      */
     @FXML
     public void initialize() {
+        ThemeManager.installToggle(btnTheme);
         loadParks();
         setupTimeSlots();
         setupOrderTypes();
@@ -431,7 +433,9 @@ public class BookingController {
             Stage stage = (Stage) btnSubmit.getScene().getWindow();
             stage.setTitle("GoNature — " +
                 ("WAITING".equals(result.getStatus()) ? "Waiting List" : "Booking Confirmed"));
-            stage.setScene(new Scene(root));                         // attach to live scene first
+            Scene scene = new Scene(root);
+            ThemeManager.register(scene);                            // theme the confirmation screen
+            stage.setScene(scene);                                   // attach to live scene first
             ctrl.populate(result);                                   // then data-bind (labels now in live scene)
         } catch (IOException e) {
             setError("Your booking went through, but we couldn't open the confirmation screen. "
@@ -456,7 +460,9 @@ public class BookingController {
     public void start(Stage stage) throws Exception {
         Parent root = FXMLLoader.load(getClass().getResource("/gui/BookingFrame.fxml"));
         stage.setTitle("GoNature — New Booking");
-        stage.setScene(new Scene(root));
+        Scene scene = new Scene(root);
+        ThemeManager.register(scene);
+        stage.setScene(scene);
         stage.show();
     }
 }

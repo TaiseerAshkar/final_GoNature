@@ -8,6 +8,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -24,6 +25,7 @@ import javafx.stage.Stage;
  */
 public class BookingConfirmationController {
 
+    @FXML private Button btnTheme;
     @FXML private VBox  bannerBox;
     @FXML private Label lblStatusIcon;
     @FXML private Label lblStatusTitle;
@@ -48,7 +50,7 @@ public class BookingConfirmationController {
      * which is called explicitly by {@link BookingController} after loading.
      */
     @FXML
-    public void initialize() { /* injection complete — waiting for populate() */ }
+    public void initialize() { ThemeManager.installToggle(btnTheme); }
 
     /**
      * binds the booking result to all detail labels and, for confirmed bookings,
@@ -60,7 +62,10 @@ public class BookingConfirmationController {
     public void populate(BookingResult r) {
         boolean isWaiting = "WAITING".equals(r.getStatus());
         if (isWaiting) {
-            bannerBox.setStyle(bannerBox.getStyle().replace("#2e7d32", "#e65100"));
+            // swap the banner from the confirmed (pine) to the waiting (gold) style class
+            bannerBox.getStyleClass().remove("banner-confirmed");
+            if (!bannerBox.getStyleClass().contains("banner-waiting"))
+                bannerBox.getStyleClass().add("banner-waiting");
             lblStatusIcon.setText("⏳");
             lblStatusTitle.setText("Added to Waiting List");
             lblBookingId.setText("Waiting List Reference: #" + r.getId());

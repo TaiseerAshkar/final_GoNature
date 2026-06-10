@@ -17,12 +17,12 @@
     <HBox styleClass="header-bar" alignment="CENTER_LEFT" spacing="10">
         <Label text="🌿 GoNature" styleClass="header-logo"/>
         <Region HBox.hgrow="ALWAYS"/>
+        <Label fx:id="lblSessionTimer" styleClass="header-timer" text="Session: 00:00:00"/>
         <Label fx:id="lblRoleBadge" styleClass="header-badge"/>
+        <Button fx:id="btnTheme" text="🌙" onAction="#handleToggleTheme" styleClass="btn-outline"/>
         <Button text="Help ?"  onAction="#handleHelp"   styleClass="btn-outline"/>
-        <Button text="Logout"  onAction="#handleLogout"
-                style="-fx-background-color:#C62828; -fx-text-fill:white;
-                       -fx-font-weight:bold; -fx-background-radius:5;
-                       -fx-padding:5 14; -fx-cursor:hand;"/>
+        <Button text="Logout"  onAction="#handleLogout" styleClass="btn-danger"
+                style="-fx-font-size:12px; -fx-padding:5 14; -fx-background-radius:6;"/>
     </HBox>
 
     <!-- Scrollable content -->
@@ -35,9 +35,7 @@
             <VBox spacing="12" styleClass="card" maxWidth="440">
                 <Label fx:id="lblInfo" styleClass="screen-subtitle" wrapText="true"/>
                 <Label fx:id="lblUpcoming" wrapText="true"
-                       style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #1B5E20;
-                              -fx-background-color: #E8F5E9; -fx-background-radius: 8;
-                              -fx-padding: 8 14;" maxWidth="Infinity"/>
+                       styleClass="info-strip" maxWidth="Infinity"/>
                 <Separator/>
                 <Button text="📋  View My Reservations" maxWidth="Infinity"
                         onAction="#handleViewOrders" styleClass="btn-teal"/>

@@ -17,8 +17,10 @@
     <HBox styleClass="header-bar" alignment="CENTER_LEFT" spacing="10">
         <Label text="🌿 GoNature" styleClass="header-logo"/>
         <Region HBox.hgrow="ALWAYS"/>
+        <Label fx:id="lblSessionTimer" styleClass="header-timer" text="Session: 00:00:00"/>
         <Label fx:id="lblUserName" styleClass="header-subtitle"/>
         <Label fx:id="lblUserRole" styleClass="header-badge"/>
+        <Button fx:id="btnTheme" text="🌙" onAction="#handleToggleTheme" styleClass="btn-outline"/>
         <Button text="Help ?" onAction="#handleHelp" styleClass="btn-outline"/>
         <Button text="Logout" onAction="#handleLogout"
                 styleClass="btn-danger"
@@ -36,11 +38,9 @@
                 <Button text="🔄  Load All Orders"        onAction="#loadOrders"
                         styleClass="btn-blue" style="-fx-padding:9 18;"/>
                 <Button text="🧭  Manage Guides"          onAction="#handleManageGuides"
-                        style="-fx-background-color:#6a1b9a; -fx-text-fill:white;
-                               -fx-font-weight:bold; -fx-background-radius:4; -fx-padding:9 18;"/>
+                        styleClass="btn-marker" style="-fx-padding:9 18;"/>
                 <Button text="⚙️  Pending Approvals"      onAction="#handlePendingApprovals"
-                        style="-fx-background-color:#0d47a1; -fx-text-fill:white;
-                               -fx-font-weight:bold; -fx-background-radius:4; -fx-padding:9 18;"/>
+                        styleClass="btn-blue" style="-fx-padding:9 18;"/>
                 <Button text="📊  View Reports Dashboard" onAction="#handleViewReports"
                         styleClass="btn-teal" style="-fx-padding:9 18;"/>
             </HBox>
@@ -79,7 +79,7 @@
                            GridPane.columnIndex="0" GridPane.rowIndex="0"/>
                     <TextField fx:id="txtOrderNum" promptText="Enter order ID"
                                style="-fx-background-radius:8; -fx-border-radius:8;
-                                      -fx-border-color:#B0BEC5; -fx-border-width:1.5;
+                                      -fx-border-color:-park-border; -fx-border-width:1.5;
                                       -fx-padding:8 10; -fx-font-size:13px;"
                                GridPane.columnIndex="1" GridPane.rowIndex="0"/>
 
@@ -87,7 +87,7 @@
                            GridPane.columnIndex="0" GridPane.rowIndex="1"/>
                     <TextField fx:id="txtNewDate" promptText="e.g. 2026-07-15"
                                style="-fx-background-radius:8; -fx-border-radius:8;
-                                      -fx-border-color:#B0BEC5; -fx-border-width:1.5;
+                                      -fx-border-color:-park-border; -fx-border-width:1.5;
                                       -fx-padding:8 10; -fx-font-size:13px;"
                                GridPane.columnIndex="1" GridPane.rowIndex="1"/>
 
@@ -95,7 +95,7 @@
                            GridPane.columnIndex="0" GridPane.rowIndex="2"/>
                     <ComboBox fx:id="cboNewOrderType"
                               style="-fx-background-radius:8; -fx-border-radius:8;
-                                     -fx-border-color:#B0BEC5; -fx-border-width:1.5;
+                                     -fx-border-color:-park-border; -fx-border-width:1.5;
                                      -fx-padding:4 8; -fx-font-size:13px; -fx-pref-width:200;"
                               GridPane.columnIndex="1" GridPane.rowIndex="2"/>
 
@@ -103,7 +103,7 @@
                            GridPane.columnIndex="0" GridPane.rowIndex="3"/>
                     <TextField fx:id="txtNewVisitors" promptText="1–15"
                                style="-fx-background-radius:8; -fx-border-radius:8;
-                                      -fx-border-color:#B0BEC5; -fx-border-width:1.5;
+                                      -fx-border-color:-park-border; -fx-border-width:1.5;
                                       -fx-padding:8 10; -fx-font-size:13px;"
                                GridPane.columnIndex="1" GridPane.rowIndex="3"/>
 
