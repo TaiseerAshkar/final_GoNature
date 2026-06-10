@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?import java.net.URL?>
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.chart.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
@@ -8,7 +9,7 @@
       fx:controller="gui.ReportsController"
       styleClass="screen-bg"
       spacing="0"
-      prefWidth="1000" prefHeight="700">
+      prefWidth="1020" prefHeight="740">
 
     <stylesheets>
         <URL value="@gonature.css"/>
@@ -21,6 +22,37 @@
         <Label fx:id="lblManagerName" styleClass="header-subtitle"/>
         <Button fx:id="btnTheme" text="🌙" styleClass="btn-outline"/>
         <Button text="Close" onAction="#handleClose" styleClass="btn-outline"/>
+    </HBox>
+
+    <!-- ── Period Selector Bar ──────────────────────────────────────────────── -->
+    <HBox spacing="12" alignment="CENTER_LEFT"
+          style="-fx-background-color:-park-surface;
+                 -fx-padding:10 16;
+                 -fx-border-color:transparent transparent -park-border transparent;
+                 -fx-border-width:0 0 1.5 0;">
+        <Label text="📅  Report Period:" styleClass="field-label"
+               style="-fx-font-weight:bold;"/>
+        <ComboBox fx:id="cboMonth" prefWidth="132"
+                  style="-fx-background-color:-park-surface;
+                         -fx-background-radius:8;
+                         -fx-border-color:-park-border;
+                         -fx-border-radius:8;
+                         -fx-border-width:1.5;
+                         -fx-font-size:13px;
+                         -fx-padding:3 2;"/>
+        <ComboBox fx:id="cboYear" prefWidth="90"
+                  style="-fx-background-color:-park-surface;
+                         -fx-background-radius:8;
+                         -fx-border-color:-park-border;
+                         -fx-border-radius:8;
+                         -fx-border-width:1.5;
+                         -fx-font-size:13px;
+                         -fx-padding:3 2;"/>
+        <Button text="📊  Generate Report" onAction="#handleGenerate"
+                styleClass="btn-marker" style="-fx-padding:8 18;"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Label fx:id="lblPeriodBadge" text="Select a period and click Generate"
+               styleClass="lbl-hint"/>
     </HBox>
 
     <!-- Tab pane -->
@@ -90,7 +122,7 @@
 
                 <TableView fx:id="tableCancels" VBox.vgrow="ALWAYS" styleClass="table-view">
                     <placeholder>
-                        <Label text="No cancelled or no-show orders found."
+                        <Label text="No cancelled or no-show orders found for this period."
                                styleClass="lbl-hint" style="-fx-font-style:italic;"/>
                     </placeholder>
                     <columns>
@@ -116,7 +148,7 @@
                 <!-- Info bar -->
                 <HBox spacing="12" alignment="CENTER_LEFT" styleClass="card"
                       style="-fx-padding: 12 16;">
-                    <Label text="📊  Hourly park usage as % of capacity — last 30 days"
+                    <Label text="📊  Hourly park usage as % of capacity"
                            styleClass="lbl-hint" style="-fx-font-style:normal;"/>
                     <Region HBox.hgrow="ALWAYS"/>
                     <Label fx:id="lblUsageStatus" styleClass="lbl-hint"/>
