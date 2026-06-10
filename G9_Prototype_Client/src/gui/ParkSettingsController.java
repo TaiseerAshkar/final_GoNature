@@ -144,13 +144,15 @@ public class ParkSettingsController {
 
     /** @param msg the error text */
     private void setError(String msg) {
-        lblStatus.setStyle("-fx-text-fill: #c62828; -fx-font-weight: bold;");
+        lblStatus.setStyle("");
+        lblStatus.getStyleClass().setAll("lbl-error");
         lblStatus.setText(msg);
     }
 
     /** @param msg the success text */
     private void setSuccess(String msg) {
-        lblStatus.setStyle("-fx-text-fill: #1b5e20; -fx-font-weight: bold;");
+        lblStatus.setStyle("");
+        lblStatus.getStyleClass().setAll("lbl-success");
         lblStatus.setText(msg);
     }
 

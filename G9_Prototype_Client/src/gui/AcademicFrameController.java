@@ -184,7 +184,7 @@ public class AcademicFrameController {
         if ("SOLO".equals(type)) {
             txtNewVisitors.setText("1");
             txtNewVisitors.setDisable(true);
-            txtNewVisitors.setStyle("-fx-background-color:#f5f5f5; -fx-background-radius:8;");
+            txtNewVisitors.setStyle("-fx-background-color:-park-surface-2; -fx-background-radius:8;");
         } else {
             txtNewVisitors.setDisable(false);
             txtNewVisitors.setStyle("");

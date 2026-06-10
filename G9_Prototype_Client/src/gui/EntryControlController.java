@@ -117,7 +117,7 @@ public class EntryControlController {
                 txtWalkInVisitors.setText("1");
                 txtWalkInVisitors.setDisable(true);
                 txtWalkInVisitors.setStyle(
-                    "-fx-background-color: #f5f5f5; -fx-background-radius: 4;");
+                    "-fx-background-color: -park-surface-2; -fx-background-radius: 4;");
                 lblVisitorHint.setText("SOLO: exactly 1 visitor.");
                 break;
             case "FAMILY":
@@ -351,9 +351,8 @@ public class EntryControlController {
      * @param success {@code true} for green success style; {@code false} for red error style
      */
     private void setExitMessage(String msg, boolean success) {
-        lblExitMessage.setStyle(success
-            ? "-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #1b5e20;"
-            : "-fx-font-size: 13px; -fx-text-fill: #c62828;");
+        lblExitMessage.setStyle("");
+        lblExitMessage.getStyleClass().setAll(success ? "lbl-success" : "lbl-error");
         lblExitMessage.setText(msg);
     }
 }

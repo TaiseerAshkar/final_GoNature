@@ -1130,6 +1130,9 @@
 .dark-mode .lbl-hint          { -fx-text-fill: -park-text-muted; }
 .dark-mode .empty-state       { -fx-text-fill: -park-text-muted; }
 .dark-mode .lbl-success       { -fx-text-fill: #81c784; }
+.dark-mode .lbl-error         { -fx-text-fill: #E57373; }
+.dark-mode .lbl-warning       { -fx-text-fill: #E0A23A; }
+.dark-mode .lbl-loading       { -fx-text-fill: #6FB7D6; }
 
 /* Card shadow needs to be heavier on dark. */
 .dark-mode .card {
@@ -1158,3 +1161,16 @@
 /* ComboBox / DatePicker selected-value text on dark. */
 .dark-mode .combo-box-base .list-cell { -fx-text-fill: -park-text; }
 .dark-mode .date-picker .text-field   { -fx-text-fill: -park-text; }
+
+/* Tabs (Reports / Entry Control): the base tab fill is a fixed light colour and
+   the selected-tab label is dark — both need dark-mode variants. */
+.dark-mode .tab-pane .tab                     { -fx-background-color: -park-surface-2; }
+.dark-mode .tab-pane .tab:hover               { -fx-background-color: -park-sage; }
+.dark-mode .tab-pane .tab:selected            { -fx-background-color: -park-surface; }
+.dark-mode .tab-pane .tab .tab-label          { -fx-text-fill: -park-text-mid; }
+.dark-mode .tab-pane .tab:selected .tab-label { -fx-text-fill: #BFE0C2; }
+
+/* Charts: plot background and grid lines are fixed light tones. */
+.dark-mode .chart-plot-background       { -fx-background-color: -park-surface-2; }
+.dark-mode .chart-vertical-grid-lines   { -fx-stroke: -park-line; }
+.dark-mode .chart-horizontal-grid-lines { -fx-stroke: -park-line; }

@@ -63,7 +63,7 @@ public class MyOrdersController {
         if (s != null && s.getUserId() != null && !s.getUserId().isEmpty()) {
             txtVisitorId.setText(s.getUserId());
             txtVisitorId.setEditable(false);
-            txtVisitorId.setStyle("-fx-background-color: #f5f5f5; -fx-background-radius: 4; -fx-padding: 5;");
+            txtVisitorId.setStyle("-fx-background-color: -park-surface-2; -fx-background-radius: 4; -fx-padding: 5;");
         }
 
         colId.setCellValueFactory(cell ->
