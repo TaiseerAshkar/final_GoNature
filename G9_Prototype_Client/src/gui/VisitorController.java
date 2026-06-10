@@ -60,6 +60,7 @@ public class VisitorController {
     // header controls
     @FXML private Label           lblSessionTimer;
     @FXML private Button          btnTheme;
+    @FXML private Button          btnConfirmVisit;
 
     // notification panel
     @FXML private Label           lblNotifBadge;
@@ -354,12 +355,14 @@ public class VisitorController {
             });
         }
 
+        boolean anyConfirmed = false;
         for (OrderDetail order : toConfirm) {
             ChatClient.lastConfirmVisitOk    = null;
             ChatClient.lastConfirmVisitError = null;
             ClientUI.chat.accept(new Message("CONFIRM_VISIT", order.getId()));
 
             if (Boolean.TRUE.equals(ChatClient.lastConfirmVisitOk)) {
+                anyConfirmed = true;
                 NotificationCenter.add("✅",
                     "Visit confirmed — Order #" + order.getId()
                     + " at " + order.getParkName()
@@ -371,6 +374,10 @@ public class VisitorController {
                     : "Could not confirm Order #" + order.getId() + ". Please try again.";
                 NotificationCenter.add("⚠️", err);
             }
+        }
+        if (anyConfirmed && btnConfirmVisit != null) {
+            btnConfirmVisit.setDisable(true);
+            btnConfirmVisit.setText("✓ Visit Already Confirmed");
         }
         refreshNotifications();
     }

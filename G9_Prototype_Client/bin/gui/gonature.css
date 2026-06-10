@@ -504,6 +504,7 @@
 .chip-pending   { -fx-background-color: #F3E6C8;     -fx-text-fill: #8A6516;          }
 .chip-completed { -fx-background-color: #E4E1D4;     -fx-text-fill: -park-olive;      }
 .chip-cancelled { -fx-background-color: #ECD6CE;     -fx-text-fill: -park-rust;       }
+.chip-noshow    { -fx-background-color: #E8E5E2;     -fx-text-fill: #616161;          }
 .chip-waiting   { -fx-background-color: #D6E4EA;     -fx-text-fill: -park-lake-900;   }
 
 
@@ -1174,3 +1175,12 @@
 .dark-mode .chart-plot-background       { -fx-background-color: -park-surface-2; }
 .dark-mode .chart-vertical-grid-lines   { -fx-stroke: -park-line; }
 .dark-mode .chart-horizontal-grid-lines { -fx-stroke: -park-line; }
+
+/* Status chips — light-coloured backgrounds look like floating islands on dark
+   surfaces; replace with a subtle tinted dark pill and a vivid text colour. */
+.dark-mode .chip-confirmed { -fx-background-color: rgba(76,175,80,0.18);   -fx-text-fill: #4caf50; }
+.dark-mode .chip-pending   { -fx-background-color: rgba(255,152,0,0.18);   -fx-text-fill: #ff9800; }
+.dark-mode .chip-cancelled { -fx-background-color: rgba(244,67,54,0.18);   -fx-text-fill: #f44336; }
+.dark-mode .chip-noshow    { -fx-background-color: rgba(158,158,158,0.18); -fx-text-fill: #9e9e9e; }
+.dark-mode .chip-completed { -fx-background-color: rgba(100,181,246,0.18); -fx-text-fill: #64b5f6; }
+.dark-mode .chip-waiting   { -fx-background-color: rgba(100,181,246,0.14); -fx-text-fill: #90caf9; }

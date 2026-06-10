@@ -47,7 +47,7 @@
                 <Button text="🚗  Register My Exit" maxWidth="Infinity"
                         onAction="#handleRegisterExit" styleClass="btn-secondary"/>
                 <Separator/>
-                <Button text="✅  Confirm My Visit" maxWidth="Infinity"
+                <Button fx:id="btnConfirmVisit" text="✅  Confirm My Visit" maxWidth="Infinity"
                         onAction="#handleConfirmVisit" styleClass="btn-blue"/>
             </VBox>
 
