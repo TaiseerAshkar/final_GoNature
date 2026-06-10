@@ -55,8 +55,8 @@ public final class UiCells {
             case "CONFIRMED": return "chip-confirmed";
             case "PENDING":   return "chip-pending";
             case "COMPLETED": return "chip-completed";
-            case "CANCELLED":
-            case "NO_SHOW":   return "chip-cancelled";
+            case "CANCELLED": return "chip-cancelled";
+            case "NO_SHOW":   return "chip-noshow";
             case "WAITING":   return "chip-waiting";
             default:          return "chip-completed";
         }

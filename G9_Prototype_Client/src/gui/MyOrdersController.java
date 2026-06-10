@@ -93,7 +93,10 @@ public class MyOrdersController {
                 boolean active = newSel != null
                     && ("PENDING".equals(newSel.getStatus())
                         || "CONFIRMED".equals(newSel.getStatus()));
-                boolean confirmable = active
+                // only PENDING orders can be confirmed — once an order is already
+                // CONFIRMED clicking again would be a no-op and confuses the visitor
+                boolean confirmable = newSel != null
+                    && "PENDING".equals(newSel.getStatus())
                     && newSel.getVisitDate() != null
                     && newSel.getVisitDate().equals(
                         LocalDate.now().plusDays(1).toString());

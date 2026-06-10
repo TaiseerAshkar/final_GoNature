@@ -219,18 +219,7 @@ public class LoginController {
      * @param content the help text to display
      */
     private void showHelp(String title, String content) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Help");
-        alert.setHeaderText(title);
-        TextArea ta = new TextArea(content);
-        ta.setEditable(false);
-        ta.setWrapText(true);
-        ta.setPrefRowCount(14);
-        ta.setPrefWidth(440);
-        ta.setStyle("-fx-font-family: 'Segoe UI', Arial, sans-serif; -fx-font-size: 12px;");
-        alert.getDialogPane().setContent(ta);
-        alert.getDialogPane().setMinWidth(480);
-        alert.showAndWait();
+        HelpDialog.show(title, content);
     }
 
     /** @param msg the error text to display */

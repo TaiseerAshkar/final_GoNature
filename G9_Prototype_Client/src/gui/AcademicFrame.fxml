@@ -7,7 +7,7 @@
       fx:controller="gui.AcademicFrameController"
       styleClass="screen-bg"
       spacing="0"
-      prefWidth="800">
+      prefWidth="950">
 
     <stylesheets>
         <URL value="@gonature.css"/>

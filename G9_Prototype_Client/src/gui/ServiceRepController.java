@@ -204,27 +204,37 @@ public class ServiceRepController {
 
         GridPane grid = new GridPane();
         grid.setHgap(12);
-        grid.setVgap(10);
-        grid.setPadding(new Insets(18, 24, 10, 24));
+        grid.setVgap(12);
+        grid.setPadding(new Insets(20, 24, 12, 24));
 
         TextField fldId        = new TextField(); fldId.setPromptText("e.g. 123456789");
         TextField fldFirstName = new TextField(); fldFirstName.setPromptText("First name");
         TextField fldLastName  = new TextField(); fldLastName.setPromptText("Last name");
         TextField fldEmail     = new TextField(); fldEmail.setPromptText("Optional");
         TextField fldPhone     = new TextField(); fldPhone.setPromptText("Optional");
+        for (TextField f : new TextField[]{ fldId, fldFirstName, fldLastName, fldEmail, fldPhone }) {
+            f.getStyleClass().add("text-field");
+            f.setPrefWidth(230);
+        }
 
-        grid.add(new Label("ID Number *"),  0, 0); grid.add(fldId,        1, 0);
-        grid.add(new Label("First Name *"), 0, 1); grid.add(fldFirstName, 1, 1);
-        grid.add(new Label("Last Name *"),  0, 2); grid.add(fldLastName,  1, 2);
-        grid.add(new Label("Email"),        0, 3); grid.add(fldEmail,     1, 3);
-        grid.add(new Label("Phone"),        0, 4); grid.add(fldPhone,     1, 4);
+        grid.add(fieldLabel("ID Number *"),  0, 0); grid.add(fldId,        1, 0);
+        grid.add(fieldLabel("First Name *"), 0, 1); grid.add(fldFirstName, 1, 1);
+        grid.add(fieldLabel("Last Name *"),  0, 2); grid.add(fldLastName,  1, 2);
+        grid.add(fieldLabel("Email"),        0, 3); grid.add(fldEmail,     1, 3);
+        grid.add(fieldLabel("Phone"),        0, 4); grid.add(fldPhone,     1, 4);
 
         Label lblErr = new Label("");
-        lblErr.setStyle("-fx-text-fill:#c62828; -fx-font-size:12px;");
+        lblErr.getStyleClass().add("lbl-error");
+        lblErr.setWrapText(true);
         grid.add(lblErr, 0, 5, 2, 1);
 
-        dlg.getDialogPane().setContent(grid);
-        dlg.getDialogPane().setPrefWidth(400);
+        DialogPane pane = dlg.getDialogPane();
+        pane.setContent(grid);
+        pane.setPrefWidth(430);
+        pane.getStyleClass().add("help-dialog");   // pine + gold themed header & buttons
+        java.net.URL guideCss = getClass().getResource("/gui/gonature.css");
+        if (guideCss != null) pane.getStylesheets().add(guideCss.toExternalForm());
+        ThemeManager.register(pane.getScene());     // follow the active light/dark theme
 
         // Keep Register button disabled until the three required fields are non-empty
         javafx.scene.Node okBtn = dlg.getDialogPane().lookupButton(submitBtn);
@@ -268,6 +278,19 @@ public class ServiceRepController {
             lblErr.setText(ChatClient.lastGuideRegisterFail != null
                 ? ChatClient.lastGuideRegisterFail : "Registration failed. Try again.");
         }
+    }
+
+    /**
+     * builds a form label styled with the topographic {@code field-label} class
+     * (pine, bold) so the register-guide dialog matches the rest of the client UI.
+     *
+     * @param text the label caption
+     * @return a styled {@link Label}
+     */
+    private static Label fieldLabel(String text) {
+        Label l = new Label(text);
+        l.getStyleClass().add("field-label");
+        return l;
     }
 
     /**
@@ -340,10 +363,7 @@ public class ServiceRepController {
      */
     @FXML
     public void handleHelp(ActionEvent event) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Help");
-        alert.setHeaderText("GoNature — Service Representative Guide");
-        TextArea ta = new TextArea(
+        HelpDialog.show("GoNature — Service Representative Guide",
             "LOADING ORDERS\n" +
             "  • Click 'Load All Orders' to see every active booking in the system.\n\n" +
             "UPDATING AN ORDER\n" +
@@ -361,14 +381,6 @@ public class ServiceRepController {
             "  CONFIRMED — confirmed by the park\n" +
             "  COMPLETED — visitor has checked in and out\n" +
             "  CANCELLED — cancelled by visitor or system");
-        ta.setEditable(false);
-        ta.setWrapText(true);
-        ta.setPrefRowCount(18);
-        ta.setPrefWidth(460);
-        ta.setStyle("-fx-font-family: 'Segoe UI', Arial, sans-serif; -fx-font-size: 12px;");
-        alert.getDialogPane().setContent(ta);
-        alert.getDialogPane().setMinWidth(500);
-        alert.showAndWait();
     }
 
     /**

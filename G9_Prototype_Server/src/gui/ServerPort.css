@@ -1,12 +1,276 @@
-/* JavaFX CSS - Leave this comment until you have at least create one rule which uses -fx-Property */
-#btnStudentInfo {
-	/*-fx-background-color: rgba(255, 255, 255, .80);*/
-	-fx-background-color: skyblue;
-	-fx-text-fill: red;
-	-fx-padding: 6 6 6 6;
-	-fx-border-radius: 8;
-	-fx-font-weight : bold;
-}
+/* ============================================================
+   GoNature — Server Control Panel stylesheet
+   Topographic / NPS wayfinding theme — matches the client UIs.
+
+     • Warm parchment background, faint contour borders
+     • Deep-pine card headers with a trail-marker gold accent line
+     • Signage-style condensed headings (Bahnschrift)
+     • Earthy button palette (pine / amber / rust)
+
+   Colour tokens are defined once on .root as JavaFX looked-up
+   colours and referenced throughout, so the whole palette can be
+   retuned from a single place.
+   ============================================================ */
+
+
+/* ── Root + colour tokens ───────────────────────────────────── */
 .root {
-	-fx-background-color: #deb887;
+    -park-parchment:    #F3EFE3;
+    -park-parchment-2:  #E9E2CF;
+    -park-surface:      #FCFBF6;
+    -park-surface-2:    #F4F0E4;
+
+    -park-pine:         #2E6B40;
+    -park-pine-700:     #36794A;
+    -park-pine-900:     #16301F;
+    -park-pine-dark:    #1F3D2B;
+
+    -park-gold:         #C8962E;
+    -park-gold-700:     #B6841F;
+    -park-amber:        #B5791F;
+    -park-amber-700:    #9E6717;
+    -park-rust:         #A23B23;
+    -park-rust-900:     #6E2514;
+    -park-lake:         #2B6E8F;
+    -park-lake-900:     #1A4860;
+
+    -park-line:         #E4DDC9;
+    -park-border:       #D9D2BE;
+    -park-text:         #20271F;
+    -park-text-mid:     #4F5A4A;
+    -park-text-muted:   #8A8F7E;
+
+    -park-font-body:    "Segoe UI", "Inter", "Arial", sans-serif;
+    -park-font-display: "Bahnschrift SemiBold", "Bahnschrift",
+                        "Segoe UI Semibold", "Arial Narrow", sans-serif;
+
+    -fx-font-family: -park-font-body;
+    -fx-font-size: 13px;
+    -fx-background-color: -park-parchment;
+}
+
+.server-bg {
+    -fx-background-color:
+        linear-gradient(to bottom right, -park-parchment 0%, -park-parchment-2 100%);
+}
+
+
+/* ── Title bar ──────────────────────────────────────────────── */
+.app-title {
+    -fx-font-family: -park-font-display;
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -park-pine-dark;
+    -fx-effect: dropshadow(gaussian, rgba(31,61,43,0.16), 2, 0, 0, 1);
+}
+
+.app-subtitle {
+    -fx-font-size: 12px;
+    -fx-text-fill: -park-text-mid;
+}
+
+/* "● LIVE" indicator pill at top-right of the title bar. */
+.live-pill {
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -park-pine;
+    -fx-background-color: #DCE5CE;
+    -fx-background-radius: 20;
+    -fx-padding: 4 12;
+    -fx-border-color: rgba(46,107,64,0.30);
+    -fx-border-radius: 20;
+    -fx-border-width: 1;
+}
+
+
+/* ── Cards ──────────────────────────────────────────────────── */
+.card {
+    -fx-background-color: -park-surface;
+    -fx-background-radius: 12;
+    -fx-effect: dropshadow(gaussian, rgba(31,61,43,0.12), 16, 0, 0, 4);
+    -fx-border-color: -park-border;
+    -fx-border-radius: 12;
+    -fx-border-width: 1;
+}
+
+/* Pine card-header strip with a trail-marker gold accent underline. */
+.card-head {
+    -fx-background-color: linear-gradient(to right, -park-pine-dark, #25492F, -park-pine);
+    -fx-background-radius: 12 12 0 0;
+    -fx-border-color: transparent transparent -park-gold transparent;
+    -fx-border-width: 0 0 2 0;
+    -fx-padding: 10 16;
+}
+
+/* Lake-blue header variant — used for the Live Notifications card. */
+.card-head-lake {
+    -fx-background-color: linear-gradient(to right, -park-lake-900, -park-lake);
+    -fx-background-radius: 12 12 0 0;
+    -fx-border-color: transparent transparent -park-gold transparent;
+    -fx-border-width: 0 0 2 0;
+    -fx-padding: 10 16;
+}
+
+.card-head-label {
+    -fx-font-family: -park-font-display;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #F5F1E4;
+}
+
+/* Status pill sitting inside the dark card header (single class per state). */
+.card-status-stopped,
+.card-status-running {
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-background-color: rgba(0,0,0,0.20);
+    -fx-background-radius: 20;
+    -fx-padding: 3 12;
+}
+.card-status-stopped { -fx-text-fill: #FFC9CC; }
+.card-status-running { -fx-text-fill: #B9F6CA; }
+
+
+/* ── Port field ─────────────────────────────────────────────── */
+.field-label {
+    -fx-font-weight: bold;
+    -fx-text-fill: -park-pine;
+    -fx-font-size: 13px;
+}
+
+.text-field {
+    -fx-background-color: -park-surface;
+    -fx-background-radius: 8;
+    -fx-border-color: -park-border;
+    -fx-border-radius: 8;
+    -fx-border-width: 1.5;
+    -fx-padding: 7 10;
+    -fx-font-size: 13px;
+    -fx-text-fill: -park-text;
+    -fx-prompt-text-fill: -park-text-muted;
+}
+.text-field:focused {
+    -fx-border-color: -park-gold;
+    -fx-effect: dropshadow(gaussian, rgba(200,150,46,0.28), 8, 0, 0, 0);
+}
+.text-field:disabled {
+    -fx-background-color: -park-surface-2;
+    -fx-opacity: 0.85;
+}
+
+
+/* ── Buttons (single class each; shared base via grouped selector) ── */
+.btn-start, .btn-stop, .btn-exit {
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-font-size: 13px;
+    -fx-background-radius: 8;
+    -fx-padding: 8 20;
+    -fx-cursor: hand;
+}
+.btn-start:disabled, .btn-stop:disabled, .btn-exit:disabled {
+    -fx-opacity: 0.42;
+    -fx-effect: none;
+}
+
+/* START — pine */
+.btn-start { -fx-background-color: -park-pine;
+    -fx-effect: dropshadow(gaussian, rgba(46,107,64,0.40), 6, 0, 0, 2); }
+.btn-start:hover   { -fx-background-color: -park-pine-700; }
+.btn-start:pressed { -fx-background-color: -park-pine-900; }
+
+/* STOP — amber */
+.btn-stop { -fx-background-color: -park-amber;
+    -fx-effect: dropshadow(gaussian, rgba(181,121,31,0.34), 6, 0, 0, 2); }
+.btn-stop:hover   { -fx-background-color: #CB8A2A; }
+.btn-stop:pressed { -fx-background-color: -park-amber-700; }
+
+/* EXIT — rust */
+.btn-exit { -fx-background-color: -park-rust;
+    -fx-effect: dropshadow(gaussian, rgba(162,59,35,0.34), 6, 0, 0, 2); }
+.btn-exit:hover   { -fx-background-color: #B8472C; }
+.btn-exit:pressed { -fx-background-color: -park-rust-900; }
+
+
+/* ── Connected-clients table ────────────────────────────────── */
+.table-view {
+    -fx-background-color: -park-surface;
+    -fx-background-radius: 0 0 12 12;
+    -fx-border-color: transparent;
+    -fx-padding: 0;
+}
+.table-view .column-header-background {
+    -fx-background-color: -park-surface-2;
+    -fx-background-radius: 0;
+}
+.table-view .column-header,
+.table-view .filler {
+    -fx-background-color: transparent;
+    -fx-border-color: -park-border;
+    -fx-border-width: 0 1 1 0;
+    -fx-size: 34;
+}
+.table-view .column-header .label {
+    -fx-text-fill: -park-pine-dark;
+    -fx-font-weight: bold;
+    -fx-font-size: 12px;
+    -fx-alignment: CENTER_LEFT;
+}
+.table-row-cell {
+    -fx-background-color: -park-surface;
+    -fx-border-color: -park-line;
+    -fx-border-width: 0 0 1 0;
+    -fx-cell-size: 32px;
+}
+.table-row-cell:odd   { -fx-background-color: -park-surface-2; }
+.table-row-cell .text { -fx-fill: -park-text; }
+.table-view .placeholder .label {
+    -fx-text-fill: -park-text-muted;
+    -fx-font-style: italic;
+    -fx-font-size: 12px;
+}
+
+
+/* ── Log text areas (single class each; shared base via grouped selector) ── */
+.log-connection, .log-notif {
+    -fx-background-color: transparent;
+    -fx-background-radius: 0 0 12 12;
+    -fx-font-family: "Consolas", "Menlo", monospace;
+    -fx-font-size: 12px;
+    -fx-border-color: transparent;
+    -fx-text-fill: -park-text;
+}
+.log-connection .content, .log-notif .content {
+    -fx-background-radius: 0 0 11 11;
+}
+/* Connection log — soft pine-tinted paper. */
+.log-connection .content { -fx-background-color: #F1F4EC; }
+/* Live notifications — soft lake-tinted paper. */
+.log-notif .content      { -fx-background-color: #EBF1F4; }
+
+
+/* ── ScrollBars (match the parchment theme) ─────────────────── */
+.scroll-bar:vertical .track,
+.scroll-bar:horizontal .track {
+    -fx-background-color: #E9E2CF;
+    -fx-background-radius: 4;
+    -fx-border-color: transparent;
+}
+.scroll-bar:vertical .thumb,
+.scroll-bar:horizontal .thumb {
+    -fx-background-color: #C3BBA1;
+    -fx-background-radius: 4;
+}
+.scroll-bar:vertical .thumb:hover,
+.scroll-bar:horizontal .thumb:hover {
+    -fx-background-color: #A99F80;
+}
+.scroll-bar .increment-button,
+.scroll-bar .decrement-button {
+    -fx-background-color: transparent;
+    -fx-padding: 3;
+}
+.scroll-bar .increment-arrow,
+.scroll-bar .decrement-arrow {
+    -fx-background-color: #A99F80;
 }

@@ -7,7 +7,7 @@
       fx:controller="gui.ServiceRepController"
       styleClass="screen-bg"
       spacing="0"
-      prefWidth="880">
+      prefWidth="1040">
 
     <stylesheets>
         <URL value="@gonature.css"/>

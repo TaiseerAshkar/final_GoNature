@@ -504,6 +504,7 @@
 .chip-pending   { -fx-background-color: #F3E6C8;     -fx-text-fill: #8A6516;          }
 .chip-completed { -fx-background-color: #E4E1D4;     -fx-text-fill: -park-olive;      }
 .chip-cancelled { -fx-background-color: #ECD6CE;     -fx-text-fill: -park-rust;       }
+.chip-noshow    { -fx-background-color: #E8E5E2;     -fx-text-fill: #616161;          }
 .chip-waiting   { -fx-background-color: #D6E4EA;     -fx-text-fill: -park-lake-900;   }
 
 
@@ -547,6 +548,58 @@
 .help-link:hover {
     -fx-text-fill: -park-lake-900;
 }
+
+
+/* ── Help dialog (shared themed Help popups) ─────────────────── */
+.help-dialog {
+    -fx-background-color: -park-surface;
+}
+/* pine header strip with the trail-marker gold underline */
+.help-dialog > .header-panel {
+    -fx-background-color: linear-gradient(to right, -park-pine-dark, #25492F, -park-pine);
+    -fx-padding: 16 22;
+    -fx-border-color: transparent transparent -park-gold transparent;
+    -fx-border-width: 0 0 3 0;
+}
+.help-dialog > .header-panel .label {
+    -fx-font-family: -park-font-display;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #F5F1E4;
+    -fx-wrap-text: true;
+}
+.help-dialog > .content {
+    -fx-background-color: -park-surface;
+    -fx-padding: 16 18;
+}
+/* the scrollable body — inset parchment panel with a soft contour border */
+.help-dialog .help-text {
+    -fx-font-family: -park-font-body;
+    -fx-font-size: 12.5px;
+    -fx-text-fill: -park-text;
+    -fx-background-color: -park-surface-2;
+    -fx-background-radius: 10;
+    -fx-border-color: -park-line;
+    -fx-border-radius: 10;
+    -fx-border-width: 1;
+    -fx-padding: 4;
+}
+.help-dialog .help-text .content { -fx-background-color: -park-surface-2; }
+.help-dialog .help-text .text    { -fx-fill: -park-text; }
+.help-dialog > .button-bar {
+    -fx-background-color: -park-surface;
+    -fx-padding: 8 16 14 16;
+}
+.help-dialog .button-bar .button {
+    -fx-background-color: -park-pine;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8;
+    -fx-padding: 7 22;
+    -fx-cursor: hand;
+}
+.help-dialog .button-bar .button:hover  { -fx-background-color: -park-pine-700; }
+.help-dialog .button-bar .button:pressed { -fx-background-color: -park-pine-900; }
 
 
 /* ── Table view ──────────────────────────────────────────────── */
@@ -1128,6 +1181,7 @@
 .dark-mode .field-label       { -fx-text-fill: #9CCBA4; }
 .dark-mode .lbl-detail-key    { -fx-text-fill: -park-text-mid; }
 .dark-mode .lbl-hint          { -fx-text-fill: -park-text-muted; }
+.dark-mode .check-box         { -fx-text-fill: -park-text-mid; }
 .dark-mode .empty-state       { -fx-text-fill: -park-text-muted; }
 .dark-mode .lbl-success       { -fx-text-fill: #81c784; }
 .dark-mode .lbl-error         { -fx-text-fill: #E57373; }
@@ -1174,3 +1228,12 @@
 .dark-mode .chart-plot-background       { -fx-background-color: -park-surface-2; }
 .dark-mode .chart-vertical-grid-lines   { -fx-stroke: -park-line; }
 .dark-mode .chart-horizontal-grid-lines { -fx-stroke: -park-line; }
+
+/* Status chips — light-coloured backgrounds look like floating islands on dark
+   surfaces; replace with a subtle tinted dark pill and a vivid text colour. */
+.dark-mode .chip-confirmed { -fx-background-color: rgba(76,175,80,0.18);   -fx-text-fill: #4caf50; }
+.dark-mode .chip-pending   { -fx-background-color: rgba(255,152,0,0.18);   -fx-text-fill: #ff9800; }
+.dark-mode .chip-cancelled { -fx-background-color: rgba(244,67,54,0.18);   -fx-text-fill: #f44336; }
+.dark-mode .chip-noshow    { -fx-background-color: rgba(158,158,158,0.18); -fx-text-fill: #9e9e9e; }
+.dark-mode .chip-completed { -fx-background-color: rgba(100,181,246,0.18); -fx-text-fill: #64b5f6; }
+.dark-mode .chip-waiting   { -fx-background-color: rgba(100,181,246,0.14); -fx-text-fill: #90caf9; }

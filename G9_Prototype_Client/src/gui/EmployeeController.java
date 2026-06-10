@@ -15,10 +15,8 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.TextArea;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Duration;
@@ -347,18 +345,7 @@ public class EmployeeController {
      * @param content the help body text shown in the scrollable text area
      */
     private void showHelp(String title, String content) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Help");
-        alert.setHeaderText(title);
-        TextArea ta = new TextArea(content);
-        ta.setEditable(false);
-        ta.setWrapText(true);
-        ta.setPrefRowCount(20);
-        ta.setPrefWidth(480);
-        ta.setStyle("-fx-font-family: 'Segoe UI', Arial, sans-serif; -fx-font-size: 12px;");
-        alert.getDialogPane().setContent(ta);
-        alert.getDialogPane().setMinWidth(520);
-        alert.showAndWait();
+        HelpDialog.show(title, content);
     }
 
     /**
