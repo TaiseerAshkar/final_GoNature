@@ -222,15 +222,17 @@ public class MyOrdersController {
         ClientUI.chat.accept(new Message("CONFIRM_VISIT", selected.getId()));
 
         if (Boolean.TRUE.equals(ChatClient.lastConfirmVisitOk)) {
-            lblMessage.setStyle("-fx-text-fill: #1b5e20; -fx-font-weight: bold;");
-            lblMessage.setText("Visit confirmed! Order #" + selected.getId()
-                + " will not be auto-cancelled.");
             NotificationCenter.add("✅",
                 "Visit confirmed — Order #" + selected.getId()
                 + " at " + selected.getParkName()
                 + " on " + selected.getVisitDate()
                 + " at " + selected.getVisitTime()
                 + ". You're all set — see you there!");
+            // reload so the status chip refreshes from PENDING to CONFIRMED
+            loadOrders(txtVisitorId.getText().trim());
+            lblMessage.setStyle("");   // fall back to the theme-aware .lbl-success style
+            lblMessage.setText("Visit confirmed! Order #" + selected.getId()
+                + " is now confirmed.");
             btnConfirmVisit.setDisable(true);
         } else {
             lblMessage.setStyle("-fx-text-fill: #c62828;");

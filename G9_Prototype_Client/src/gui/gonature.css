@@ -1140,3 +1140,21 @@
 /* Keep header tags crisp on the (still-pine) header. */
 .dark-mode .header-timer { -fx-text-fill: #E9E2CF; }
 .dark-mode .header-badge { -fx-text-fill: #EBDFA8; }
+
+/* Table & list cell text is drawn via .text nodes that keep their default dark
+   fill, so it must be flipped to light explicitly on dark surfaces. */
+.dark-mode .table-row-cell .text          { -fx-fill: -park-text; }
+.dark-mode .table-row-cell:selected .text { -fx-fill: #EAF3EA; }
+.dark-mode .table-row-cell:empty          { -fx-background-color: -park-surface; }
+.dark-mode .list-cell                     { -fx-text-fill: -park-text; }
+.dark-mode .list-view .list-cell .text    { -fx-fill: -park-text; }
+
+/* TextField / PasswordField / TextArea typed text and caret on dark. */
+.dark-mode .text-field,
+.dark-mode .password-field,
+.dark-mode .text-area      { -fx-text-fill: -park-text; }
+.dark-mode .text-input     { -fx-highlight-fill: -park-sage-2; }
+
+/* ComboBox / DatePicker selected-value text on dark. */
+.dark-mode .combo-box-base .list-cell { -fx-text-fill: -park-text; }
+.dark-mode .date-picker .text-field   { -fx-text-fill: -park-text; }

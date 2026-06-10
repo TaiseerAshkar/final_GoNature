@@ -496,6 +496,28 @@ public class DBController {
         return new CancelResult(true, null);
     }
 
+    /**
+     * marks a PENDING order as CONFIRMED — used when a visitor confirms an upcoming visit.
+     * only rows currently {@code 'pending'} are changed; already-confirmed, cancelled, or
+     * completed orders are left untouched.
+     *
+     * @param orderId the primary-key ID of the order to confirm
+     * @return {@code true} if a pending row was updated to confirmed; {@code false} otherwise
+     */
+    public boolean confirmOrder(int orderId) {
+        if (connection == null) return false;
+        try {
+            PreparedStatement st = connection.prepareStatement(
+                "UPDATE orders SET status = 'confirmed' " +
+                "WHERE id = ? AND status = 'pending'");
+            st.setInt(1, orderId);
+            return st.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.out.println("confirmOrder error: " + e.getMessage());
+            return false;
+        }
+    }
+
     // ── Authentication ───────────────────────────────────────────────────────
 
     /**

@@ -644,6 +644,9 @@ public class EchoServer extends AbstractServer {
                         break;
                     }
                     ReminderService.getInstance().confirmVisit(orderId);
+                    // also flip the order's status from pending -> confirmed in the DB so it
+                    // shows as CONFIRMED in the visitor's My Orders (no-op if already confirmed)
+                    DBController.getInstance().confirmOrder(orderId);
                     client.sendToClient(new Message("CONFIRM_VISIT_OK", orderId));
                     break;
                 }
