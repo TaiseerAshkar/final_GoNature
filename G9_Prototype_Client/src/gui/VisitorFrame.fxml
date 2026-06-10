@@ -7,7 +7,7 @@
       fx:controller="gui.VisitorController"
       styleClass="screen-bg"
       spacing="0"
-      prefWidth="540" prefHeight="700">
+      prefWidth="640" prefHeight="780">
 
     <stylesheets>
         <URL value="@gonature.css"/>

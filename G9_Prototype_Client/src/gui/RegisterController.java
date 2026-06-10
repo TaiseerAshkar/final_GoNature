@@ -12,6 +12,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 /**
@@ -154,10 +155,10 @@ public class RegisterController {
         alert.setContentText(msg.toString());
         alert.showAndWait();
 
-        navigateToLogin();
+        closeOrReturn();
     }
 
-    /** navigates back to the login screen. */
+    /** navigates back to the login screen, reusing the current window. */
     private void navigateToLogin() {
         try {
             new LoginController().start((Stage) lblError.getScene().getWindow());
@@ -167,13 +168,29 @@ public class RegisterController {
     }
 
     /**
-     * cancels registration and returns to the login screen.
+     * leaves the registration form. when the form was opened in its own modal window
+     * (e.g. a service rep registering a visitor from the desk) it simply closes that
+     * window; when it was opened inside the main login window (the "Create an Account"
+     * flow) it returns to the login screen.
+     */
+    private void closeOrReturn() {
+        Stage stage = (Stage) lblError.getScene().getWindow();
+        if (stage != null && stage.getModality() != Modality.NONE) {
+            stage.close();        // standalone modal — just close it
+        } else {
+            navigateToLogin();    // opened in the login window — go back to login
+        }
+    }
+
+    /**
+     * cancels registration: closes the modal if opened standalone, otherwise
+     * returns to the login screen.
      *
      * @param event the button-click event
      */
     @FXML
     public void handleCancel(ActionEvent event) {
-        navigateToLogin();
+        closeOrReturn();
     }
 
     /** @param msg the error text to display */

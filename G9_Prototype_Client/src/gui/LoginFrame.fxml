@@ -14,7 +14,8 @@
       fx:controller="gui.LoginController"
       styleClass="screen-bg"
       alignment="CENTER" spacing="0"
-      prefWidth="480" prefHeight="740">
+      prefWidth="600" prefHeight="820"
+      minWidth="500" minHeight="780">
 
     <stylesheets>
         <URL value="@gonature.css"/>
@@ -28,42 +29,60 @@
     <!-- ── Topographic ridgeline hero ─────────────────────────── -->
     <StackPane prefHeight="210" maxWidth="Infinity">
 
-        <!-- layered mountains, pinned to the bottom of the hero -->
-        <Pane prefWidth="480" prefHeight="124" maxHeight="124"
+        <!-- layered mountains, fill the full available width -->
+        <Pane prefHeight="124" maxHeight="124" maxWidth="Infinity"
               StackPane.alignment="BOTTOM_CENTER">
 
             <!-- trail-marker sun -->
-            <Circle centerX="372" centerY="46" radius="22" fill="#C8962E" opacity="0.85"/>
+            <Circle centerX="420" centerY="46" radius="22" fill="#C8962E" opacity="0.85"/>
 
-            <!-- back ridge (olive) -->
+            <!-- back ridge (olive) — extends to 1400 so it fills any window width -->
             <Polygon fill="#6B7C41" opacity="0.95">
                 <points>
-                    <Double fx:value="0"/>   <Double fx:value="124"/>
-                    <Double fx:value="0"/>   <Double fx:value="74"/>
-                    <Double fx:value="64"/>  <Double fx:value="44"/>
-                    <Double fx:value="150"/> <Double fx:value="70"/>
-                    <Double fx:value="232"/> <Double fx:value="36"/>
-                    <Double fx:value="320"/> <Double fx:value="72"/>
-                    <Double fx:value="392"/> <Double fx:value="42"/>
-                    <Double fx:value="452"/> <Double fx:value="68"/>
-                    <Double fx:value="480"/> <Double fx:value="54"/>
-                    <Double fx:value="480"/> <Double fx:value="124"/>
+                    <Double fx:value="0"/>    <Double fx:value="124"/>
+                    <Double fx:value="0"/>    <Double fx:value="74"/>
+                    <Double fx:value="64"/>   <Double fx:value="44"/>
+                    <Double fx:value="150"/>  <Double fx:value="70"/>
+                    <Double fx:value="232"/>  <Double fx:value="36"/>
+                    <Double fx:value="320"/>  <Double fx:value="72"/>
+                    <Double fx:value="392"/>  <Double fx:value="42"/>
+                    <Double fx:value="452"/>  <Double fx:value="68"/>
+                    <Double fx:value="530"/>  <Double fx:value="48"/>
+                    <Double fx:value="610"/>  <Double fx:value="70"/>
+                    <Double fx:value="700"/>  <Double fx:value="40"/>
+                    <Double fx:value="790"/>  <Double fx:value="66"/>
+                    <Double fx:value="880"/>  <Double fx:value="44"/>
+                    <Double fx:value="970"/>  <Double fx:value="68"/>
+                    <Double fx:value="1060"/> <Double fx:value="46"/>
+                    <Double fx:value="1160"/> <Double fx:value="64"/>
+                    <Double fx:value="1260"/> <Double fx:value="50"/>
+                    <Double fx:value="1400"/> <Double fx:value="58"/>
+                    <Double fx:value="1400"/> <Double fx:value="124"/>
                 </points>
             </Polygon>
 
-            <!-- front ridge (pine) -->
+            <!-- front ridge (pine) — extends to 1400 -->
             <Polygon fill="#2E6B40">
                 <points>
-                    <Double fx:value="0"/>   <Double fx:value="124"/>
-                    <Double fx:value="0"/>   <Double fx:value="98"/>
-                    <Double fx:value="58"/>  <Double fx:value="76"/>
-                    <Double fx:value="132"/> <Double fx:value="94"/>
-                    <Double fx:value="206"/> <Double fx:value="66"/>
-                    <Double fx:value="286"/> <Double fx:value="98"/>
-                    <Double fx:value="360"/> <Double fx:value="74"/>
-                    <Double fx:value="430"/> <Double fx:value="96"/>
-                    <Double fx:value="480"/> <Double fx:value="82"/>
-                    <Double fx:value="480"/> <Double fx:value="124"/>
+                    <Double fx:value="0"/>    <Double fx:value="124"/>
+                    <Double fx:value="0"/>    <Double fx:value="98"/>
+                    <Double fx:value="58"/>   <Double fx:value="76"/>
+                    <Double fx:value="132"/>  <Double fx:value="94"/>
+                    <Double fx:value="206"/>  <Double fx:value="66"/>
+                    <Double fx:value="286"/>  <Double fx:value="98"/>
+                    <Double fx:value="360"/>  <Double fx:value="74"/>
+                    <Double fx:value="440"/>  <Double fx:value="96"/>
+                    <Double fx:value="520"/>  <Double fx:value="76"/>
+                    <Double fx:value="600"/>  <Double fx:value="98"/>
+                    <Double fx:value="690"/>  <Double fx:value="72"/>
+                    <Double fx:value="780"/>  <Double fx:value="94"/>
+                    <Double fx:value="870"/>  <Double fx:value="74"/>
+                    <Double fx:value="960"/>  <Double fx:value="96"/>
+                    <Double fx:value="1050"/> <Double fx:value="78"/>
+                    <Double fx:value="1150"/> <Double fx:value="96"/>
+                    <Double fx:value="1250"/> <Double fx:value="76"/>
+                    <Double fx:value="1400"/> <Double fx:value="88"/>
+                    <Double fx:value="1400"/> <Double fx:value="124"/>
                 </points>
             </Polygon>
         </Pane>
@@ -78,7 +97,7 @@
     </StackPane>
 
     <!-- ── Login card ─────────────────────────────────────────── -->
-    <VBox spacing="0" styleClass="login-card" maxWidth="400">
+    <VBox spacing="0" styleClass="login-card" maxWidth="420">
 
         <!-- Card heading -->
         <VBox spacing="3" style="-fx-padding: 0 0 16 0;">

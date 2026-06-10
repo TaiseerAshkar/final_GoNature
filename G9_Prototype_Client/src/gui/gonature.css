@@ -1181,6 +1181,7 @@
 .dark-mode .field-label       { -fx-text-fill: #9CCBA4; }
 .dark-mode .lbl-detail-key    { -fx-text-fill: -park-text-mid; }
 .dark-mode .lbl-hint          { -fx-text-fill: -park-text-muted; }
+.dark-mode .check-box         { -fx-text-fill: -park-text-mid; }
 .dark-mode .empty-state       { -fx-text-fill: -park-text-muted; }
 .dark-mode .lbl-success       { -fx-text-fill: #81c784; }
 .dark-mode .lbl-error         { -fx-text-fill: #E57373; }

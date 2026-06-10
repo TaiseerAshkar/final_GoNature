@@ -313,16 +313,18 @@ public class AcademicFrameController {
         stage.initOwner(lblUserName.getScene().getWindow());
         stage.setTitle("GoNature — Manage Guides");
 
-        Label titleLbl = new Label("Guide Management");
-        titleLbl.setStyle("-fx-font-size:17px; -fx-font-weight:bold; -fx-text-fill:#1b5e20;");
+        Label titleLbl = new Label("🧭  Guide Management");
+        titleLbl.getStyleClass().add("screen-title");
 
         Label statusLbl = new Label("Loading…");
-        statusLbl.setStyle("-fx-font-size:12px; -fx-text-fill:#555;");
+        statusLbl.getStyleClass().add("lbl-hint");
 
         // ── Table ────────────────────────────────────────────────────────────
         TableView<GuideDetail> table = new TableView<>();
+        table.getStyleClass().add("table-view");
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         table.setPrefHeight(300);
+        VBox.setVgrow(table, javafx.scene.layout.Priority.ALWAYS);
 
         TableColumn<GuideDetail, String> colId     = new TableColumn<>("ID Number");
         TableColumn<GuideDetail, String> colName   = new TableColumn<>("Name");
@@ -334,15 +336,15 @@ public class AcademicFrameController {
         colEmail.setCellValueFactory( new PropertyValueFactory<>("email"));
         colStatus.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getStatusLabel()));
 
-        // Colour the status cell
+        // Status cell rendered as a themed chip (approved = green, pending = amber)
         colStatus.setCellFactory(col -> new TableCell<GuideDetail, String>() {
             @Override protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty || item == null) { setText(null); setStyle(""); return; }
-                setText(item);
-                setStyle("APPROVED".equals(item)
-                    ? "-fx-text-fill:#1b5e20; -fx-font-weight:bold;"
-                    : "-fx-text-fill:#e65100; -fx-font-weight:bold;");
+                if (empty || item == null) { setText(null); setGraphic(null); return; }
+                Label chip = new Label(item);
+                chip.getStyleClass().add("APPROVED".equals(item) ? "chip-confirmed" : "chip-pending");
+                setText(null);
+                setGraphic(chip);
             }
         });
 
@@ -353,12 +355,10 @@ public class AcademicFrameController {
             private final Button btnApprove = new Button("✅  Approve");
             private final Button btnReject  = new Button("❌  Reject");
             {
-                btnApprove.setStyle(
-                    "-fx-background-color:#2e7d32; -fx-text-fill:white;" +
-                    "-fx-font-size:11px; -fx-background-radius:4; -fx-padding:3 10;");
-                btnReject.setStyle(
-                    "-fx-background-color:#c62828; -fx-text-fill:white;" +
-                    "-fx-font-size:11px; -fx-background-radius:4; -fx-padding:3 10;");
+                btnApprove.getStyleClass().add("btn-primary");
+                btnApprove.setStyle("-fx-font-size:11px; -fx-padding:4 10; -fx-background-radius:6;");
+                btnReject.getStyleClass().add("btn-danger");
+                btnReject.setStyle("-fx-font-size:11px; -fx-padding:4 10; -fx-background-radius:6;");
 
                 btnApprove.setOnAction(e -> {
                     GuideDetail g = getTableView().getItems().get(getIndex());
@@ -366,10 +366,10 @@ public class AcademicFrameController {
                     ChatClient.lastGuideActionFail    = null;
                     ClientUI.chat.accept(new Message("APPROVE_GUIDE", g.getIdNumber()));
                     if (ChatClient.lastGuideActionSuccess != null) {
-                        statusLbl.setStyle("-fx-font-size:12px; -fx-text-fill:#1b5e20;");
+                        statusLbl.getStyleClass().setAll("lbl-success");
                         statusLbl.setText("✅  Approved: " + g.getFullName());
                     } else {
-                        statusLbl.setStyle("-fx-font-size:12px; -fx-text-fill:#c62828;");
+                        statusLbl.getStyleClass().setAll("lbl-error");
                         statusLbl.setText("❌  " + (ChatClient.lastGuideActionFail != null
                             ? ChatClient.lastGuideActionFail : "Approval failed."));
                     }
@@ -389,10 +389,10 @@ public class AcademicFrameController {
                         ChatClient.lastGuideActionFail    = null;
                         ClientUI.chat.accept(new Message("REJECT_GUIDE", g.getIdNumber()));
                         if (ChatClient.lastGuideActionSuccess != null) {
-                            statusLbl.setStyle("-fx-font-size:12px; -fx-text-fill:#555;");
+                            statusLbl.getStyleClass().setAll("lbl-hint");
                             statusLbl.setText("🗑  Removed: " + g.getFullName());
                         } else {
-                            statusLbl.setStyle("-fx-font-size:12px; -fx-text-fill:#c62828;");
+                            statusLbl.getStyleClass().setAll("lbl-error");
                             statusLbl.setText("❌  " + (ChatClient.lastGuideActionFail != null
                                 ? ChatClient.lastGuideActionFail : "Rejection failed."));
                         }
@@ -413,26 +413,35 @@ public class AcademicFrameController {
         });
 
         table.getColumns().addAll(colId, colName, colEmail, colStatus, colActions);
-        table.setPlaceholder(new Label("No guides registered yet."));
+        Label placeholder = new Label("No guides registered yet.");
+        placeholder.getStyleClass().add("empty-state");
+        table.setPlaceholder(placeholder);
 
         Button btnRefresh = new Button("🔄  Refresh");
-        btnRefresh.setStyle(
-            "-fx-background-color:#0277BD; -fx-text-fill:white;" +
-            "-fx-font-size:12px; -fx-background-radius:4; -fx-padding:5 14;");
+        btnRefresh.getStyleClass().add("btn-teal");
+        btnRefresh.setStyle("-fx-font-size:12px; -fx-padding:7 16; -fx-background-radius:8;");
         btnRefresh.setOnAction(e -> refreshGuideTable(table, statusLbl));
 
         Button btnClose = new Button("Close");
-        btnClose.setStyle(
-            "-fx-background-color:#546e7a; -fx-text-fill:white;" +
-            "-fx-font-size:12px; -fx-background-radius:4; -fx-padding:5 14;");
+        btnClose.getStyleClass().add("btn-secondary");
+        btnClose.setStyle("-fx-font-size:12px; -fx-padding:7 16; -fx-background-radius:8;");
         btnClose.setOnAction(e -> stage.close());
 
-        HBox btnBar = new HBox(10, btnRefresh, btnClose);
+        javafx.scene.layout.Region spacer = new javafx.scene.layout.Region();
+        HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
+        HBox btnBar = new HBox(10, btnRefresh, spacer, btnClose);
         btnBar.setAlignment(Pos.CENTER_LEFT);
 
-        VBox root = new VBox(12, titleLbl, statusLbl, table, btnBar);
-        root.setPadding(new Insets(20));
-        stage.setScene(new Scene(root, 720, 430));
+        VBox header = new VBox(3, titleLbl, statusLbl);
+        VBox root = new VBox(14, header, table, btnBar);
+        root.getStyleClass().add("screen-bg");
+        root.setPadding(new Insets(22));
+
+        Scene scene = new Scene(root, 780, 470);
+        java.net.URL css = getClass().getResource("/gui/gonature.css");
+        if (css != null) scene.getStylesheets().add(css.toExternalForm());
+        ThemeManager.register(scene);   // follow the active light/dark theme
+        stage.setScene(scene);
 
         refreshGuideTable(table, statusLbl);
         stage.show();
@@ -447,12 +456,12 @@ public class AcademicFrameController {
             table.getItems().setAll(guides);
             long pending  = guides.stream().filter(g -> g.getIsApproved() == 0).count();
             long approved = guides.stream().filter(g -> g.getIsApproved() == 1).count();
-            statusLbl.setStyle("-fx-font-size:12px; -fx-text-fill:#555;");
+            statusLbl.getStyleClass().setAll("lbl-hint");
             statusLbl.setText(guides.size() + " guide(s)  —  " + pending
                 + " pending  |  " + approved + " approved");
         } else {
             table.getItems().clear();
-            statusLbl.setStyle("-fx-font-size:12px; -fx-text-fill:#c62828;");
+            statusLbl.getStyleClass().setAll("lbl-error");
             statusLbl.setText("Could not load guides — is the server running?");
         }
     }
@@ -472,16 +481,18 @@ public class AcademicFrameController {
         stage.initOwner(lblUserName.getScene().getWindow());
         stage.setTitle("GoNature — Pending Park Settings Approvals");
 
-        Label titleLbl = new Label("Pending Park Settings Requests");
-        titleLbl.setStyle("-fx-font-size:17px; -fx-font-weight:bold; -fx-text-fill:#0d47a1;");
+        Label titleLbl = new Label("⚙  Pending Park Settings Requests");
+        titleLbl.getStyleClass().add("screen-title");
 
         Label statusLbl = new Label("Loading…");
-        statusLbl.setStyle("-fx-font-size:12px; -fx-text-fill:#555;");
+        statusLbl.getStyleClass().add("lbl-hint");
 
         // ── Table ────────────────────────────────────────────────────────────
         TableView<ParkSettingsRequest> table = new TableView<>();
+        table.getStyleClass().add("table-view");
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         table.setPrefHeight(320);
+        VBox.setVgrow(table, javafx.scene.layout.Priority.ALWAYS);
 
         TableColumn<ParkSettingsRequest, String> colPark      = new TableColumn<>("Park");
         TableColumn<ParkSettingsRequest, String> colBy        = new TableColumn<>("Requested By");
@@ -500,12 +511,10 @@ public class AcademicFrameController {
             private final Button btnApprove = new Button("✅  Approve");
             private final Button btnReject  = new Button("❌  Reject");
             {
-                btnApprove.setStyle(
-                    "-fx-background-color:#1565c0; -fx-text-fill:white;" +
-                    "-fx-font-size:11px; -fx-background-radius:4; -fx-padding:3 10;");
-                btnReject.setStyle(
-                    "-fx-background-color:#c62828; -fx-text-fill:white;" +
-                    "-fx-font-size:11px; -fx-background-radius:4; -fx-padding:3 10;");
+                btnApprove.getStyleClass().add("btn-primary");
+                btnApprove.setStyle("-fx-font-size:11px; -fx-padding:4 10; -fx-background-radius:6;");
+                btnReject.getStyleClass().add("btn-danger");
+                btnReject.setStyle("-fx-font-size:11px; -fx-padding:4 10; -fx-background-radius:6;");
 
                 btnApprove.setOnAction(e -> {
                     ParkSettingsRequest r = getTableView().getItems().get(getIndex());
@@ -513,11 +522,11 @@ public class AcademicFrameController {
                     ChatClient.lastSettingsActionFail    = null;
                     ClientUI.chat.accept(new Message("APPROVE_SETTINGS", r.getId()));
                     if (ChatClient.lastSettingsActionSuccess != null) {
-                        statusLbl.setStyle("-fx-font-size:12px; -fx-text-fill:#1b5e20;");
+                        statusLbl.getStyleClass().setAll("lbl-success");
                         statusLbl.setText("✅  Approved request #" + r.getId()
                             + " — " + r.getParkName() + " settings updated.");
                     } else {
-                        statusLbl.setStyle("-fx-font-size:12px; -fx-text-fill:#c62828;");
+                        statusLbl.getStyleClass().setAll("lbl-error");
                         statusLbl.setText("❌  " + (ChatClient.lastSettingsActionFail != null
                             ? ChatClient.lastSettingsActionFail : "Approval failed."));
                     }
@@ -538,11 +547,11 @@ public class AcademicFrameController {
                         ChatClient.lastSettingsActionFail    = null;
                         ClientUI.chat.accept(new Message("REJECT_SETTINGS", r.getId()));
                         if (ChatClient.lastSettingsActionSuccess != null) {
-                            statusLbl.setStyle("-fx-font-size:12px; -fx-text-fill:#555;");
+                            statusLbl.getStyleClass().setAll("lbl-hint");
                             statusLbl.setText("🗑  Rejected request #" + r.getId()
                                 + " from " + r.getRequestedBy() + ".");
                         } else {
-                            statusLbl.setStyle("-fx-font-size:12px; -fx-text-fill:#c62828;");
+                            statusLbl.getStyleClass().setAll("lbl-error");
                             statusLbl.setText("❌  " + (ChatClient.lastSettingsActionFail != null
                                 ? ChatClient.lastSettingsActionFail : "Rejection failed."));
                         }
@@ -561,26 +570,35 @@ public class AcademicFrameController {
         });
 
         table.getColumns().addAll(colPark, colBy, colValues, colDate, colActions);
-        table.setPlaceholder(new Label("No pending settings requests."));
+        Label placeholder = new Label("No pending settings requests.");
+        placeholder.getStyleClass().add("empty-state");
+        table.setPlaceholder(placeholder);
 
         Button btnRefresh = new Button("🔄  Refresh");
-        btnRefresh.setStyle(
-            "-fx-background-color:#0277BD; -fx-text-fill:white;" +
-            "-fx-font-size:12px; -fx-background-radius:4; -fx-padding:5 14;");
+        btnRefresh.getStyleClass().add("btn-teal");
+        btnRefresh.setStyle("-fx-font-size:12px; -fx-padding:7 16; -fx-background-radius:8;");
         btnRefresh.setOnAction(e -> refreshRequestsTable(table, statusLbl));
 
         Button btnClose = new Button("Close");
-        btnClose.setStyle(
-            "-fx-background-color:#546e7a; -fx-text-fill:white;" +
-            "-fx-font-size:12px; -fx-background-radius:4; -fx-padding:5 14;");
+        btnClose.getStyleClass().add("btn-secondary");
+        btnClose.setStyle("-fx-font-size:12px; -fx-padding:7 16; -fx-background-radius:8;");
         btnClose.setOnAction(e -> stage.close());
 
-        HBox btnBar = new HBox(10, btnRefresh, btnClose);
+        javafx.scene.layout.Region spacer = new javafx.scene.layout.Region();
+        HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
+        HBox btnBar = new HBox(10, btnRefresh, spacer, btnClose);
         btnBar.setAlignment(Pos.CENTER_LEFT);
 
-        VBox root = new VBox(12, titleLbl, statusLbl, table, btnBar);
-        root.setPadding(new Insets(20));
-        stage.setScene(new Scene(root, 820, 450));
+        VBox header = new VBox(3, titleLbl, statusLbl);
+        VBox root = new VBox(14, header, table, btnBar);
+        root.getStyleClass().add("screen-bg");
+        root.setPadding(new Insets(22));
+
+        Scene scene = new Scene(root, 860, 480);
+        java.net.URL css = getClass().getResource("/gui/gonature.css");
+        if (css != null) scene.getStylesheets().add(css.toExternalForm());
+        ThemeManager.register(scene);   // follow the active light/dark theme
+        stage.setScene(scene);
 
         refreshRequestsTable(table, statusLbl);
         stage.show();
@@ -593,13 +611,13 @@ public class AcademicFrameController {
         List<ParkSettingsRequest> reqs = ChatClient.lastPendingSettings;
         if (reqs != null) {
             table.getItems().setAll(reqs);
-            statusLbl.setStyle("-fx-font-size:12px; -fx-text-fill:#555;");
+            statusLbl.getStyleClass().setAll("lbl-hint");
             statusLbl.setText(reqs.isEmpty()
                 ? "No pending requests."
                 : reqs.size() + " pending request(s) awaiting approval.");
         } else {
             table.getItems().clear();
-            statusLbl.setStyle("-fx-font-size:12px; -fx-text-fill:#c62828;");
+            statusLbl.getStyleClass().setAll("lbl-error");
             statusLbl.setText("Could not load requests — is the server running?");
         }
     }

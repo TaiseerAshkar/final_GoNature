@@ -7,7 +7,7 @@
       fx:controller="gui.EmployeeController"
       styleClass="screen-bg"
       spacing="0"
-      prefWidth="540" prefHeight="520">
+      prefWidth="740" prefHeight="780">
 
     <stylesheets>
         <URL value="@gonature.css"/>
