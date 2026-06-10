@@ -224,10 +224,7 @@ public class ServerPortFrameController {
     private void setRunning(String port) {
         if (lblServerStatus == null) return;
         lblServerStatus.setText("● Running on port " + port);
-        lblServerStatus.setStyle(
-            "-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #B9F6CA;" +
-            "-fx-background-color: rgba(0,0,0,0.18); -fx-background-radius: 20;" +
-            "-fx-padding: 3 12;");
+        lblServerStatus.getStyleClass().setAll("card-status-running");
         portxt.setDisable(true);
         if (btnStart != null) btnStart.setDisable(true);
         if (btnStop  != null) btnStop.setDisable(false);
@@ -236,10 +233,7 @@ public class ServerPortFrameController {
     private void setStopped() {
         if (lblServerStatus == null) return;
         lblServerStatus.setText("● Stopped");
-        lblServerStatus.setStyle(
-            "-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #FFCDD2;" +
-            "-fx-background-color: rgba(0,0,0,0.18); -fx-background-radius: 20;" +
-            "-fx-padding: 3 12;");
+        lblServerStatus.getStyleClass().setAll("card-status-stopped");
         portxt.setDisable(false);
         if (btnStart != null) btnStart.setDisable(false);
         if (btnStop  != null) btnStop.setDisable(true);

@@ -340,10 +340,7 @@ public class ServiceRepController {
      */
     @FXML
     public void handleHelp(ActionEvent event) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Help");
-        alert.setHeaderText("GoNature — Service Representative Guide");
-        TextArea ta = new TextArea(
+        HelpDialog.show("GoNature — Service Representative Guide",
             "LOADING ORDERS\n" +
             "  • Click 'Load All Orders' to see every active booking in the system.\n\n" +
             "UPDATING AN ORDER\n" +
@@ -361,14 +358,6 @@ public class ServiceRepController {
             "  CONFIRMED — confirmed by the park\n" +
             "  COMPLETED — visitor has checked in and out\n" +
             "  CANCELLED — cancelled by visitor or system");
-        ta.setEditable(false);
-        ta.setWrapText(true);
-        ta.setPrefRowCount(18);
-        ta.setPrefWidth(460);
-        ta.setStyle("-fx-font-family: 'Segoe UI', Arial, sans-serif; -fx-font-size: 12px;");
-        alert.getDialogPane().setContent(ta);
-        alert.getDialogPane().setMinWidth(500);
-        alert.showAndWait();
     }
 
     /**

@@ -550,6 +550,58 @@
 }
 
 
+/* ── Help dialog (shared themed Help popups) ─────────────────── */
+.help-dialog {
+    -fx-background-color: -park-surface;
+}
+/* pine header strip with the trail-marker gold underline */
+.help-dialog > .header-panel {
+    -fx-background-color: linear-gradient(to right, -park-pine-dark, #25492F, -park-pine);
+    -fx-padding: 16 22;
+    -fx-border-color: transparent transparent -park-gold transparent;
+    -fx-border-width: 0 0 3 0;
+}
+.help-dialog > .header-panel .label {
+    -fx-font-family: -park-font-display;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #F5F1E4;
+    -fx-wrap-text: true;
+}
+.help-dialog > .content {
+    -fx-background-color: -park-surface;
+    -fx-padding: 16 18;
+}
+/* the scrollable body — inset parchment panel with a soft contour border */
+.help-dialog .help-text {
+    -fx-font-family: -park-font-body;
+    -fx-font-size: 12.5px;
+    -fx-text-fill: -park-text;
+    -fx-background-color: -park-surface-2;
+    -fx-background-radius: 10;
+    -fx-border-color: -park-line;
+    -fx-border-radius: 10;
+    -fx-border-width: 1;
+    -fx-padding: 4;
+}
+.help-dialog .help-text .content { -fx-background-color: -park-surface-2; }
+.help-dialog .help-text .text    { -fx-fill: -park-text; }
+.help-dialog > .button-bar {
+    -fx-background-color: -park-surface;
+    -fx-padding: 8 16 14 16;
+}
+.help-dialog .button-bar .button {
+    -fx-background-color: -park-pine;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8;
+    -fx-padding: 7 22;
+    -fx-cursor: hand;
+}
+.help-dialog .button-bar .button:hover  { -fx-background-color: -park-pine-700; }
+.help-dialog .button-bar .button:pressed { -fx-background-color: -park-pine-900; }
+
+
 /* ── Table view ──────────────────────────────────────────────── */
 .table-view {
     -fx-background-color: -park-surface;
