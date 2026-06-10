@@ -63,7 +63,7 @@ public class MyOrdersController {
         if (s != null && s.getUserId() != null && !s.getUserId().isEmpty()) {
             txtVisitorId.setText(s.getUserId());
             txtVisitorId.setEditable(false);
-            txtVisitorId.setStyle("-fx-background-color: #f5f5f5; -fx-background-radius: 4; -fx-padding: 5;");
+            txtVisitorId.setStyle("-fx-background-color: -park-surface-2; -fx-background-radius: 4; -fx-padding: 5;");
         }
 
         colId.setCellValueFactory(cell ->
@@ -222,15 +222,17 @@ public class MyOrdersController {
         ClientUI.chat.accept(new Message("CONFIRM_VISIT", selected.getId()));
 
         if (Boolean.TRUE.equals(ChatClient.lastConfirmVisitOk)) {
-            lblMessage.setStyle("-fx-text-fill: #1b5e20; -fx-font-weight: bold;");
-            lblMessage.setText("Visit confirmed! Order #" + selected.getId()
-                + " will not be auto-cancelled.");
             NotificationCenter.add("✅",
                 "Visit confirmed — Order #" + selected.getId()
                 + " at " + selected.getParkName()
                 + " on " + selected.getVisitDate()
                 + " at " + selected.getVisitTime()
                 + ". You're all set — see you there!");
+            // reload so the status chip refreshes from PENDING to CONFIRMED
+            loadOrders(txtVisitorId.getText().trim());
+            lblMessage.setStyle("");   // fall back to the theme-aware .lbl-success style
+            lblMessage.setText("Visit confirmed! Order #" + selected.getId()
+                + " is now confirmed.");
             btnConfirmVisit.setDisable(true);
         } else {
             lblMessage.setStyle("-fx-text-fill: #c62828;");

@@ -162,7 +162,8 @@ public class BookingController {
         final String dateStr   = date.format(DATE_FMT);
         final int    capacity  = park.getCapacity();
 
-        lblAvailability.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #546E7A;");
+        lblAvailability.getStyleClass().setAll("lbl-loading");
+        lblAvailability.setStyle("");
         lblAvailability.setText("Checking availability…");
 
         Thread worker = new Thread(() -> {
@@ -175,19 +176,19 @@ public class BookingController {
                 Platform.runLater(() -> {
                     if (available == null) {
                         // null = server never responded (15-second timeout or network error)
-                        lblAvailability.setStyle(
-                            "-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #546E7A;");
+                        lblAvailability.getStyleClass().setAll("lbl-loading");
+                        lblAvailability.setStyle("");
                         lblAvailability.setText("Couldn't check availability right now.");
                     } else if (available <= 0) {
                         // 0  = park is exactly full
                         // <0 = slight overbooking edge case — still treat as full
-                        lblAvailability.setStyle(
-                            "-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #E65100;");
+                        lblAvailability.getStyleClass().setAll("lbl-warning");
+                        lblAvailability.setStyle("");
                         lblAvailability.setText(
                             "This slot is fully booked — you may join the waiting list.");
                     } else {
-                        lblAvailability.setStyle(
-                            "-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #1B5E20;");
+                        lblAvailability.getStyleClass().setAll("lbl-success");
+                        lblAvailability.setStyle("");
                         lblAvailability.setText(
                             "Available spots: " + available + " of " + capacity);
                     }

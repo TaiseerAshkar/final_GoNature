@@ -5,6 +5,7 @@ import client.ClientUI;
 import logic.Message;
 import logic.Park;
 import logic.ReportCancelRow;
+import logic.ReportRequest;
 import logic.ReportUsageRow;
 import logic.ReportVisitorRow;
 import logic.UserSession;
@@ -24,7 +25,9 @@ import javafx.util.StringConverter;
 
 import javafx.collections.FXCollections;
 import javafx.scene.chart.CategoryAxis;
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -35,9 +38,16 @@ import java.util.TreeSet;
  * FXML controller for the reports dashboard ({@code ReportsFrame.fxml}).
  *
  * <p>three tabs: visitor bar chart, cancellation table, and hourly-usage line chart.
- * all three auto-load on open. park managers are locked to their park; dept. managers see all.
+ * a shared period selector (month + year) at the top controls which calendar month
+ * is shown. park managers are locked to their park; dept. managers see all.
  */
 public class ReportsController {
+
+    // ── Month names in order ─────────────────────────────────────────────────
+    private static final List<String> MONTH_NAMES = Arrays.asList(
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+    );
 
     /**
      * set by {@link EmployeeController} before opening this window to lock the dashboard
@@ -49,8 +59,13 @@ public class ReportsController {
     private Integer myParkId   = null;  // captured from lockedParkId at init; null = no restriction
     private String  myParkName = null;  // display name of the locked park, used to filter the usage chart
 
-    @FXML private Label lblManagerName;
+    @FXML private Label  lblManagerName;
     @FXML private Button btnTheme;
+
+    // ── Period selector (shared across all tabs) ─────────────────────────────
+    @FXML private ComboBox<String>  cboMonth;
+    @FXML private ComboBox<Integer> cboYear;
+    @FXML private Label             lblPeriodBadge;
 
     // ── Tab 1: Visitor Report ────────────────────────────────────────────────
     @FXML private ComboBox<Park>           cboVisitorPark;
@@ -79,30 +94,94 @@ public class ReportsController {
     @FXML private LineChart<String, Number> chartUsage;
 
     /**
-     * captures and clears the static park lock, wires table columns, populates park filters,
-     * then auto-loads all three reports.
+     * captures and clears the static park lock, sets up the period selector to the
+     * current month, wires table columns, populates park filters, then auto-loads all
+     * three reports for the current month.
      */
     @FXML
     public void initialize() {
         ThemeManager.installToggle(btnTheme);
-        // clear the static lock immediately so the next open (from the management dashboard) is unrestricted
-        myParkId      = lockedParkId;
-        lockedParkId  = null;
+        // clear the static lock immediately so the next open is unrestricted
+        myParkId     = lockedParkId;
+        lockedParkId = null;
 
         UserSession s = UserSession.getInstance();
         if (s != null) {
             String name = s.getFullName();
-            if (myParkId != null) {
-                name += "  —  Park #" + myParkId + " (locked)";
-            }
+            if (myParkId != null) name += "  —  Park #" + myParkId + " (locked)";
             lblManagerName.setText(name);
         }
+
+        setupPeriodSelector();
         setupCancelTable();
         loadParksIntoFilters();
         loadVisitorReport();
         loadCancelReport();
         loadUsageReport();
     }
+
+    // ── Period selector ───────────────────────────────────────────────────────
+
+    /**
+     * populates month and year ComboBoxes and defaults to the current calendar month.
+     */
+    private void setupPeriodSelector() {
+        cboMonth.getItems().addAll(MONTH_NAMES);
+
+        LocalDate today = LocalDate.now();
+        int currentYear = today.getYear();
+        for (int y = currentYear - 2; y <= currentYear + 1; y++) {
+            cboYear.getItems().add(y);
+        }
+
+        // default to current month / year
+        cboMonth.setValue(MONTH_NAMES.get(today.getMonthValue() - 1));
+        cboYear.setValue(currentYear);
+    }
+
+    /** @return the 1-based month number from the month ComboBox */
+    private int getSelectedMonth() {
+        String m = cboMonth.getValue();
+        if (m == null) return LocalDate.now().getMonthValue();
+        int idx = MONTH_NAMES.indexOf(m);
+        return idx < 0 ? LocalDate.now().getMonthValue() : idx + 1;
+    }
+
+    /** @return the selected year (four-digit) from the year ComboBox */
+    private int getSelectedYear() {
+        Integer y = cboYear.getValue();
+        return y != null ? y : LocalDate.now().getYear();
+    }
+
+    /** @return a human-readable label such as {@code "June 2026"} */
+    private String periodLabel() {
+        return cboMonth.getValue() + " " + getSelectedYear();
+    }
+
+    /**
+     * builds a {@link ReportRequest} for the given park ID and the currently
+     * selected month/year.
+     *
+     * @param parkId the park ID, or {@code 0} for all parks
+     */
+    private ReportRequest buildRequest(int parkId) {
+        return new ReportRequest(parkId, getSelectedYear(), getSelectedMonth());
+    }
+
+    /**
+     * refreshes all three reports for the currently selected period.
+     *
+     * @param e the button-click event
+     */
+    @FXML
+    public void handleGenerate(ActionEvent e) {
+        lblPeriodBadge.setText("Showing: " + periodLabel());
+        loadVisitorReport();
+        loadCancelReport();
+        loadUsageReport();
+    }
+
+    // ── Cancel table setup ────────────────────────────────────────────────────
 
     /**
      * wires cell-value factories for the cancellation table.
@@ -130,6 +209,8 @@ public class ReportsController {
             new SimpleStringProperty(c.getValue().getStatus()));
         UiCells.applyStatusChip(colCancelStatus);
     }
+
+    // ── Park filter setup ─────────────────────────────────────────────────────
 
     /**
      * loads parks and populates both filter combos.
@@ -176,17 +257,19 @@ public class ReportsController {
         }
     }
 
+    // ── Tab load methods ──────────────────────────────────────────────────────
+
     /** @param e the button-click event */
     @FXML public void handleRefreshVisitor(ActionEvent e) { loadVisitorReport(); }
 
     /**
-     * loads visitor report data and populates the bar chart.
+     * loads visitor report data for the selected month and populates the bar chart.
      * INDIVIDUAL and SUBSCRIBER types are merged into one series so the chart stays readable.
      */
     private void loadVisitorReport() {
         lblVisitorError.setText("");
         lblVisitorStatus.setText("Loading…");
-        // park managers are locked; everyone else uses the combo selection
+
         Integer parkId = (myParkId != null) ? myParkId : null;
         if (myParkId == null) {
             Park sel = cboVisitorPark.getValue();
@@ -194,9 +277,13 @@ public class ReportsController {
         }
 
         ChatClient.lastVisitorReport = null;
-        ClientUI.chat.accept(new Message("GET_VISITOR_REPORT", parkId != null ? parkId : 0));
+        ClientUI.chat.accept(new Message("GET_VISITOR_REPORT",
+            buildRequest(parkId != null ? parkId : 0)));
         List<ReportVisitorRow> rows = ChatClient.lastVisitorReport;
         chartVisitors.getData().clear();
+
+        String period = periodLabel();
+        chartVisitors.setTitle("Visitor Report — " + period);
 
         if (rows == null) {
             lblVisitorError.setText("Could not load visitor data. Is the server running?");
@@ -204,7 +291,7 @@ public class ReportsController {
             return;
         }
         if (rows.isEmpty()) {
-            lblVisitorStatus.setText("No completed or confirmed visits in the last 30 days.");
+            lblVisitorStatus.setText("No completed or confirmed visits in " + period + ".");
             return;
         }
 
@@ -228,20 +315,20 @@ public class ReportsController {
         }
         chartVisitors.getData().addAll(indSeries, grpSeries);
         lblVisitorStatus.setText(
-            total + " visitors across " + byDay.size() + " day(s) — last 30 days");
+            total + " visitor(s) across " + byDay.size() + " day(s) — " + period);
     }
 
     /** @param e the button-click event */
     @FXML public void handleRefreshCancel(ActionEvent e) { loadCancelReport(); }
 
     /**
-     * loads cancellation report data and populates the table.
+     * loads cancellation report data for the selected month and populates the table.
      * shows cancelled vs no-show counts separately in the status label.
      */
     private void loadCancelReport() {
         lblCancelError.setText("");
         lblCancelStatus.setText("Loading…");
-        // park managers are locked; everyone else uses the combo selection
+
         Integer parkId = (myParkId != null) ? myParkId : null;
         if (myParkId == null) {
             Park sel = cboCancelPark.getValue();
@@ -249,9 +336,12 @@ public class ReportsController {
         }
 
         ChatClient.lastCancelReport = null;
-        ClientUI.chat.accept(new Message("GET_CANCEL_REPORT", parkId != null ? parkId : 0));
+        ClientUI.chat.accept(new Message("GET_CANCEL_REPORT",
+            buildRequest(parkId != null ? parkId : 0)));
         List<ReportCancelRow> rows = ChatClient.lastCancelReport;
         tableCancels.getItems().clear();
+
+        String period = periodLabel();
 
         if (rows == null) {
             lblCancelError.setText("Could not load cancellation data. Is the server running?");
@@ -262,14 +352,15 @@ public class ReportsController {
         long cancelled = rows.stream().filter(r -> "CANCELLED".equals(r.getStatus())).count();
         long noShow    = rows.stream().filter(r -> "NO_SHOW".equals(r.getStatus())).count();
         lblCancelStatus.setText(
-            rows.size() + " record(s) — " + cancelled + " cancelled, " + noShow + " no-show");
+            rows.size() + " record(s) — " + cancelled + " cancelled, "
+            + noShow + " no-show — " + period);
     }
 
     /** @param e the button-click event */
     @FXML public void handleRefreshUsage(ActionEvent e) { loadUsageReport(); }
 
     /**
-     * loads usage report data and plots one line-chart series per park.
+     * loads usage report data for the selected month and plots one line-chart series per park.
      * each point is {@code (hourSlot, pct-of-capacity)}, capped at 100%.
      */
     private void loadUsageReport() {
@@ -277,9 +368,12 @@ public class ReportsController {
         lblUsageStatus.setText("Loading…");
 
         ChatClient.lastUsageReport = null;
-        ClientUI.chat.accept(new Message("GET_USAGE_REPORT", null));
+        ClientUI.chat.accept(new Message("GET_USAGE_REPORT", buildRequest(0)));
         List<ReportUsageRow> rows = ChatClient.lastUsageReport;
         chartUsage.getData().clear();
+
+        String period = periodLabel();
+        chartUsage.setTitle("Usage Report — " + period);
 
         if (rows == null) {
             lblUsageError.setText("Could not load usage data. Is the server running?");
@@ -287,7 +381,7 @@ public class ReportsController {
             return;
         }
         if (rows.isEmpty()) {
-            lblUsageStatus.setText("No usage data for the last 30 days.");
+            lblUsageStatus.setText("No usage data for " + period + ".");
             return;
         }
 
@@ -323,8 +417,10 @@ public class ReportsController {
             }
             chartUsage.getData().add(series);
         }
-        lblUsageStatus.setText(byPark.size() + " park(s) — last 30 days");
+        lblUsageStatus.setText(byPark.size() + " park(s) — " + period);
     }
+
+    // ── Navigation ────────────────────────────────────────────────────────────
 
     /**
      * closes the reports dashboard window.

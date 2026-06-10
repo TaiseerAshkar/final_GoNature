@@ -17,6 +17,7 @@ import logic.RegisterGuideRequest;
 import logic.RegisterRequest;
 import logic.RegisterResult;
 import logic.ReportCancelRow;
+import logic.ReportRequest;
 import logic.ReportUsageRow;
 import logic.ReportVisitorRow;
 import ocsf.server.AbstractServer;
@@ -419,32 +420,44 @@ public class EchoServer extends AbstractServer {
                 }
 
                 case "GET_VISITOR_REPORT": {
-                    Integer parkId = null;
-                    if (incoming.getData() instanceof Integer) {
-                        int pid = (Integer) incoming.getData();
-                        if (pid > 0) parkId = pid;
-                    }
+                    ReportRequest vReq = (incoming.getData() instanceof ReportRequest)
+                        ? (ReportRequest) incoming.getData() : null;
+                    int vYear  = (vReq != null) ? vReq.getYear()
+                                                : LocalDate.now().getYear();
+                    int vMonth = (vReq != null) ? vReq.getMonth()
+                                                : LocalDate.now().getMonthValue();
+                    Integer vParkId = (vReq != null && vReq.getParkId() > 0)
+                        ? vReq.getParkId() : null;
                     List<ReportVisitorRow> vReport =
-                        DBController.getInstance().getVisitorReport(parkId);
+                        DBController.getInstance().getVisitorReport(vParkId, vYear, vMonth);
                     client.sendToClient(new Message("VISITOR_REPORT_DATA", vReport));
                     break;
                 }
 
                 case "GET_CANCEL_REPORT": {
-                    Integer parkId = null;
-                    if (incoming.getData() instanceof Integer) {
-                        int pid = (Integer) incoming.getData();
-                        if (pid > 0) parkId = pid;
-                    }
+                    ReportRequest cReq = (incoming.getData() instanceof ReportRequest)
+                        ? (ReportRequest) incoming.getData() : null;
+                    int cYear  = (cReq != null) ? cReq.getYear()
+                                                : LocalDate.now().getYear();
+                    int cMonth = (cReq != null) ? cReq.getMonth()
+                                                : LocalDate.now().getMonthValue();
+                    Integer cParkId = (cReq != null && cReq.getParkId() > 0)
+                        ? cReq.getParkId() : null;
                     List<ReportCancelRow> cReport =
-                        DBController.getInstance().getCancelReport(parkId);
+                        DBController.getInstance().getCancelReport(cParkId, cYear, cMonth);
                     client.sendToClient(new Message("CANCEL_REPORT_DATA", cReport));
                     break;
                 }
 
                 case "GET_USAGE_REPORT": {
+                    ReportRequest uReq = (incoming.getData() instanceof ReportRequest)
+                        ? (ReportRequest) incoming.getData() : null;
+                    int uYear  = (uReq != null) ? uReq.getYear()
+                                                : LocalDate.now().getYear();
+                    int uMonth = (uReq != null) ? uReq.getMonth()
+                                                : LocalDate.now().getMonthValue();
                     List<ReportUsageRow> uReport =
-                        DBController.getInstance().getUsageReport();
+                        DBController.getInstance().getUsageReport(uYear, uMonth);
                     client.sendToClient(new Message("USAGE_REPORT_DATA", uReport));
                     break;
                 }
@@ -644,6 +657,9 @@ public class EchoServer extends AbstractServer {
                         break;
                     }
                     ReminderService.getInstance().confirmVisit(orderId);
+                    // also flip the order's status from pending -> confirmed in the DB so it
+                    // shows as CONFIRMED in the visitor's My Orders (no-op if already confirmed)
+                    DBController.getInstance().confirmOrder(orderId);
                     client.sendToClient(new Message("CONFIRM_VISIT_OK", orderId));
                     break;
                 }

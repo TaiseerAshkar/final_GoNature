@@ -496,6 +496,28 @@ public class DBController {
         return new CancelResult(true, null);
     }
 
+    /**
+     * marks a PENDING order as CONFIRMED — used when a visitor confirms an upcoming visit.
+     * only rows currently {@code 'pending'} are changed; already-confirmed, cancelled, or
+     * completed orders are left untouched.
+     *
+     * @param orderId the primary-key ID of the order to confirm
+     * @return {@code true} if a pending row was updated to confirmed; {@code false} otherwise
+     */
+    public boolean confirmOrder(int orderId) {
+        if (connection == null) return false;
+        try {
+            PreparedStatement st = connection.prepareStatement(
+                "UPDATE orders SET status = 'confirmed' " +
+                "WHERE id = ? AND status = 'pending'");
+            st.setInt(1, orderId);
+            return st.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.out.println("confirmOrder error: " + e.getMessage());
+            return false;
+        }
+    }
+
     // ── Authentication ───────────────────────────────────────────────────────
 
     /**
@@ -945,14 +967,16 @@ public class DBController {
     // ── Reports ───────────────────────────────────────────────────────────────
 
     /**
-     * visitor report: total visitors per day per order-type for the last 30 days.
+     * visitor report: total visitors per day per order-type for the given calendar month.
      * each row has a {@code dayLabel} for the chart X-axis and a {@code visitDate} for sort ordering.
      *
      * @param parkId the park to filter by, or {@code null} for all parks
+     * @param year   the four-digit calendar year
+     * @param month  the month number 1–12
      * @return a list of {@link ReportVisitorRow} objects ordered by date and order type;
      *         empty on error or no data
      */
-    public List<ReportVisitorRow> getVisitorReport(Integer parkId) {
+    public List<ReportVisitorRow> getVisitorReport(Integer parkId, int year, int month) {
         List<ReportVisitorRow> list = new ArrayList<>();
         if (connection == null) return list;
         try {
@@ -963,12 +987,14 @@ public class DBController {
                 "       SUM(o.num_visitors) AS total_visitors " +
                 "FROM orders o " +
                 "WHERE o.status IN ('confirmed','completed') " +
-                "  AND o.visit_date BETWEEN DATE_SUB(CURDATE(), INTERVAL 29 DAY) AND CURDATE() " +
+                "  AND YEAR(o.visit_date) = ? AND MONTH(o.visit_date) = ? " +
                 (parkId != null ? "  AND o.park_id = ? " : "") +
                 "GROUP BY o.visit_date, o.order_type " +
                 "ORDER BY o.visit_date ASC, o.order_type ASC";
             PreparedStatement st = connection.prepareStatement(sql);
-            if (parkId != null) st.setInt(1, parkId);
+            st.setInt(1, year);
+            st.setInt(2, month);
+            if (parkId != null) st.setInt(3, parkId);
             ResultSet rs = st.executeQuery();
             while (rs.next()) {
                 list.add(new ReportVisitorRow(
@@ -985,12 +1011,15 @@ public class DBController {
     }
 
     /**
-     * cancellation report: all {@code 'cancelled'} and {@code 'no_show'} orders, newest first.
+     * cancellation report: all {@code 'cancelled'} and {@code 'no_show'} orders whose
+     * planned visit date falls in the given calendar month, newest first.
      *
      * @param parkId the park to filter by, or {@code null} for all parks
+     * @param year   the four-digit calendar year
+     * @param month  the month number 1–12
      * @return a list of {@link ReportCancelRow} objects; empty on error or no data
      */
-    public List<ReportCancelRow> getCancelReport(Integer parkId) {
+    public List<ReportCancelRow> getCancelReport(Integer parkId, int year, int month) {
         List<ReportCancelRow> list = new ArrayList<>();
         if (connection == null) return list;
         try {
@@ -1004,10 +1033,13 @@ public class DBController {
                 "       DATE_FORMAT(o.created_at,'%Y-%m-%d %H:%i') AS created_at " +
                 "FROM orders o JOIN parks p ON p.id = o.park_id " +
                 "WHERE o.status IN ('cancelled','no_show') " +
+                "  AND YEAR(o.visit_date) = ? AND MONTH(o.visit_date) = ? " +
                 (parkId != null ? "  AND o.park_id = ? " : "") +
                 "ORDER BY o.created_at DESC";
             PreparedStatement st = connection.prepareStatement(sql);
-            if (parkId != null) st.setInt(1, parkId);
+            st.setInt(1, year);
+            st.setInt(2, month);
+            if (parkId != null) st.setInt(3, parkId);
             ResultSet rs = st.executeQuery();
             while (rs.next()) {
                 list.add(new ReportCancelRow(
@@ -1029,13 +1061,16 @@ public class DBController {
     }
 
     /**
-     * usage report: average visitors per hour slot per day over the last 30 days, across all parks.
-     * the client divides by capacity × 100 to get percentage-of-capacity for the line chart.
+     * usage report: average visitors per hour slot per day for the given calendar month,
+     * across all parks.  the client divides by capacity × 100 to get percentage-of-capacity
+     * for the line chart.
      *
+     * @param year  the four-digit calendar year
+     * @param month the month number 1–12
      * @return a list of {@link ReportUsageRow} objects ordered by park name then hour slot;
      *         empty on error or no data
      */
-    public List<ReportUsageRow> getUsageReport() {
+    public List<ReportUsageRow> getUsageReport(int year, int month) {
         List<ReportUsageRow> list = new ArrayList<>();
         if (connection == null) return list;
         try {
@@ -1047,9 +1082,11 @@ public class DBController {
                 "             / GREATEST(COUNT(DISTINCT o.visit_date), 1), 1) AS avg_per_day " +
                 "FROM orders o JOIN parks p ON p.id = o.park_id " +
                 "WHERE o.status IN ('confirmed','completed') " +
-                "  AND o.visit_date BETWEEN DATE_SUB(CURDATE(), INTERVAL 29 DAY) AND CURDATE() " +
+                "  AND YEAR(o.visit_date) = ? AND MONTH(o.visit_date) = ? " +
                 "GROUP BY p.id, p.name, p.capacity, TIME_FORMAT(o.visit_time,'%H:00') " +
                 "ORDER BY p.name ASC, hour_slot ASC");
+            st.setInt(1, year);
+            st.setInt(2, month);
             ResultSet rs = st.executeQuery();
             while (rs.next()) {
                 list.add(new ReportUsageRow(
