@@ -30,6 +30,13 @@ public class LoginController {
     @FXML private CheckBox      chkShowPassword;
     @FXML private Label         lblError;
     @FXML private Button        btnLogin;
+    @FXML private Button        btnTheme;
+
+    /** wires the dark-mode toggle so the theme can be switched from the login screen too. */
+    @FXML
+    public void initialize() {
+        ThemeManager.installToggle(btnTheme);
+    }
 
     /**
      * routes to visitor or staff login based on whether a password was supplied.

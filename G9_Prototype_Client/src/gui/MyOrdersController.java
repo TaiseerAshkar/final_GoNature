@@ -40,6 +40,7 @@ public class MyOrdersController {
     @FXML private TableColumn<OrderDetail, String>  colType;
     @FXML private TableColumn<OrderDetail, String>  colStatus;
     @FXML private TableColumn<OrderDetail, String>  colCreated;
+    @FXML private Button                            btnTheme;
     @FXML private Button                            btnCancel;
     @FXML private Button                            btnShowQR;
     @FXML private Button                            btnConfirmVisit;
@@ -57,6 +58,7 @@ public class MyOrdersController {
      */
     @FXML
     public void initialize() {
+        ThemeManager.installToggle(btnTheme);
         UserSession s = UserSession.getInstance();
         if (s != null && s.getUserId() != null && !s.getUserId().isEmpty()) {
             txtVisitorId.setText(s.getUserId());
@@ -268,7 +270,9 @@ public class MyOrdersController {
     public void start(Stage stage) throws Exception {
         Parent root = FXMLLoader.load(getClass().getResource("/gui/MyOrdersFrame.fxml"));
         stage.setTitle("GoNature — My Orders");
-        stage.setScene(new Scene(root));
+        Scene scene = new Scene(root);
+        ThemeManager.register(scene);
+        stage.setScene(scene);
         stage.show();
     }
 }

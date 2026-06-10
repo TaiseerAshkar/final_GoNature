@@ -18,6 +18,7 @@
         <Label text="🌿 GoNature" styleClass="header-logo"/>
         <Region HBox.hgrow="ALWAYS"/>
         <Label text="Reservation System" styleClass="header-subtitle"/>
+        <Button fx:id="btnTheme" text="🌙" styleClass="btn-outline"/>
     </HBox>
 
     <!-- ── Scrollable body ─────────────────────────────────────── -->

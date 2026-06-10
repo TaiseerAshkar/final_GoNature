@@ -84,7 +84,7 @@ public class AcademicFrameController {
             lblUserRole.setText(session.getRole());
         }
 
-        if (btnTheme != null) btnTheme.setText(ThemeManager.iconText());
+        ThemeManager.installToggle(btnTheme);
         startSessionTimer();
 
         colId.setCellValueFactory(d ->

@@ -11,6 +11,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
@@ -27,6 +28,7 @@ import javafx.stage.Stage;
  */
 public class ParkSettingsController {
 
+    @FXML private Button    btnTheme;
     @FXML private Label     lblParkName;
     @FXML private TextField txtCapacity;
     @FXML private TextField txtMaxOrders;
@@ -40,6 +42,7 @@ public class ParkSettingsController {
      */
     @FXML
     public void initialize() {
+        ThemeManager.installToggle(btnTheme);
         UserSession s = UserSession.getInstance();
         if (s == null || s.getParkId() == null) {
             setError("No park assigned to your account.");
@@ -158,7 +161,9 @@ public class ParkSettingsController {
     public void start(Stage stage) throws Exception {
         Parent root = FXMLLoader.load(getClass().getResource("/gui/ParkSettingsFrame.fxml"));
         stage.setTitle("GoNature — Park Settings");
-        stage.setScene(new Scene(root));
+        Scene scene = new Scene(root);
+        ThemeManager.register(scene);
+        stage.setScene(scene);
         stage.show();
     }
 }

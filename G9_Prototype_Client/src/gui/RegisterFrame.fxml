@@ -17,6 +17,8 @@
     <HBox styleClass="header-bar" alignment="CENTER_LEFT" spacing="12">
         <Label text="🌿 GoNature" styleClass="header-logo"/>
         <Label text="—  Create Account" styleClass="header-subtitle"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button fx:id="btnTheme" text="🌙" styleClass="btn-outline"/>
     </HBox>
 
     <!-- Scrollable form body -->

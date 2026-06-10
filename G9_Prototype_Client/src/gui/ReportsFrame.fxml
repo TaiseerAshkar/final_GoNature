@@ -19,6 +19,7 @@
         <Label text="🌿 GoNature — Reports Dashboard" styleClass="header-logo"/>
         <Region HBox.hgrow="ALWAYS"/>
         <Label fx:id="lblManagerName" styleClass="header-subtitle"/>
+        <Button fx:id="btnTheme" text="🌙" styleClass="btn-outline"/>
         <Button text="Close" onAction="#handleClose" styleClass="btn-outline"/>
     </HBox>
 

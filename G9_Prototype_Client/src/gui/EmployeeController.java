@@ -77,7 +77,7 @@ public class EmployeeController {
             // btnReports is disabled by default in FXML — employees can't access reports
         }
 
-        if (btnTheme != null) btnTheme.setText(ThemeManager.iconText());
+        ThemeManager.installToggle(btnTheme);
         startSessionTimer();
 
         loadStats();

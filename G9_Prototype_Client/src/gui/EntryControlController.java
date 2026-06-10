@@ -31,6 +31,7 @@ import java.util.List;
 public class EntryControlController {
 
     @FXML private Label lblParkName;
+    @FXML private Button btnTheme;
 
     // Check-in tab fields
     @FXML private TextField        txtVisitorId;
@@ -63,6 +64,7 @@ public class EntryControlController {
      */
     @FXML
     public void initialize() {
+        ThemeManager.installToggle(btnTheme);
         UserSession s = UserSession.getInstance();
         lblParkName.setText(s != null && s.getParkId() != null
             ? "Park #" + s.getParkId() : "No Park Assigned");
@@ -324,7 +326,9 @@ public class EntryControlController {
     public void start(Stage stage) throws Exception {
         Parent root = FXMLLoader.load(getClass().getResource("/gui/EntryControlFrame.fxml"));
         stage.setTitle("GoNature — Entry Control");
-        stage.setScene(new Scene(root));
+        Scene scene = new Scene(root);
+        ThemeManager.register(scene);
+        stage.setScene(scene);
         stage.show();
     }
 

@@ -74,7 +74,7 @@ public class ServiceRepController {
         UserSession s = UserSession.getInstance();
         if (s != null) lblUserName.setText(s.getFullName());
 
-        if (btnTheme != null) btnTheme.setText(ThemeManager.iconText());
+        ThemeManager.installToggle(btnTheme);
         startSessionTimer();
 
         colId.setCellValueFactory(d ->

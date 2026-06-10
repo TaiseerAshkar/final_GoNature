@@ -28,6 +28,7 @@ public class WaitingListController {
     @FXML private Label lblParkName;
     @FXML private Label lblCount;
     @FXML private Label lblError;
+    @FXML private Button btnTheme;
 
     @FXML private TableView<OrderDetail>            tableWaiting;
     @FXML private TableColumn<OrderDetail, String>  colVisitorId;
@@ -42,6 +43,7 @@ public class WaitingListController {
      */
     @FXML
     public void initialize() {
+        ThemeManager.installToggle(btnTheme);
         UserSession s = UserSession.getInstance();
         Integer parkId = s != null ? s.getParkId() : null;
         lblParkName.setText(parkId != null ? "Park #" + parkId : "No Park Assigned");
@@ -107,7 +109,9 @@ public class WaitingListController {
         Parent root = FXMLLoader.load(
             getClass().getResource("/gui/WaitingListFrame.fxml"));
         stage.setTitle("GoNature — Waiting List");
-        stage.setScene(new Scene(root));
+        Scene scene = new Scene(root);
+        ThemeManager.register(scene);
+        stage.setScene(scene);
         stage.show();
     }
 }

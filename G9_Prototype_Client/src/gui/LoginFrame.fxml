@@ -20,6 +20,11 @@
         <URL value="@gonature.css"/>
     </stylesheets>
 
+    <!-- Theme toggle -->
+    <HBox alignment="CENTER_RIGHT" maxWidth="Infinity" style="-fx-padding: 10 14 0 14;">
+        <Button fx:id="btnTheme" text="🌙" styleClass="btn-ghost"/>
+    </HBox>
+
     <!-- ── Topographic ridgeline hero ─────────────────────────── -->
     <StackPane prefHeight="210" maxWidth="Infinity">
 
