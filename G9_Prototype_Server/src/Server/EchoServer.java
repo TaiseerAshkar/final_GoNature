@@ -41,6 +41,7 @@ import gui.ServerPortFrameController;
  *   <li>{@code JOIN_WAITING_LIST} → {@code WAITING_LIST_CONFIRMED} / {@code BOOKING_ERROR}</li>
  *   <li>{@code GET_MY_ORDERS}     → {@code MY_ORDERS_LIST}</li>
  *   <li>{@code CANCEL_ORDER}      → {@code CANCEL_SUCCESS} / {@code CANCEL_FAIL}</li>
+ *   <li>{@code FIND_TODAY_BOOKING} → {@code BOOKING_FOUND} / {@code BOOKING_NOT_FOUND}</li>
  *   <li>{@code CHECK_IN_VISITOR}  → {@code ENTRY_APPROVED} / {@code ENTRY_DENIED}</li>
  *   <li>{@code REGISTER_EXIT}     → {@code EXIT_SUCCESS} / {@code EXIT_FAIL}</li>
  *   <li>{@code GET_VISITOR_REPORT}→ {@code VISITOR_REPORT_DATA}</li>
@@ -387,6 +388,24 @@ public class EchoServer extends AbstractServer {
                         client.sendToClient(new Message("ENTRY_APPROVED", entryResult));
                     } else {
                         client.sendToClient(new Message("ENTRY_DENIED", entryResult.getMessage()));
+                    }
+                    break;
+                }
+
+                case "FIND_TODAY_BOOKING": {
+                    if (!(incoming.getData() instanceof EntryCheckRequest)) {
+                        client.sendToClient(new Message("BOOKING_NOT_FOUND", "Invalid request."));
+                        break;
+                    }
+                    EntryCheckRequest fbReq = (EntryCheckRequest) incoming.getData();
+                    OrderDetail found = DBController.getInstance()
+                        .getTodayBooking(fbReq.getVisitorId().trim(), fbReq.getParkId());
+                    if (found != null) {
+                        client.sendToClient(new Message("BOOKING_FOUND", found));
+                    } else {
+                        client.sendToClient(new Message("BOOKING_NOT_FOUND",
+                            "No confirmed booking found for visitor " + fbReq.getVisitorId()
+                            + " at this park today."));
                     }
                     break;
                 }

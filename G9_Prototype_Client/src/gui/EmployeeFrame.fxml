@@ -7,7 +7,7 @@
       fx:controller="gui.EmployeeController"
       styleClass="screen-bg"
       spacing="0"
-      prefWidth="740" prefHeight="780">
+      prefWidth="820" prefHeight="600">
 
     <stylesheets>
         <URL value="@gonature.css"/>
@@ -32,7 +32,7 @@
         <Label fx:id="lblWelcome" styleClass="screen-title"/>
 
         <!-- Action card -->
-        <VBox spacing="12" styleClass="card" maxWidth="440">
+        <VBox spacing="12" styleClass="card" maxWidth="560">
 
             <Label fx:id="lblInfo" styleClass="screen-subtitle" wrapText="true"/>
 

@@ -6,6 +6,7 @@ import logic.EntryCheckRequest;
 import logic.EntryResult;
 import logic.ExitRequest;
 import logic.Message;
+import logic.OrderDetail;
 import logic.Park;
 import logic.UserSession;
 import javafx.event.ActionEvent;
@@ -24,25 +25,48 @@ import java.util.List;
 /**
  * controller for the park employee entry-control screen ({@code EntryControlFrame.fxml}).
  *
- * <p>two tabs: Check-In Visitor (validates input, sends {@code CHECK_IN_VISITOR},
- * shows the result card with pricing) and Register Exit (sends {@code REGISTER_EXIT}).
- * both tabs load parks from the server and pre-select the employee's assigned park.
+ * <p>two tabs: Check-In Visitor (two modes — pre-booked and walk-in) and Register Exit.
+ * the check-in tab defaults to Pre-booked mode: employee enters a visitor ID, clicks
+ * "Find Booking" to preview today's confirmed order, then "Confirm Entry" to complete it.
+ * Walk-in mode collects visit type + visitor count and creates a new order immediately.
  */
 public class EntryControlController {
 
     @FXML private Label lblParkName;
     @FXML private Button btnTheme;
 
-    // Check-in tab fields
-    @FXML private TextField        txtVisitorId;
-    @FXML private ComboBox<Park>   cboPark;
+    // ── Mode toggle ────────────────────────────────────────────────────────────
+    @FXML private ToggleButton btnModePrebooked;
+    @FXML private ToggleButton btnModeWalkin;
+
+    // ── Shared check-in input ──────────────────────────────────────────────────
+    @FXML private TextField txtVisitorId;
+
+    // ── Pre-booked mode ────────────────────────────────────────────────────────
+    @FXML private VBox   panePrebooked;
+    @FXML private Button btnFindBooking;
+
+    // ── Booking details card ───────────────────────────────────────────────────
+    @FXML private VBox  paneBookingDetails;
+    @FXML private Label lblBookingStatus;
+    @FXML private Label lblBookingOrderId;
+    @FXML private Label lblBookingVisitorId;
+    @FXML private Label lblBookingPark;
+    @FXML private Label lblBookingDate;
+    @FXML private Label lblBookingTime;
+    @FXML private Label lblBookingVisitors;
+    @FXML private Label lblBookingType;
+    @FXML private Button btnConfirmEntry;
+
+    // ── Walk-in mode ───────────────────────────────────────────────────────────
+    @FXML private VBox             paneWalkin;
     @FXML private TextField        txtWalkInVisitors;
     @FXML private ComboBox<String> cboOrderType;
     @FXML private Label            lblVisitorHint;
     @FXML private Button           btnCheckIn;
-    @FXML private Label            lblCheckInMessage;
 
-    // Entry result card
+    // ── Feedback + result card ────────────────────────────────────────────────
+    @FXML private Label lblCheckInMessage;
     @FXML private VBox  paneResult;
     @FXML private HBox  bannerBox;
     @FXML private Label lblResultStatus;
@@ -54,14 +78,17 @@ public class EntryControlController {
     @FXML private Label lblResultPayment;
     @FXML private Label lblResultNote;
 
-    // Exit tab fields
+    // ── Exit tab ───────────────────────────────────────────────────────────────
     @FXML private ComboBox<Park> cboExitPark;
     @FXML private TextField      txtExitVisitorId;
     @FXML private Label          lblExitMessage;
 
-    /**
-     * populates the park badge, pre-fills order type, and loads parks into both dropdowns.
-     */
+    /** the employee's assigned park — resolved once at startup, used for all server calls. */
+    private Park selectedPark;
+
+    /** booking found in pre-booked mode; set by handleFindBooking(), consumed by handleConfirmEntry(). */
+    private OrderDetail foundBooking;
+
     @FXML
     public void initialize() {
         ThemeManager.installToggle(btnTheme);
@@ -70,121 +97,169 @@ public class EntryControlController {
             ? "Park #" + s.getParkId() : "No Park Assigned");
         cboOrderType.getItems().addAll("SOLO", "FAMILY", "GROUP");
         cboOrderType.setValue("SOLO");
-        // Listener: update hint and auto-set/lock visitors when type changes
         cboOrderType.valueProperty().addListener((obs, oldVal, newVal) ->
             updateVisitorControls(newVal));
-        updateVisitorControls("SOLO"); // apply initial state
-        loadParksIntoSelectors();
+        updateVisitorControls("SOLO");
+        loadSelectedPark();
+        applyModeStyle(true); // pre-booked active by default
     }
 
     /**
-     * loads parks from the server, fills both dropdowns, and pre-selects the employee's
-     * assigned park. also updates the header badge to show the park name.
+     * loads parks from the server, pre-selects the employee's assigned park,
+     * locks the exit park selector, and caches park name in UserSession.
      */
-    private void loadParksIntoSelectors() {
+    private void loadSelectedPark() {
         ChatClient.lastParkList = null;
         ClientUI.chat.accept(new Message("GET_PARKS", null));
         List<Park> parks = ChatClient.lastParkList;
         if (parks == null || parks.isEmpty()) return;
 
-        cboPark.getItems().addAll(parks);
         cboExitPark.getItems().addAll(parks);
 
-        // Pre-select the employee's assigned park
         UserSession s = UserSession.getInstance();
         if (s != null && s.getParkId() != null) {
             for (Park p : parks) {
                 if (p.getId() == s.getParkId()) {
-                    cboPark.setValue(p);
+                    selectedPark = p;
                     cboExitPark.setValue(p);
                     lblParkName.setText(p.getName());
+                    s.setParkName(p.getName());
                     break;
                 }
             }
         }
+        cboExitPark.setDisable(true);
     }
 
-    /**
-     * locks the count field at 1 for SOLO, or unlocks it for FAMILY / GROUP.
-     * also updates the hint so the employee knows the allowed range.
-     *
-     * @param orderType the newly selected visit type string
-     */
-    private void updateVisitorControls(String orderType) {
-        if (orderType == null) return;
-        switch (orderType) {
-            case "SOLO":
-                txtWalkInVisitors.setText("1");
-                txtWalkInVisitors.setDisable(true);
-                txtWalkInVisitors.setStyle(
-                    "-fx-background-color: -park-surface-2; -fx-background-radius: 4;");
-                lblVisitorHint.setText("SOLO: exactly 1 visitor.");
-                break;
-            case "FAMILY":
-                txtWalkInVisitors.setDisable(false);
-                txtWalkInVisitors.setStyle("");
-                if ("1".equals(txtWalkInVisitors.getText().trim()))
-                    txtWalkInVisitors.setText("2");
-                lblVisitorHint.setText("FAMILY: 2–15 visitors (15% discount for subscribers).");
-                break;
-            case "GROUP":
-                txtWalkInVisitors.setDisable(false);
-                txtWalkInVisitors.setStyle("");
-                if ("1".equals(txtWalkInVisitors.getText().trim()))
-                    txtWalkInVisitors.setText("2");
-                lblVisitorHint.setText(
-                    "GROUP: 2–16 visitors led by a registered guide (guide enters free).");
-                break;
-            default:
-                txtWalkInVisitors.setDisable(false);
-                txtWalkInVisitors.setStyle("");
-                lblVisitorHint.setText("");
+    // ── Mode toggle ────────────────────────────────────────────────────────────
+
+    @FXML
+    public void handleModeToggle(ActionEvent event) {
+        boolean preBooked = (event.getSource() == btnModePrebooked);
+        applyModeStyle(preBooked);
+    }
+
+    private void applyModeStyle(boolean preBooked) {
+        // keep at least one button selected at all times
+        btnModePrebooked.setSelected(preBooked);
+        btnModeWalkin.setSelected(!preBooked);
+
+        btnModePrebooked.getStyleClass().setAll(
+            "mode-btn-left", preBooked ? "mode-btn-active" : "mode-btn-inactive");
+        btnModeWalkin.getStyleClass().setAll(
+            "mode-btn-right", preBooked ? "mode-btn-inactive" : "mode-btn-active");
+
+        panePrebooked.setVisible(preBooked);
+        panePrebooked.setManaged(preBooked);
+        paneWalkin.setVisible(!preBooked);
+        paneWalkin.setManaged(!preBooked);
+
+        // reset state on mode switch
+        foundBooking = null;
+        paneBookingDetails.setVisible(false);
+        paneBookingDetails.setManaged(false);
+        paneResult.setVisible(false);
+        paneResult.setManaged(false);
+        lblCheckInMessage.setText("");
+        lblCheckInMessage.setStyle("-fx-font-size:12px;");
+    }
+
+    // ── Pre-booked mode ────────────────────────────────────────────────────────
+
+    /** sends FIND_TODAY_BOOKING and shows the booking details card, or an error hint. */
+    @FXML
+    public void handleFindBooking(ActionEvent event) {
+        paneBookingDetails.setVisible(false);
+        paneBookingDetails.setManaged(false);
+        paneResult.setVisible(false);
+        paneResult.setManaged(false);
+        lblCheckInMessage.setText("");
+
+        String visitorId = txtVisitorId.getText().trim();
+        if (visitorId.isEmpty()) {
+            setCheckInError("Please enter a Visitor ID."); return;
+        }
+        if (selectedPark == null) {
+            setCheckInError("No park assigned to your account."); return;
+        }
+
+        ChatClient.lastFoundBooking     = null;
+        ChatClient.lastFindBookingError = null;
+        ClientUI.chat.accept(new Message("FIND_TODAY_BOOKING",
+            new EntryCheckRequest(visitorId, selectedPark.getId(), 0, "")));
+
+        if (ChatClient.lastFoundBooking != null) {
+            showBookingDetails(ChatClient.lastFoundBooking);
+        } else {
+            String err = ChatClient.lastFindBookingError;
+            setCheckInError(err != null ? err
+                : "No confirmed booking found for this visitor today. Switch to Walk-in mode.");
         }
     }
 
-    /**
-     * simulates a QR code scan by prompting the employee for the code value from the
-     * visitor's phone. parses the {@code GONATURE:ORDER=N:VISITOR=ID} payload (or accepts
-     * a plain visitor ID) and pre-fills the Visitor ID field so check-in can proceed normally.
-     *
-     * @param event the button-click event
-     */
-    @FXML
-    public void handleScanQRCode(ActionEvent event) {
-        TextInputDialog dlg = new TextInputDialog();
-        dlg.setTitle("QR Code Scanner");
-        dlg.setHeaderText("📷  Scan Visitor Entry QR Code");
-        dlg.setContentText(
-            "Enter the value from the visitor's QR code\n" +
-            "or type their government ID directly:");
-        dlg.showAndWait().ifPresent(raw -> {
-            String visitorId = QRCodeUtil.parseVisitorId(raw);
-            if (!visitorId.isEmpty()) {
-                txtVisitorId.setText(visitorId);
-                setCheckInError(""); // clear stale messages
-                clearCheckInState();
-            }
-        });
+    private void showBookingDetails(OrderDetail b) {
+        foundBooking = b;
+        String status = b.getStatus() != null ? b.getStatus().toUpperCase() : "CONFIRMED";
+        lblBookingStatus.setText(status);
+        lblBookingStatus.getStyleClass().setAll("chip",
+            "CONFIRMED".equals(status) ? "chip-confirmed" : "chip-pending");
+        lblBookingOrderId.setText("#" + b.getId());
+        lblBookingVisitorId.setText(b.getVisitorId());
+        lblBookingPark.setText(b.getParkName());
+        lblBookingDate.setText(b.getVisitDate());
+        lblBookingTime.setText(b.getVisitTime());
+        lblBookingVisitors.setText(String.valueOf(b.getNumVisitors()));
+        lblBookingType.setText(b.getOrderType());
+        paneBookingDetails.setVisible(true);
+        paneBookingDetails.setManaged(true);
     }
 
-    /**
-     * validates the form, sends {@code CHECK_IN_VISITOR}, then shows the result card
-     * on success or an error message on denial.
-     *
-     * @param event the button-click event
-     */
+    /** confirms entry for the pre-booked visitor found by handleFindBooking(). */
+    @FXML
+    public void handleConfirmEntry(ActionEvent event) {
+        if (foundBooking == null) {
+            setCheckInError("Please click 'Find Booking' first."); return;
+        }
+        if (selectedPark == null) {
+            setCheckInError("No park assigned to your account."); return;
+        }
+
+        ChatClient.lastEntryResult = null;
+        ChatClient.lastEntryError  = null;
+        ClientUI.chat.accept(new Message("CHECK_IN_VISITOR",
+            new EntryCheckRequest(
+                foundBooking.getVisitorId(),
+                selectedPark.getId(),
+                foundBooking.getNumVisitors(),
+                foundBooking.getOrderType())));
+
+        if (ChatClient.lastEntryResult != null) {
+            paneBookingDetails.setVisible(false);
+            paneBookingDetails.setManaged(false);
+            showEntryResult(ChatClient.lastEntryResult,
+                foundBooking.getVisitorId(), selectedPark.getName(),
+                foundBooking.getNumVisitors(), foundBooking.getOrderType());
+            foundBooking = null;
+        } else {
+            setCheckInError(ChatClient.lastEntryError != null
+                ? ChatClient.lastEntryError : "Check-in failed. Please try again.");
+        }
+    }
+
+    // ── Walk-in mode ────────────────────────────────────────────────────────────
+
     @FXML
     public void handleCheckIn(ActionEvent event) {
-        clearCheckInState();
+        paneResult.setVisible(false);
+        paneResult.setManaged(false);
+        lblCheckInMessage.setText("");
 
         String visitorId = txtVisitorId.getText().trim();
         if (visitorId.isEmpty()) { setCheckInError("Please enter a Visitor ID."); return; }
-
-        Park selectedPark = cboPark.getValue();
-        if (selectedPark == null) { setCheckInError("Please select a park."); return; }
+        if (selectedPark == null) { setCheckInError("No park assigned to your account."); return; }
 
         String orderType = cboOrderType.getValue();
-        if (orderType == null) { setCheckInError("Please select a visit type (SOLO, FAMILY, or GROUP)."); return; }
+        if (orderType == null) { setCheckInError("Please select a visit type."); return; }
 
         int numVisitors;
         try {
@@ -195,30 +270,16 @@ public class EntryControlController {
             return;
         }
 
-        // Per-type client-side visitor count validation (mirrors server rules)
         switch (orderType) {
             case "SOLO":
-                if (numVisitors != 1) {
-                    setCheckInError("SOLO check-in allows exactly 1 visitor.");
-                    return;
-                }
+                if (numVisitors != 1) { setCheckInError("SOLO check-in allows exactly 1 visitor."); return; }
                 break;
             case "FAMILY":
-                if (numVisitors < 2 || numVisitors > 15) {
-                    setCheckInError("FAMILY check-in requires 2–15 visitors.");
-                    return;
-                }
+                if (numVisitors < 2 || numVisitors > 15) { setCheckInError("FAMILY requires 2–15 visitors."); return; }
                 break;
             case "GROUP":
-                if (numVisitors < 2) {
-                    setCheckInError("Minimum 2 visitors required for a GROUP check-in.");
-                    return;
-                }
-                if (numVisitors > 16) {
-                    setCheckInError(
-                        "Maximum 16 visitors allowed for a GROUP check-in (15 guests + guide).");
-                    return;
-                }
+                if (numVisitors < 2) { setCheckInError("Minimum 2 visitors required for a GROUP check-in."); return; }
+                if (numVisitors > 16) { setCheckInError("Maximum 16 visitors for GROUP (15 guests + guide)."); return; }
                 break;
         }
 
@@ -235,35 +296,21 @@ public class EntryControlController {
                 ? ChatClient.lastEntryError : "Check-in failed. Please try again.");
     }
 
-    /**
-     * populates and shows the result card. server values take priority; form values
-     * are fallbacks for any fields the server left blank or zero.
-     *
-     * @param r                   the successful {@link EntryResult} from the server
-     * @param fallbackVisitorId   visitor ID from the form (used if server omits it)
-     * @param fallbackParkName    park name from the dropdown (used if server omits it)
-     * @param fallbackVisitors    visitor count from the form (used if server returns 0)
-     * @param fallbackType        order type from the form (used if server omits it)
-     */
+    // ── Shared result card ──────────────────────────────────────────────────────
+
     private void showEntryResult(EntryResult r,
                                   String fallbackVisitorId,
                                   String fallbackParkName,
                                   int    fallbackVisitors,
                                   String fallbackType) {
         boolean prebooked = r.isPrebooked();
-
-        // server value takes priority; fall back to the form value if server left it blank
-        String oType = (r.getOrderType() != null && !r.getOrderType().isEmpty())
-                        ? r.getOrderType() : fallbackType;
-        String vId   = (r.getVisitorId() != null && !r.getVisitorId().isEmpty())
-                        ? r.getVisitorId() : fallbackVisitorId;
-        String park  = (r.getParkName() != null && !r.getParkName().isEmpty())
-                        ? r.getParkName() : fallbackParkName;
+        String oType = (r.getOrderType() != null && !r.getOrderType().isEmpty()) ? r.getOrderType() : fallbackType;
+        String vId   = (r.getVisitorId() != null && !r.getVisitorId().isEmpty())  ? r.getVisitorId()  : fallbackVisitorId;
+        String park  = (r.getParkName()  != null && !r.getParkName().isEmpty())   ? r.getParkName()   : fallbackParkName;
         int    vis   = r.getNumVisitors() > 0 ? r.getNumVisitors() : fallbackVisitors;
 
         String bannerColor = prebooked ? "#1b5e20" : "#0d47a1";
-        bannerBox.setStyle("-fx-padding: 10 14; -fx-background-radius: 6; " +
-                           "-fx-background-color: " + bannerColor + ";");
+        bannerBox.setStyle("-fx-padding: 10 14; -fx-background-radius: 6; -fx-background-color: " + bannerColor + ";");
         lblResultStatus.setText(prebooked
             ? "ENTRY APPROVED — PRE-BOOKED " + oType
             : "ENTRY APPROVED — WALK-IN " + oType);
@@ -274,18 +321,13 @@ public class EntryControlController {
         lblResultVisitors.setText(String.valueOf(vis));
         lblResultType.setText(oType);
         lblResultPayment.setText(String.format("$%.2f", r.getTotalPrice()));
-        // pricing note is built server-side so it accurately reflects guide/subscriber status
         lblResultNote.setText(r.getMessage());
         paneResult.setVisible(true);
         paneResult.setManaged(true);
     }
 
-    /**
-     * validates the exit form and sends {@code REGISTER_EXIT}.
-     * clears the visitor ID field on success.
-     *
-     * @param event the button-click event
-     */
+    // ── Exit tab ────────────────────────────────────────────────────────────────
+
     @FXML
     public void handleRegisterExit(ActionEvent event) {
         lblExitMessage.setText("");
@@ -293,36 +335,57 @@ public class EntryControlController {
         String visitorId = txtExitVisitorId.getText().trim();
         if (visitorId.isEmpty()) { setExitMessage("Please enter a Visitor ID.", false); return; }
 
-        Park selectedPark = cboExitPark.getValue();
-        if (selectedPark == null) { setExitMessage("Please select a park.", false); return; }
+        Park exitPark = cboExitPark.getValue();
+        if (exitPark == null) { setExitMessage("Please select a park.", false); return; }
 
         ChatClient.lastExitSuccess = false;
         ChatClient.lastExitError   = null;
         ClientUI.chat.accept(new Message("REGISTER_EXIT",
-            new ExitRequest(visitorId, selectedPark.getId())));
+            new ExitRequest(visitorId, exitPark.getId())));
 
         if (ChatClient.lastExitSuccess) {
             setExitMessage("Exit registered for visitor " + visitorId
-                + " at " + selectedPark.getName() + ". Have a great day!", true);
+                + " at " + exitPark.getName() + ". Have a great day!", true);
             txtExitVisitorId.clear();
         } else {
             setExitMessage(ChatClient.lastExitError != null
                 ? ChatClient.lastExitError
                 : "No active entry found for visitor " + visitorId
-                  + " at " + selectedPark.getName() + " today.", false);
+                  + " at " + exitPark.getName() + " today.", false);
         }
     }
 
-    /** @param event the button-click event */
+    // ── QR scan ─────────────────────────────────────────────────────────────────
+
+    @FXML
+    public void handleScanQRCode(ActionEvent event) {
+        TextInputDialog dlg = new TextInputDialog();
+        dlg.setTitle("QR Code Scanner");
+        dlg.setHeaderText("📷  Scan Visitor Entry QR Code");
+        dlg.setContentText(
+            "Enter the value from the visitor's QR code\n" +
+            "or type their government ID directly:");
+        dlg.showAndWait().ifPresent(raw -> {
+            String visitorId = QRCodeUtil.parseVisitorId(raw);
+            if (!visitorId.isEmpty()) {
+                txtVisitorId.setText(visitorId);
+                lblCheckInMessage.setText("");
+                paneBookingDetails.setVisible(false);
+                paneBookingDetails.setManaged(false);
+                paneResult.setVisible(false);
+                paneResult.setManaged(false);
+                foundBooking = null;
+            }
+        });
+    }
+
+    // ── Misc ────────────────────────────────────────────────────────────────────
+
     @FXML
     public void handleClose(ActionEvent event) {
         ((Stage) lblParkName.getScene().getWindow()).close();
     }
 
-    /**
-     * @param stage the stage in which to show the screen
-     * @throws Exception if the FXML file cannot be loaded
-     */
     public void start(Stage stage) throws Exception {
         Parent root = FXMLLoader.load(getClass().getResource("/gui/EntryControlFrame.fxml"));
         stage.setTitle("GoNature — Entry Control");
@@ -332,24 +395,39 @@ public class EntryControlController {
         stage.show();
     }
 
-    /** hides the result card and clears any previous error so the next check-in starts clean. */
-    private void clearCheckInState() {
-        lblCheckInMessage.setText("");
-        lblCheckInMessage.setStyle("-fx-font-size: 12px;");
-        paneResult.setVisible(false);
-        paneResult.setManaged(false);
+    private void updateVisitorControls(String orderType) {
+        if (orderType == null) return;
+        switch (orderType) {
+            case "SOLO":
+                txtWalkInVisitors.setText("1");
+                txtWalkInVisitors.setDisable(true);
+                txtWalkInVisitors.setStyle("-fx-background-color: -park-surface-2; -fx-background-radius: 4;");
+                lblVisitorHint.setText("SOLO: exactly 1 visitor.");
+                break;
+            case "FAMILY":
+                txtWalkInVisitors.setDisable(false);
+                txtWalkInVisitors.setStyle("");
+                if ("1".equals(txtWalkInVisitors.getText().trim())) txtWalkInVisitors.setText("2");
+                lblVisitorHint.setText("FAMILY: 2–15 visitors (15% discount for subscribers).");
+                break;
+            case "GROUP":
+                txtWalkInVisitors.setDisable(false);
+                txtWalkInVisitors.setStyle("");
+                if ("1".equals(txtWalkInVisitors.getText().trim())) txtWalkInVisitors.setText("2");
+                lblVisitorHint.setText("GROUP: 2–16 visitors. The Visitor ID must belong to an approved guide.");
+                break;
+            default:
+                txtWalkInVisitors.setDisable(false);
+                txtWalkInVisitors.setStyle("");
+                lblVisitorHint.setText("");
+        }
     }
 
-    /** @param msg the error text to display in red */
     private void setCheckInError(String msg) {
         lblCheckInMessage.setStyle("-fx-font-size: 12px; -fx-text-fill: #c62828;");
         lblCheckInMessage.setText(msg);
     }
 
-    /**
-     * @param msg     the message text
-     * @param success {@code true} for green success style; {@code false} for red error style
-     */
     private void setExitMessage(String msg, boolean success) {
         lblExitMessage.setStyle("");
         lblExitMessage.getStyleClass().setAll(success ? "lbl-success" : "lbl-error");

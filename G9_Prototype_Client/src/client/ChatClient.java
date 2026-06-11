@@ -58,10 +58,12 @@ public class ChatClient extends AbstractClient {
     public static String            lastCancelError  = null;
 
     // ── Entry / exit ──────────────────────────────────────────────────────────
-    public static EntryResult lastEntryResult = null;
-    public static String      lastEntryError  = null;
-    public static boolean     lastExitSuccess = false;
-    public static String      lastExitError   = null;
+    public static EntryResult lastEntryResult   = null;
+    public static String      lastEntryError    = null;
+    public static boolean     lastExitSuccess   = false;
+    public static String      lastExitError     = null;
+    public static OrderDetail lastFoundBooking  = null;
+    public static String      lastFindBookingError = null;
 
     // ── Registration ──────────────────────────────────────────────────────────
     public static RegisterResult lastRegisterResult = null;
@@ -194,6 +196,14 @@ public class ChatClient extends AbstractClient {
             case "EXIT_FAIL":
                 lastExitSuccess = false;
                 lastExitError   = (String) m.getData();
+                break;
+            case "BOOKING_FOUND":
+                lastFoundBooking      = (OrderDetail) m.getData();
+                lastFindBookingError  = null;
+                break;
+            case "BOOKING_NOT_FOUND":
+                lastFoundBooking      = null;
+                lastFindBookingError  = (String) m.getData();
                 break;
             case "VISITOR_REPORT_DATA":
                 lastVisitorReport = (List<ReportVisitorRow>) m.getData();

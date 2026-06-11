@@ -17,6 +17,7 @@ public class UserSession {
     private String  email;
     private String  userId;
     private Integer parkId;
+    private String  parkName;
 
     /** epoch-millis timestamp captured the moment this session was populated by a login. */
     private long    loginTime;
@@ -70,6 +71,12 @@ public class UserSession {
 
     /** @return the assigned park ID for employees/managers, or {@code null} */
     public Integer getParkId()    { return parkId; }
+
+    /** @return the resolved park name (set after the first GET_PARKS call), or {@code null} */
+    public String  getParkName()  { return parkName; }
+
+    /** caches the park name so screens don't need to re-fetch it from the server. */
+    public void    setParkName(String name) { this.parkName = name; }
 
     /** @return the user's full name in "First Last" format */
     public String  getFullName()  { return firstName + " " + lastName; }

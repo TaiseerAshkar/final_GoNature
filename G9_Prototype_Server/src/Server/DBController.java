@@ -470,14 +470,34 @@ public class DBController {
      *
      * <p>cancellation frees up capacity: the slot is excluded from
      * {@link #getAvailableSpots} so a new booking can take the vacated position.
-     * no waiting-list notification is sent automatically; the freed slot simply
-     * becomes available again for new bookings.
+     * the freed slot is then offered to the earliest waiting-list entry for the same
+     * park/date/time via {@link #promoteFromWaitingList}; if someone is promoted, their
+     * email is returned in the {@link CancelResult}.
      *
      * @param orderId the primary-key ID of the order to cancel
-     * @return a {@link CancelResult} indicating success or failure
+     * @return a {@link CancelResult} indicating success or failure; on success,
+     *         {@link CancelResult#getNotifiedEmail()} holds the promoted visitor's email or {@code null}
      */
     public CancelResult cancelOrder(int orderId) {
         if (connection == null) return new CancelResult(false, null);
+
+        // capture the slot details before changing status so we can offer it to the waiting list
+        int    parkId = -1;
+        Date   visitDate = null;
+        Time   visitTime = null;
+        try {
+            PreparedStatement sel = connection.prepareStatement(
+                "SELECT park_id, visit_date, visit_time FROM orders WHERE id = ?");
+            sel.setInt(1, orderId);
+            ResultSet rs = sel.executeQuery();
+            if (rs.next()) {
+                parkId    = rs.getInt("park_id");
+                visitDate = rs.getDate("visit_date");
+                visitTime = rs.getTime("visit_time");
+            }
+        } catch (SQLException e) {
+            System.out.println("cancelOrder (slot lookup) error: " + e.getMessage());
+        }
 
         // WHERE restricts to cancellable statuses — any other status returns 0 updated rows
         try {
@@ -492,8 +512,138 @@ public class DBController {
             return new CancelResult(false, null);
         }
 
-        // capacity slot is now freed (excluded from getAvailableSpots); no waiting-list notification sent here
-        return new CancelResult(true, null);
+        // the slot is now free — promote the earliest matching waiting-list entry (if any)
+        String notifiedEmail = null;
+        if (parkId > 0 && visitDate != null && visitTime != null)
+            notifiedEmail = promoteFromWaitingList(parkId, visitDate, visitTime);
+
+        return new CancelResult(true, notifiedEmail);
+    }
+
+    /**
+     * offers a freed slot to the earliest waiting-list entry for the same park, date, and
+     * time. on a match it creates a confirmed order for that visitor, removes them from the
+     * waiting list, emails them a real notification, and writes a server simulation log line.
+     *
+     * @param parkId    the park whose slot opened up
+     * @param visitDate the freed slot's date
+     * @param visitTime the freed slot's time
+     * @return the promoted visitor's email address, or {@code null} if nobody was waiting
+     */
+    private String promoteFromWaitingList(int parkId, Date visitDate, Time visitTime) {
+        if (connection == null) return null;
+
+        String dateStr = new java.text.SimpleDateFormat("yyyy-MM-dd").format(visitDate);
+        String timeStr = new java.text.SimpleDateFormat("HH:mm").format(visitTime);
+
+        // Check available capacity once — it is the same for every candidate in this queue.
+        // getAvailableSpots already excludes the just-cancelled order because cancelOrder()
+        // changed its status to 'cancelled' before calling us.
+        int available = getAvailableSpots(parkId, dateStr, timeStr);
+        if (available <= 0) return null;   // park is still full after the cancellation
+
+        // Walk the queue in arrival order and pick the first entry that fits.
+        String visitorId  = null;
+        String dbOrderType = null;
+        int    wlId        = -1;
+        int    numVisitors = 0;
+        try {
+            PreparedStatement st = connection.prepareStatement(
+                "SELECT id, visitor_id, num_visitors, order_type " +
+                "FROM waiting_list " +
+                "WHERE park_id = ? AND visit_date = ? AND visit_time = ? " +
+                "ORDER BY created_at ASC, id ASC");
+            st.setInt(1, parkId);
+            st.setDate(2, visitDate);
+            st.setTime(3, visitTime);
+            ResultSet rs = st.executeQuery();
+            while (rs.next()) {
+                int candidateSize = rs.getInt("num_visitors");
+                if (candidateSize <= available) {
+                    wlId        = rs.getInt("id");
+                    visitorId   = rs.getString("visitor_id");
+                    numVisitors = candidateSize;
+                    dbOrderType = rs.getString("order_type");
+                    break;   // first fitting entry found
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println("promoteFromWaitingList (lookup) error: " + e.getMessage());
+            return null;
+        }
+        if (wlId == -1) return null;   // no entry in the queue fits within available capacity
+
+        String email = getVisitorEmail(visitorId);
+
+        // create the confirmed order for the promoted visitor
+        int newOrderId;
+        try {
+            PreparedStatement ins = connection.prepareStatement(
+                "INSERT INTO orders " +
+                "(visitor_id, park_id, visit_date, visit_time, num_visitors, order_type, status, email) " +
+                "VALUES (?, ?, ?, ?, ?, ?, 'confirmed', ?)",
+                Statement.RETURN_GENERATED_KEYS);
+            ins.setString(1, visitorId);
+            ins.setInt(2,    parkId);
+            ins.setDate(3,   visitDate);
+            ins.setTime(4,   visitTime);
+            ins.setInt(5,    numVisitors);
+            ins.setString(6, dbOrderType);
+            ins.setString(7, email);
+            ins.executeUpdate();
+            ResultSet keys = ins.getGeneratedKeys();
+            newOrderId = keys.next() ? keys.getInt(1) : -1;
+        } catch (SQLException e) {
+            System.out.println("promoteFromWaitingList (insert) error: " + e.getMessage());
+            return null;   // leave the visitor on the waiting list if the order couldn't be created
+        }
+
+        // remove them from the waiting list now that they hold a confirmed order
+        try {
+            PreparedStatement del = connection.prepareStatement(
+                "DELETE FROM waiting_list WHERE id = ?");
+            del.setInt(1, wlId);
+            del.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println("promoteFromWaitingList (delete) error: " + e.getMessage());
+        }
+
+        // resolve the park name for the notification
+        String parkName = "your selected park";
+        try {
+            PreparedStatement pn = connection.prepareStatement("SELECT name FROM parks WHERE id = ?");
+            pn.setInt(1, parkId);
+            ResultSet rs = pn.executeQuery();
+            if (rs.next()) parkName = rs.getString("name");
+        } catch (SQLException e) {
+            System.out.println("promoteFromWaitingList (park name) error: " + e.getMessage());
+        }
+
+        // server simulation log line
+        gui.ServerPortFrameController.logSimulation(String.format(
+            "🎟️ Waiting-list promotion → Order #%d confirmed for visitor %s at %s on %s %s%s",
+            newOrderId, visitorId, parkName, dateStr, timeStr,
+            (email.isEmpty() ? " (no email on file)" : " — notified " + email)));
+
+        // real email notification (no-op if no address on file)
+        if (!email.isEmpty()) {
+            EmailService.sendEmail(email,
+                "Good news! A spot opened up for your GoNature visit 🌿",
+                "Hello,\n\n" +
+                "Great news — a spot just opened up for the visit you were waiting for, and we've " +
+                "automatically confirmed a booking for you!\n\n" +
+                "Order #: " + newOrderId + "\n" +
+                "Park: "    + parkName + "\n" +
+                "Date: "    + dateStr + "\n" +
+                "Time: "    + timeStr + "\n" +
+                "Visitors: " + numVisitors + "\n\n" +
+                "Please confirm this booking within 1 hour to keep your spot. If we don't hear " +
+                "from you, the slot will be released to the next visitor in line.\n\n" +
+                "See you in the park!\n\n" +
+                "— GoNature Parks");
+        }
+
+        return email.isEmpty() ? null : email;
     }
 
     /**
@@ -680,7 +830,66 @@ public class DBController {
         }
     }
 
+    /**
+     * walk-in GROUP visits require a guide who has already been approved by the department.
+     * pre-booked GROUP orders are NOT gated by this method — they were approved at booking time.
+     *
+     * @param visitorId the visitor's national ID number
+     * @return {@code true} if the ID exists in guides with {@code is_approved = 1}
+     */
+    public boolean isApprovedGuide(String visitorId) {
+        if (connection == null) return false;
+        try {
+            PreparedStatement st = connection.prepareStatement(
+                "SELECT 1 FROM guides WHERE id_number = ? AND is_approved = 1 LIMIT 1");
+            st.setString(1, visitorId);
+            ResultSet rs = st.executeQuery();
+            return rs.next();
+        } catch (SQLException e) {
+            System.out.println("isApprovedGuide error: " + e.getMessage());
+            return false;
+        }
+    }
+
     // ── Entry control ─────────────────────────────────────────────────────────
+
+    /**
+     * looks up today's confirmed/pending booking for a visitor without committing it.
+     * used by the FIND_TODAY_BOOKING pre-booked check-in flow.
+     */
+    public OrderDetail getTodayBooking(String visitorId, int parkId) {
+        if (connection == null) return null;
+        try {
+            PreparedStatement st = connection.prepareStatement(
+                "SELECT o.id, o.visitor_id, o.num_visitors, o.order_type, " +
+                "       o.visit_date, o.visit_time, o.status, o.email, o.created_at, " +
+                "       p.name AS park_name " +
+                "FROM orders o JOIN parks p ON p.id = o.park_id " +
+                "WHERE o.visitor_id=? AND o.park_id=? AND o.visit_date=CURDATE() " +
+                "  AND o.status IN ('pending','confirmed') " +
+                "ORDER BY o.created_at ASC LIMIT 1");
+            st.setString(1, visitorId);
+            st.setInt(2, parkId);
+            ResultSet rs = st.executeQuery();
+            if (!rs.next()) return null;
+            String raw = rs.getString("order_type").toUpperCase();
+            String oType = "INDIVIDUAL".equals(raw) ? "SOLO" : raw;
+            return new OrderDetail(
+                rs.getInt("id"),
+                rs.getString("park_name"),
+                rs.getString("visitor_id"),
+                rs.getString("visit_date"),
+                rs.getString("visit_time"),
+                rs.getInt("num_visitors"),
+                oType,
+                rs.getString("status").toUpperCase(),
+                rs.getString("email"),
+                rs.getString("created_at"));
+        } catch (SQLException e) {
+            System.out.println("getTodayBooking error: " + e.getMessage());
+            return null;
+        }
+    }
 
     /**
      * checks a visitor in at the gate. tries in order: already-inside guard, pre-booked match,
@@ -758,6 +967,12 @@ public class DBController {
         int    numVis        = req.getNumVisitors();
         String wDisplayType  = req.getOrderType().toUpperCase(); // SOLO / FAMILY / GROUP (for display + pricing)
         String wType         = toDbOrderType(req.getOrderType()); // individual / family / group (for DB insert)
+
+        // walk-in GROUP requires an approved guide as the lead visitor
+        if ("GROUP".equals(wDisplayType) && !isApprovedGuide(visitorId))
+            return new EntryResult(false, false, -1, "", visitorId, 0, "", 0,
+                "GROUP visit requires an approved guide. This visitor is not a registered guide.");
+
         String parkName  = "";
         double fullPrice = 0;
 
@@ -1421,7 +1636,9 @@ public class DBController {
 
     /**
      * returns active waiting-list entries for the park, oldest request first.
-     * status is hard-coded to {@code "WAITING"} since waiting_list rows don't use the orders status column.
+     * status is hard-coded to {@code "WAITING"} and email is resolved from the visitor
+     * tables, since the {@code waiting_list} table itself has no status or email column.
+     * promoted visitors are removed from the table outright, so every remaining row is active.
      *
      * @param parkId the park's primary-key ID
      * @return a list of {@link OrderDetail} with status {@code "WAITING"}; empty on error
@@ -1437,25 +1654,55 @@ public class DBController {
                 "       wl.num_visitors, " +
                 "       CASE UPPER(wl.order_type) WHEN 'INDIVIDUAL' THEN 'SOLO' WHEN 'SOLO' THEN 'SOLO' WHEN 'FAMILY' THEN 'FAMILY' WHEN 'GROUP' THEN 'GROUP' ELSE UPPER(wl.order_type) END AS order_type, " +
                 "       'WAITING'            AS status, " +
-                "       wl.email, " +
                 "       DATE_FORMAT(wl.created_at, '%Y-%m-%d %H:%i') AS created_at " +
                 "FROM waiting_list wl JOIN parks p ON p.id = wl.park_id " +
-                "WHERE wl.park_id = ? AND wl.status = 'waiting' " +
+                "WHERE wl.park_id = ? " +
                 "ORDER BY wl.visit_date, wl.visit_time, wl.created_at");
             st.setInt(1, parkId);
             ResultSet rs = st.executeQuery();
             while (rs.next()) {
+                String visitorId = rs.getString("visitor_id");
                 list.add(new OrderDetail(
                     rs.getInt("id"),          rs.getString("park_name"),
-                    rs.getString("visitor_id"), rs.getString("visit_date"),
+                    visitorId,                  rs.getString("visit_date"),
                     rs.getString("visit_time"), rs.getInt("num_visitors"),
                     rs.getString("order_type"), rs.getString("status"),
-                    rs.getString("email"),      rs.getString("created_at")));
+                    getVisitorEmail(visitorId), rs.getString("created_at")));
             }
         } catch (SQLException e) {
             System.out.println("getWaitingList error: " + e.getMessage());
         }
         return list;
+    }
+
+    /**
+     * resolves a person's contact email from their government ID, checking the
+     * visitors, subscribers, and guides tables in turn.
+     *
+     * @param visitorId the government ID number
+     * @return the email address, or an empty string if none is on file
+     */
+    private String getVisitorEmail(String visitorId) {
+        if (connection == null || visitorId == null) return "";
+        String[] queries = {
+            "SELECT email FROM visitors    WHERE id_number = ?",
+            "SELECT email FROM subscribers WHERE id_number = ?",
+            "SELECT email FROM guides      WHERE id_number = ?"
+        };
+        for (String q : queries) {
+            try {
+                PreparedStatement st = connection.prepareStatement(q);
+                st.setString(1, visitorId);
+                ResultSet rs = st.executeQuery();
+                if (rs.next()) {
+                    String email = rs.getString("email");
+                    if (email != null && !email.trim().isEmpty()) return email.trim();
+                }
+            } catch (SQLException e) {
+                System.out.println("getVisitorEmail error: " + e.getMessage());
+            }
+        }
+        return "";
     }
 
     // ── Guide management ──────────────────────────────────────────────────────
