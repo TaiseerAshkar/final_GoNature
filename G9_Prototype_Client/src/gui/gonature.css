@@ -598,7 +598,7 @@
     -fx-font-family: -park-font-display;
     -fx-font-size: 16px;
     -fx-font-weight: bold;
-    -fx-text-fill: #F5F1E4;
+    -fx-text-fill: #FFFFFF;
     -fx-wrap-text: true;
 }
 .help-dialog > .content {
@@ -645,6 +645,9 @@
 .help-dialog .field-label     { -fx-text-fill: -park-pine; }
 .help-dialog .section-label   { -fx-text-fill: -park-gold-900; }
 .help-dialog .screen-subtitle { -fx-text-fill: -park-text-mid; }
+/* re-assert header text to white — source order wins over same-specificity generic .label rules above */
+.help-dialog > .header-panel > .label,
+.help-dialog > .header-panel .label { -fx-text-fill: #FFFFFF; }
 /* KEY: popups stay on the LIGHT parchment palette even when the app is in dark mode, so every
    client dialog matches the always-light server dialog — crisp dark text on warm parchment, never
    dark-on-dark. redefining the tokens on the pane (specificity 0,2,0 beats ".dark-mode" 0,1,0)

@@ -77,6 +77,7 @@ public class ServerUI extends Application {
 
         // theme the popup to match the server control panel (pine header, gold accent, themed buttons)
         DialogPane pane = dialog.getDialogPane();
+        pane.setMinWidth(400);
         java.net.URL css = getClass().getResource("/gui/ServerPort.css");
         if (css != null) pane.getStylesheets().add(css.toExternalForm());
         pane.getStyleClass().add("help-dialog");
