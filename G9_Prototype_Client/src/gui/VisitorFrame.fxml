@@ -45,7 +45,7 @@
                         onAction="#handleViewOrders" styleClass="btn-danger"/>
                 <Separator/>
                 <Button text="🚗  Register My Exit" maxWidth="Infinity"
-                        onAction="#handleRegisterExit" styleClass="btn-secondary"/>
+                        onAction="#handleRegisterExit" styleClass="btn-teal"/>
                 <Separator/>
                 <Button fx:id="btnConfirmVisit" text="✅  Confirm My Visit" maxWidth="Infinity"
                         onAction="#handleConfirmVisit" styleClass="btn-blue"/>

@@ -10,13 +10,20 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 /**
  * FXML controller for the server control panel ({@code ServerPort.fxml}).
@@ -200,6 +207,46 @@ public class ServerPortFrameController {
                 "  |  " + parkName + "  |  " + date + " at " + time +
                 "  |  Order #" + orderId);
         });
+    }
+
+    /**
+     * saves the connection log and live-notifications log to a timestamped .txt file
+     * chosen by the operator via a file-save dialog.
+     *
+     * @param event the button-click event
+     */
+    public void handleExportLogs(ActionEvent event) {
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Export Server Logs");
+        String ts = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+        chooser.setInitialFileName("gonature_logs_" + ts + ".txt");
+        chooser.getExtensionFilters().add(
+            new FileChooser.ExtensionFilter("Text files", "*.txt"));
+        Stage stage = (Stage) txtLog.getScene().getWindow();
+        File file = chooser.showSaveDialog(stage);
+        if (file == null) return;
+
+        String content =
+            "=== GoNature Server Logs — " + ts + " ===\n\n" +
+            "--- Connection Log ---\n" +
+            (txtLog.getText().isEmpty() ? "(empty)\n" : txtLog.getText()) +
+            "\n--- Live Notifications ---\n" +
+            (txtSimLog.getText().isEmpty() ? "(empty)\n" : txtSimLog.getText());
+
+        try {
+            Files.writeString(file.toPath(), content);
+            Alert ok = new Alert(Alert.AlertType.INFORMATION);
+            ok.setTitle("Export Successful");
+            ok.setHeaderText(null);
+            ok.setContentText("Logs saved to:\n" + file.getAbsolutePath());
+            ok.showAndWait();
+        } catch (IOException e) {
+            Alert err = new Alert(Alert.AlertType.ERROR);
+            err.setTitle("Export Failed");
+            err.setHeaderText(null);
+            err.setContentText("Could not write file: " + e.getMessage());
+            err.showAndWait();
+        }
     }
 
     /**

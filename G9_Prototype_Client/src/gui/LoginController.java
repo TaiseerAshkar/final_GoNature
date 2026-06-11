@@ -12,6 +12,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.control.TabPane;
 import javafx.scene.input.MouseEvent;
 import javafx.stage.Stage;
 
@@ -24,7 +25,9 @@ import javafx.stage.Stage;
  */
 public class LoginController {
 
-    @FXML private TextField     txtIdentifier;
+    @FXML private TabPane       tabPane;
+    @FXML private TextField     txtIdentifier;       // visitor/guide tab
+    @FXML private TextField     txtStaffUsername;    // staff tab
     @FXML private PasswordField txtPassword;
     @FXML private TextField     txtPasswordVisible;
     @FXML private CheckBox      chkShowPassword;
@@ -38,6 +41,11 @@ public class LoginController {
         ThemeManager.installToggle(btnTheme);
     }
 
+    /** @return true when the Staff tab is the active selection */
+    private boolean isStaffTab() {
+        return tabPane != null && tabPane.getSelectionModel().getSelectedIndex() == 1;
+    }
+
     /**
      * routes to visitor or staff login based on whether a password was supplied.
      * visitors leave the password blank; staff always supply one.
@@ -49,20 +57,28 @@ public class LoginController {
     @FXML
     public void handleLogin(ActionEvent event) {
         lblError.setText("");
-        String identifier = txtIdentifier.getText().trim();
-        String password   = chkShowPassword.isSelected()
-                            ? txtPasswordVisible.getText()
-                            : txtPassword.getText();
 
-        if (identifier.isEmpty()) {
-            setError("Please enter your ID number or username to sign in.");
-            return;
-        }
-
-        if (password.isEmpty()) {
-            loginAsVisitor(identifier);
+        if (isStaffTab()) {
+            String username = txtStaffUsername != null ? txtStaffUsername.getText().trim() : "";
+            String password = chkShowPassword != null && chkShowPassword.isSelected()
+                              ? txtPasswordVisible.getText()
+                              : txtPassword.getText();
+            if (username.isEmpty()) {
+                setError("Please enter your username.");
+                return;
+            }
+            if (password.isEmpty()) {
+                setError("Please enter your password.");
+                return;
+            }
+            loginAsStaff(username, password);
         } else {
-            loginAsStaff(identifier, password);
+            String id = txtIdentifier != null ? txtIdentifier.getText().trim() : "";
+            if (id.isEmpty()) {
+                setError("Please enter your ID number to sign in.");
+                return;
+            }
+            loginAsVisitor(id);
         }
     }
 

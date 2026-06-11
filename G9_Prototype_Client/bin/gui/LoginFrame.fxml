@@ -106,32 +106,41 @@
         </VBox>
 
         <Separator style="-fx-opacity: 0.6;"/>
-        <Region prefHeight="16"/>
+        <Region prefHeight="10"/>
 
-        <!-- ID / Username -->
-        <VBox spacing="5" style="-fx-padding: 0 0 14 0;">
-            <Label text="ID Number or Username" styleClass="field-label"/>
-            <TextField fx:id="txtIdentifier" styleClass="text-field"
-                       promptText="Visitor: enter ID  ·  Staff: enter username"/>
-        </VBox>
+        <!-- Login-mode tabs: Visitor/Guide vs Staff -->
+        <TabPane fx:id="tabPane" tabClosingPolicy="UNAVAILABLE"
+                 style="-fx-padding: 0 0 10 0;">
 
-        <!-- Password -->
-        <VBox spacing="5" style="-fx-padding: 0 0 6 0;">
-            <Label text="Password" styleClass="field-label"/>
-            <!-- Hidden password (default) -->
-            <PasswordField fx:id="txtPassword" styleClass="password-field"
-                           promptText="Staff only — leave blank if you are a visitor"/>
-            <!-- Visible password (shown when checkbox is ticked) -->
-            <TextField fx:id="txtPasswordVisible" styleClass="text-field"
-                       promptText="Staff only — leave blank if you are a visitor"
-                       visible="false" managed="false"/>
-            <!-- Show / hide toggle -->
-            <CheckBox fx:id="chkShowPassword" text="Show password"
-                      onAction="#handleShowPassword"
-                      style="-fx-font-size: 11px; -fx-cursor: hand; -fx-padding: 2 0 0 2;"/>
-            <Label text="Visitors and guides: enter your ID and leave the password blank."
-                   styleClass="lbl-hint" wrapText="true" style="-fx-padding: 2 0 0 2;"/>
-        </VBox>
+            <!-- Tab 1 — Visitor / Guide -->
+            <Tab text="Visitor / Guide">
+                <VBox spacing="8" style="-fx-padding: 12 2 4 2;">
+                    <Label fx:id="lblIdentifierLabel" text="ID Number" styleClass="field-label"/>
+                    <TextField fx:id="txtIdentifier" styleClass="text-field"
+                               promptText="Enter your government ID number"/>
+                    <Label text="Enter your 5–15 digit ID and leave the password blank."
+                           styleClass="lbl-hint" wrapText="true"/>
+                </VBox>
+            </Tab>
+
+            <!-- Tab 2 — Staff -->
+            <Tab text="Staff">
+                <VBox spacing="8" style="-fx-padding: 12 2 4 2;">
+                    <Label text="Username" styleClass="field-label"/>
+                    <TextField fx:id="txtStaffUsername" styleClass="text-field"
+                               promptText="Enter your staff username"/>
+                    <Label text="Password" styleClass="field-label"/>
+                    <PasswordField fx:id="txtPassword" styleClass="password-field"
+                                   promptText="Enter your password"/>
+                    <TextField fx:id="txtPasswordVisible" styleClass="text-field"
+                               promptText="Enter your password"
+                               visible="false" managed="false"/>
+                    <CheckBox fx:id="chkShowPassword" text="Show password"
+                              onAction="#handleShowPassword"
+                              style="-fx-font-size: 11px; -fx-cursor: hand; -fx-padding: 2 0 0 2;"/>
+                </VBox>
+            </Tab>
+        </TabPane>
 
         <!-- Error message -->
         <Label fx:id="lblError" text="" styleClass="lbl-error" wrapText="true"

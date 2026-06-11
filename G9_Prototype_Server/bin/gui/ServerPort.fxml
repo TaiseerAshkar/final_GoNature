@@ -65,8 +65,12 @@
 
     <!-- Connection Log card -->
     <VBox styleClass="card" spacing="0">
-        <HBox styleClass="card-head">
+        <HBox styleClass="card-head" alignment="CENTER_LEFT">
             <Label text="📋  Connection Log" styleClass="card-head-label"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="💾  Export Logs" onAction="#handleExportLogs"
+                    style="-fx-font-size:11px; -fx-padding:3 10; -fx-background-radius:6;
+                           -fx-background-color:#4A6741; -fx-text-fill:white; -fx-cursor:hand;"/>
         </HBox>
 
         <TextArea fx:id="txtLog" prefHeight="100" editable="false"

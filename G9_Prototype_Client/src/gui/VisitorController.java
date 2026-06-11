@@ -37,6 +37,7 @@ import javafx.util.Duration;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -174,15 +175,32 @@ public class VisitorController {
         if (orders == null) { lblUpcoming.setText("No upcoming reservations."); return; }
 
         String today = LocalDate.now().format(DATE_FMT);
-        long count = orders.stream()
+        List<OrderDetail> upcoming = orders.stream()
             .filter(o -> ("PENDING".equals(o.getStatus()) || "CONFIRMED".equals(o.getStatus()))
                 && o.getVisitDate() != null
                 && o.getVisitDate().compareTo(today) >= 0)
-            .count();
+            .sorted(Comparator.comparing(OrderDetail::getVisitDate)
+                .thenComparing(OrderDetail::getVisitTime))
+            .collect(Collectors.toList());
 
-        lblUpcoming.setText(count == 0
-            ? "No upcoming reservations."
-            : "You have " + count + " upcoming reservation" + (count == 1 ? "" : "s") + ".");
+        if (upcoming.isEmpty()) {
+            lblUpcoming.setText("No upcoming reservations.");
+            return;
+        }
+
+        OrderDetail next = upcoming.get(0);
+        long daysUntil = LocalDate.parse(next.getVisitDate(), DATE_FMT)
+            .toEpochDay() - LocalDate.now().toEpochDay();
+        String when = daysUntil == 0 ? "Today"
+                    : daysUntil == 1 ? "Tomorrow"
+                    : "In " + daysUntil + " days";
+        String summary = "Next: " + next.getParkName() + "  •  " + when
+            + " at " + next.getVisitTime()
+            + "  (" + next.getNumVisitors()
+            + " visitor" + (next.getNumVisitors() == 1 ? "" : "s") + ")";
+        if (upcoming.size() > 1)
+            summary += "  +" + (upcoming.size() - 1) + " more";
+        lblUpcoming.setText(summary);
     }
 
     // ── Notification panel ────────────────────────────────────────────────────
@@ -209,6 +227,8 @@ public class VisitorController {
         int count = all.size();
 
         lblNotifBadge.setText(String.valueOf(count));
+        lblNotifBadge.setVisible(count > 0);
+        lblNotifBadge.setManaged(count > 0);
 
         boolean empty = count == 0;
         lblNoNotif.setVisible(empty);
