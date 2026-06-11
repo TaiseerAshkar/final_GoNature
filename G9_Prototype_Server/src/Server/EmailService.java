@@ -30,6 +30,14 @@ public class EmailService {
     private static String  port;
     private static boolean configLoaded = false;
 
+    /** bounded pool so burst bookings never exhaust JVM threads. */
+    private static final java.util.concurrent.ExecutorService emailExecutor =
+        java.util.concurrent.Executors.newFixedThreadPool(4, r -> {
+            Thread t = new Thread(r, "email-sender");
+            t.setDaemon(true);
+            return t;
+        });
+
     /** utility class — no instances. */
     private EmailService() {}
 
@@ -80,7 +88,7 @@ public class EmailService {
         System.out.println("EmailService: ► queuing email  to=" + to
             + "  subject=\"" + subject + "\"  host=" + host + ":" + port
             + "  sender=" + sender);
-        Thread worker = new Thread(() -> {
+        emailExecutor.execute(() -> {
             try {
                 System.out.println("EmailService: connecting to " + host + ":" + port + " …");
                 Properties p = new Properties();
@@ -119,8 +127,6 @@ public class EmailService {
                 System.out.println("EmailService: ✗ send FAILED to " + to
                     + " — " + e.getClass().getSimpleName() + ": " + e.getMessage());
             }
-        }, "email-sender");
-        worker.setDaemon(true);
-        worker.start();
+        });
     }
 }

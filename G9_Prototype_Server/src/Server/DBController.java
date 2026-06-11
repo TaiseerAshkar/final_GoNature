@@ -134,21 +134,21 @@ public class DBController {
      */
     public Park getParkById(int parkId) {
         if (connection == null) return null;
-        try {
-            PreparedStatement st = connection.prepareStatement(
+        try (PreparedStatement st = connection.prepareStatement(
                 "SELECT id, name, capacity, max_orders, visit_duration_hours, full_price " +
-                "FROM parks WHERE id = ?");
+                "FROM parks WHERE id = ?")) {
             st.setInt(1, parkId);
-            ResultSet rs = st.executeQuery();
-            if (rs.next()) {
-                return new Park(
-                    rs.getInt("id"),
-                    rs.getString("name"),
-                    rs.getInt("capacity"),
-                    rs.getInt("max_orders"),
-                    rs.getInt("visit_duration_hours"),
-                    rs.getDouble("full_price")
-                );
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next()) {
+                    return new Park(
+                        rs.getInt("id"),
+                        rs.getString("name"),
+                        rs.getInt("capacity"),
+                        rs.getInt("max_orders"),
+                        rs.getInt("visit_duration_hours"),
+                        rs.getDouble("full_price")
+                    );
+                }
             }
         } catch (SQLException e) {
             System.out.println("getParkById error: " + e.getMessage());
@@ -514,8 +514,13 @@ public class DBController {
 
         // the slot is now free — promote the earliest matching waiting-list entry (if any)
         String notifiedEmail = null;
-        if (parkId > 0 && visitDate != null && visitTime != null)
+        if (parkId > 0 && visitDate != null && visitTime != null) {
             notifiedEmail = promoteFromWaitingList(parkId, visitDate, visitTime);
+        } else {
+            System.out.println("cancelOrder: skipping waiting-list promotion — " +
+                "slot details unavailable for order #" + orderId +
+                " (slot lookup may have failed before the cancel UPDATE)");
+        }
 
         return new CancelResult(true, notifiedEmail);
     }
@@ -530,7 +535,7 @@ public class DBController {
      * @param visitTime the freed slot's time
      * @return the promoted visitor's email address, or {@code null} if nobody was waiting
      */
-    private String promoteFromWaitingList(int parkId, Date visitDate, Time visitTime) {
+    private synchronized String promoteFromWaitingList(int parkId, Date visitDate, Time visitTime) {
         if (connection == null) return null;
 
         String dateStr = new java.text.SimpleDateFormat("yyyy-MM-dd").format(visitDate);
@@ -656,10 +661,9 @@ public class DBController {
      */
     public boolean confirmOrder(int orderId) {
         if (connection == null) return false;
-        try {
-            PreparedStatement st = connection.prepareStatement(
+        try (PreparedStatement st = connection.prepareStatement(
                 "UPDATE orders SET status = 'confirmed' " +
-                "WHERE id = ? AND status = 'pending'");
+                "WHERE id = ? AND status = 'pending'")) {
             st.setInt(1, orderId);
             return st.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -742,11 +746,10 @@ public class DBController {
      */
     public boolean isRegisteredSubscriber(String visitorId) {
         if (connection == null) return false;
-        try {
-            PreparedStatement st = connection.prepareStatement(
-                "SELECT 1 FROM subscribers WHERE id_number = ? LIMIT 1");
+        try (PreparedStatement st = connection.prepareStatement(
+                "SELECT 1 FROM subscribers WHERE id_number = ? LIMIT 1")) {
             st.setString(1, visitorId);
-            return st.executeQuery().next();
+            try (ResultSet rs = st.executeQuery()) { return rs.next(); }
         } catch (SQLException e) {
             System.out.println("isRegisteredSubscriber error: " + e.getMessage());
             return false;
@@ -818,12 +821,10 @@ public class DBController {
      */
     public boolean isRegisteredGuide(String visitorId) {
         if (connection == null) return false;
-        try {
-            PreparedStatement st = connection.prepareStatement(
-                "SELECT 1 FROM guides WHERE id_number = ? LIMIT 1");
+        try (PreparedStatement st = connection.prepareStatement(
+                "SELECT 1 FROM guides WHERE id_number = ? LIMIT 1")) {
             st.setString(1, visitorId);
-            ResultSet rs = st.executeQuery();
-            return rs.next();
+            try (ResultSet rs = st.executeQuery()) { return rs.next(); }
         } catch (SQLException e) {
             System.out.println("isRegisteredGuide error: " + e.getMessage());
             return false;
@@ -839,12 +840,10 @@ public class DBController {
      */
     public boolean isApprovedGuide(String visitorId) {
         if (connection == null) return false;
-        try {
-            PreparedStatement st = connection.prepareStatement(
-                "SELECT 1 FROM guides WHERE id_number = ? AND is_approved = 1 LIMIT 1");
+        try (PreparedStatement st = connection.prepareStatement(
+                "SELECT 1 FROM guides WHERE id_number = ? AND is_approved = 1 LIMIT 1")) {
             st.setString(1, visitorId);
-            ResultSet rs = st.executeQuery();
-            return rs.next();
+            try (ResultSet rs = st.executeQuery()) { return rs.next(); }
         } catch (SQLException e) {
             System.out.println("isApprovedGuide error: " + e.getMessage());
             return false;
@@ -872,7 +871,8 @@ public class DBController {
             st.setInt(2, parkId);
             ResultSet rs = st.executeQuery();
             if (!rs.next()) return null;
-            String raw = rs.getString("order_type").toUpperCase();
+            String rawOT = rs.getString("order_type");
+            String raw   = (rawOT != null) ? rawOT.toUpperCase() : "INDIVIDUAL";
             String oType = "INDIVIDUAL".equals(raw) ? "SOLO" : raw;
             return new OrderDetail(
                 rs.getInt("id"),
@@ -937,11 +937,12 @@ public class DBController {
             ResultSet rs = st.executeQuery();
 
             if (rs.next()) {
-                int    orderId      = rs.getInt("id");
-                int    numVis       = rs.getInt("num_visitors");
+                int    orderId         = rs.getInt("id");
+                int    numVis          = rs.getInt("num_visitors");
                 // map DB value to display name (SOLO / FAMILY / GROUP)
-                String oTypeRaw     = rs.getString("order_type").toUpperCase();
-                String oType        = "INDIVIDUAL".equals(oTypeRaw) ? "SOLO" : oTypeRaw;
+                String oTypeRawVal     = rs.getString("order_type");
+                String oTypeRaw        = (oTypeRawVal != null) ? oTypeRawVal.toUpperCase() : "INDIVIDUAL";
+                String oType           = "INDIVIDUAL".equals(oTypeRaw) ? "SOLO" : oTypeRaw;
                 String parkName     = rs.getString("park_name");
                 double fullPrice    = rs.getDouble("full_price");
                 boolean isGuide     = isRegisteredGuide(visitorId);
@@ -1127,12 +1128,11 @@ public class DBController {
      */
     public boolean registerExit(String visitorId, int parkId) {
         if (connection == null) return false;
-        try {
-            PreparedStatement st = connection.prepareStatement(
+        try (PreparedStatement st = connection.prepareStatement(
                 "UPDATE orders SET exit_time=NOW() " +
                 "WHERE visitor_id=? AND park_id=? AND visit_date=CURDATE() " +
                 "  AND status='completed' AND entry_time IS NOT NULL AND exit_time IS NULL " +
-                "ORDER BY entry_time DESC LIMIT 1");
+                "ORDER BY entry_time DESC LIMIT 1")) {
             st.setString(1, visitorId.trim());
             st.setInt(2, parkId);
             return st.executeUpdate() > 0;
@@ -1616,15 +1616,15 @@ public class DBController {
      */
     public int getCurrentOccupancy(int parkId) {
         if (connection == null) return 0;
-        try {
-            PreparedStatement st = connection.prepareStatement(
+        try (PreparedStatement st = connection.prepareStatement(
                 "SELECT COALESCE(SUM(num_visitors), 0) AS inside " +
                 "FROM orders " +
                 "WHERE park_id = ? AND visit_date = CURDATE() " +
-                "  AND status = 'completed' AND entry_time IS NOT NULL AND exit_time IS NULL");
+                "  AND status = 'completed' AND entry_time IS NOT NULL AND exit_time IS NULL")) {
             st.setInt(1, parkId);
-            ResultSet rs = st.executeQuery();
-            if (rs.next()) return rs.getInt("inside");
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next()) return rs.getInt("inside");
+            }
             return 0;
         } catch (SQLException e) {
             System.out.println("getCurrentOccupancy error: " + e.getMessage());
@@ -1690,13 +1690,13 @@ public class DBController {
             "SELECT email FROM guides      WHERE id_number = ?"
         };
         for (String q : queries) {
-            try {
-                PreparedStatement st = connection.prepareStatement(q);
+            try (PreparedStatement st = connection.prepareStatement(q)) {
                 st.setString(1, visitorId);
-                ResultSet rs = st.executeQuery();
-                if (rs.next()) {
-                    String email = rs.getString("email");
-                    if (email != null && !email.trim().isEmpty()) return email.trim();
+                try (ResultSet rs = st.executeQuery()) {
+                    if (rs.next()) {
+                        String email = rs.getString("email");
+                        if (email != null && !email.trim().isEmpty()) return email.trim();
+                    }
                 }
             } catch (SQLException e) {
                 System.out.println("getVisitorEmail error: " + e.getMessage());

@@ -93,16 +93,15 @@ public class EchoServer extends AbstractServer {
 
                 case "LOGIN_VISITOR": {
                     String idNumber = (String) incoming.getData();
-                    // Reject if this ID is already logged in on another connection
-                    if (activeSessions.contains(idNumber)) {
-                        client.sendToClient(new Message("LOGIN_FAIL",
-                            "This account is already logged in on another device."));
-                        break;
-                    }
                     LoginResult result = DBController.getInstance().loginVisitor(idNumber);
                     if (result != null) {
-                        activeSessions.add(idNumber);
-                        client.setInfo("sessionKey", idNumber); // stored for logout/disconnect cleanup
+                        // add() returns false if the key was already present — atomic check-and-add
+                        if (!activeSessions.add(idNumber)) {
+                            client.sendToClient(new Message("LOGIN_FAIL",
+                                "This account is already logged in on another device."));
+                            break;
+                        }
+                        client.setInfo("sessionKey", idNumber);
                         client.sendToClient(new Message("LOGIN_SUCCESS", result));
                     } else {
                         client.sendToClient(new Message("LOGIN_FAIL",
@@ -120,17 +119,16 @@ public class EchoServer extends AbstractServer {
                     }
                     String[] creds = (String[]) incoming.getData();
                     String username = creds[0];
-                    // Reject if this username is already logged in on another connection
-                    if (activeSessions.contains(username)) {
-                        client.sendToClient(new Message("LOGIN_FAIL",
-                            "This account is already logged in on another device."));
-                        break;
-                    }
                     DBController db = DBController.getInstance();
                     LoginResult result = db.loginUser(username, creds[1]);
                     if (result != null) {
-                        activeSessions.add(username);
-                        client.setInfo("sessionKey", username); // stored for logout/disconnect cleanup
+                        // add() returns false if the key was already present — atomic check-and-add
+                        if (!activeSessions.add(username)) {
+                            client.sendToClient(new Message("LOGIN_FAIL",
+                                "This account is already logged in on another device."));
+                            break;
+                        }
+                        client.setInfo("sessionKey", username);
                         client.sendToClient(new Message("LOGIN_SUCCESS", result));
                     } else {
                         client.sendToClient(new Message("LOGIN_FAIL",
