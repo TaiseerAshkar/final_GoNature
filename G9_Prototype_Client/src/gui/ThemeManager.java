@@ -3,7 +3,11 @@ package gui;
 import javafx.collections.ListChangeListener;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.DialogPane;
 import javafx.stage.Window;
+
+import java.net.URL;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -123,4 +127,31 @@ public final class ThemeManager {
      *         (click to go light) and a moon while light mode is on (click to go dark)
      */
     public static String iconText() { return darkMode ? "☀" : "🌙"; }
+
+    /**
+     * applies the shared topographic theme to a popup dialog — works for {@link javafx.scene.control.Alert},
+     * {@link javafx.scene.control.TextInputDialog}, {@link javafx.scene.control.ChoiceDialog}, and any
+     * custom {@link Dialog}. attaches {@code gonature.css} to the dialog pane (so the looked-up colour
+     * tokens and {@code .dark-mode} rules resolve), tags it with the {@code help-dialog} style class for the
+     * pine/gold header strip and themed buttons, and registers its scene so it follows the active
+     * light/dark theme. call once, right after creating the dialog and before {@code showAndWait()}.
+     *
+     * @param dialog the dialog to theme; ignored if {@code null}
+     */
+    public static void styleDialog(Dialog<?> dialog) {
+        if (dialog == null) return;
+        DialogPane pane = dialog.getDialogPane();
+        if (pane == null) return;
+
+        URL css = ThemeManager.class.getResource("/gui/gonature.css");
+        if (css != null) {
+            String href = css.toExternalForm();
+            if (!pane.getStylesheets().contains(href)) pane.getStylesheets().add(href);
+        }
+        if (!pane.getStyleClass().contains("help-dialog")) pane.getStyleClass().add("help-dialog");
+
+        // the dialog's scene only exists once it's shown — register now if present, and on attach
+        if (pane.getScene() != null) register(pane.getScene());
+        pane.sceneProperty().addListener((o, ov, sc) -> { if (sc != null) register(sc); });
+    }
 }

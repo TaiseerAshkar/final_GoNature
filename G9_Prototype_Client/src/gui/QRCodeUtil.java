@@ -95,6 +95,7 @@ class QRCodeUtil {
         alert.setHeaderText("📱  Your Entry Pass");
         alert.getDialogPane().setContent(content);
         alert.getDialogPane().setMinWidth(300);
+        ThemeManager.styleDialog(alert);
         alert.showAndWait();
     }
 

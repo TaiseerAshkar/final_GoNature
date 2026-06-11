@@ -347,6 +347,7 @@ public class VisitorController {
             dlg.setTitle("Confirm My Visit");
             dlg.setHeaderText("You have " + eligible.size() + " bookings for tomorrow.");
             dlg.setContentText("Select the booking to confirm:");
+            ThemeManager.styleDialog(dlg);
             dlg.showAndWait().ifPresent(chosen -> {
                 int idx = labels.indexOf(chosen);
                 if (idx >= 0) toConfirm.add(eligible.get(idx));

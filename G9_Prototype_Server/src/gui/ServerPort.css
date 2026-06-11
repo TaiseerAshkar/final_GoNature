@@ -249,6 +249,50 @@
 .log-notif .content      { -fx-background-color: #EBF1F4; }
 
 
+/* ── Startup password dialog (themed popup) ─────────────────── */
+.help-dialog {
+    -fx-background-color: -park-surface;
+}
+/* pine header strip with the trail-marker gold underline */
+.help-dialog > .header-panel {
+    -fx-background-color: linear-gradient(to right, -park-pine-dark, #25492F, -park-pine);
+    -fx-padding: 16 22;
+    -fx-border-color: transparent transparent -park-gold transparent;
+    -fx-border-width: 0 0 3 0;
+}
+.help-dialog > .header-panel .label {
+    -fx-font-family: -park-font-display;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #F5F1E4;
+}
+.help-dialog > .content {
+    -fx-background-color: -park-surface;
+    -fx-padding: 14 18;
+}
+/* plain content/message text follows the theme token (less specific than the header rule) */
+.help-dialog > .content.label,
+.help-dialog .label { -fx-text-fill: -park-text; }
+.help-dialog > .button-bar {
+    -fx-background-color: -park-surface;
+    -fx-padding: 8 16 14 16;
+}
+.help-dialog .button-bar .button {
+    -fx-background-color: -park-pine;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8;
+    -fx-padding: 7 22;
+    -fx-cursor: hand;
+}
+.help-dialog .button-bar .button:hover   { -fx-background-color: -park-pine-700; }
+.help-dialog .button-bar .button:pressed { -fx-background-color: -park-pine-900; }
+.help-dialog .button-bar .button:cancel-button       { -fx-background-color: #6B6A52; }
+.help-dialog .button-bar .button:cancel-button:hover { -fx-background-color: #7B795E; }
+/* re-assert the field label's pine accent (declared later, equal specificity → wins) */
+.help-dialog .field-label { -fx-text-fill: -park-pine; }
+
+
 /* ── ScrollBars (match the parchment theme) ─────────────────── */
 .scroll-bar:vertical .track,
 .scroll-bar:horizontal .track {

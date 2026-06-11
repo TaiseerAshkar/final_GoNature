@@ -365,6 +365,7 @@ public class EntryControlController {
         dlg.setContentText(
             "Enter the value from the visitor's QR code\n" +
             "or type their government ID directly:");
+        ThemeManager.styleDialog(dlg);
         dlg.showAndWait().ifPresent(raw -> {
             String visitorId = QRCodeUtil.parseVisitorId(raw);
             if (!visitorId.isEmpty()) {

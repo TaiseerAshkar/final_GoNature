@@ -153,6 +153,7 @@ public class RegisterController {
         alert.setTitle("Registration Successful");
         alert.setHeaderText("Welcome to GoNature!");
         alert.setContentText(msg.toString());
+        ThemeManager.styleDialog(alert);
         alert.showAndWait();
 
         closeOrReturn();

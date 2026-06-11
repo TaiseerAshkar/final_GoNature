@@ -383,6 +383,7 @@ public class AcademicFrameController {
                         ButtonType.YES, ButtonType.NO);
                     confirm.setTitle("Confirm Rejection");
                     confirm.setHeaderText("This will permanently delete the guide record.");
+                    ThemeManager.styleDialog(confirm);
                     confirm.showAndWait().ifPresent(btn -> {
                         if (btn != ButtonType.YES) return;
                         ChatClient.lastGuideActionSuccess = null;
@@ -541,6 +542,7 @@ public class AcademicFrameController {
                         ButtonType.YES, ButtonType.NO);
                     confirm.setTitle("Confirm Rejection");
                     confirm.setHeaderText("The proposed values will not be applied.");
+                    ThemeManager.styleDialog(confirm);
                     confirm.showAndWait().ifPresent(btn -> {
                         if (btn != ButtonType.YES) return;
                         ChatClient.lastSettingsActionSuccess = null;

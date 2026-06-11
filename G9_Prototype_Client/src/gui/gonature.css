@@ -634,6 +634,38 @@
 .help-dialog .button-bar .button:hover  { -fx-background-color: -park-pine-700; }
 .help-dialog .button-bar .button:pressed { -fx-background-color: -park-pine-900; }
 
+/* plain content/message text uses the theme token (dark text on the light parchment surface). */
+.help-dialog > .content.label,
+.help-dialog > .content .label,
+.help-dialog .label { -fx-text-fill: -park-text; }
+.help-dialog > .content .text,
+.help-dialog .text  { -fx-fill: -park-text; }
+/* custom accent labels keep their pine & gold tints (declared later → win over the line above). */
+.help-dialog .card-title      { -fx-text-fill: -park-pine-dark; }
+.help-dialog .field-label     { -fx-text-fill: -park-pine; }
+.help-dialog .section-label   { -fx-text-fill: -park-gold-900; }
+.help-dialog .screen-subtitle { -fx-text-fill: -park-text-mid; }
+/* KEY: popups stay on the LIGHT parchment palette even when the app is in dark mode, so every
+   client dialog matches the always-light server dialog — crisp dark text on warm parchment, never
+   dark-on-dark. redefining the tokens on the pane (specificity 0,2,0 beats ".dark-mode" 0,1,0)
+   makes the surface, text and accents all resolve to their light values for the dialog subtree. */
+.dark-mode.help-dialog {
+    -park-surface:    #FCFBF6;
+    -park-surface-2:  #F4F0E4;
+    -park-parchment:  #F3EFE3;
+    -park-text:       #20271F;
+    -park-text-mid:   #4F5A4A;
+    -park-text-muted: #8A8F7E;
+    -park-line:       #E4DDC9;
+    -park-border:     #D9D2BE;
+    -fx-background-color: -park-surface;
+}
+/* a second CANCEL / secondary button in the bar reads as neutral bark, not pine */
+.help-dialog .button-bar .button:cancel-button {
+    -fx-background-color: #6B6A52;
+}
+.help-dialog .button-bar .button:cancel-button:hover { -fx-background-color: #7B795E; }
+
 
 /* ── Table view ──────────────────────────────────────────────── */
 .table-view {
