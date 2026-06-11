@@ -313,6 +313,39 @@
     -fx-background-color: -park-sage-2;
 }
 
+/* MODE TOGGLE — segmented Pre-booked / Walk-in buttons */
+.mode-btn-left {
+    -fx-background-radius: 8 0 0 8;
+    -fx-border-radius:     8 0 0 8;
+    -fx-border-color: -park-pine;
+    -fx-border-width: 1.5;
+    -fx-font-size: 13px;
+    -fx-padding: 8 22;
+    -fx-cursor: hand;
+    -fx-font-weight: bold;
+}
+.mode-btn-right {
+    -fx-background-radius: 0 8 8 0;
+    -fx-border-radius:     0 8 8 0;
+    -fx-border-color: -park-pine;
+    -fx-border-width: 1.5 1.5 1.5 0;
+    -fx-font-size: 13px;
+    -fx-padding: 8 22;
+    -fx-cursor: hand;
+    -fx-font-weight: bold;
+}
+.mode-btn-active {
+    -fx-background-color: -park-pine;
+    -fx-text-fill: white;
+}
+.mode-btn-active:hover  { -fx-background-color: -park-pine-700; }
+.mode-btn-active:pressed { -fx-background-color: -park-pine-900; }
+.mode-btn-inactive {
+    -fx-background-color: -park-surface;
+    -fx-text-fill: -park-text;
+}
+.mode-btn-inactive:hover { -fx-background-color: -park-sage; }
+
 /* Disabled state for all button types */
 .btn-primary:disabled, .btn-teal:disabled, .btn-blue:disabled,
 .btn-warning:disabled, .btn-danger:disabled, .btn-secondary:disabled,
@@ -1182,6 +1215,7 @@
 .dark-mode .lbl-detail-key    { -fx-text-fill: -park-text-mid; }
 .dark-mode .lbl-hint          { -fx-text-fill: -park-text-muted; }
 .dark-mode .check-box         { -fx-text-fill: -park-text-mid; }
+.dark-mode .mode-btn-inactive { -fx-background-color: -park-surface-2; -fx-text-fill: -park-text-mid; }
 .dark-mode .empty-state       { -fx-text-fill: -park-text-muted; }
 .dark-mode .lbl-success       { -fx-text-fill: #81c784; }
 .dark-mode .lbl-error         { -fx-text-fill: #E57373; }

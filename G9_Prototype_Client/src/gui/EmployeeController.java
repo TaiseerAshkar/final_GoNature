@@ -186,7 +186,12 @@ public class EmployeeController {
         List<Park> parks = ChatClient.lastParkList;
         if (parks != null) {
             for (Park p : parks) {
-                if (p.getId() == parkId) { capacity = p.getCapacity(); break; }
+                if (p.getId() == parkId) {
+                    capacity = p.getCapacity();
+                    s.setParkName(p.getName());
+                    if (lblParkBadge != null) lblParkBadge.setText(p.getName());
+                    break;
+                }
             }
         }
 

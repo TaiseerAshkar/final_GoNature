@@ -50,7 +50,9 @@ public class TodayReservationsController {
         ThemeManager.installToggle(btnTheme);
         UserSession s = UserSession.getInstance();
         Integer parkId = s != null ? s.getParkId() : null;
-        lblParkName.setText(parkId != null ? "Park #" + parkId : "No Park Assigned");
+        String parkName = (s != null && s.getParkName() != null) ? s.getParkName()
+                          : (parkId != null ? "Park #" + parkId : "No Park Assigned");
+        lblParkName.setText(parkName);
         lblDate.setText("Today: " +
             LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
 
