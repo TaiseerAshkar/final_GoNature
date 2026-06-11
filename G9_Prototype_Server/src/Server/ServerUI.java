@@ -44,16 +44,18 @@ public class ServerUI extends Application {
 
         PasswordField passwordField = new PasswordField();
         passwordField.setPromptText("Password");
+        passwordField.getStyleClass().add("text-field");
 
         // plain text field shares the same binding — shown when "Show password" is ticked
         TextField plainField = new TextField();
         plainField.setPromptText("Password");
+        plainField.getStyleClass().add("text-field");
         plainField.setVisible(false);
         plainField.setManaged(false);
         plainField.textProperty().bindBidirectional(passwordField.textProperty());
 
         CheckBox showPw = new CheckBox("Show password");
-        showPw.setStyle("-fx-font-size: 12px; -fx-text-fill: #555;");
+        showPw.setStyle("-fx-font-size: 12px; -fx-text-fill: -park-text-mid;");
         showPw.setOnAction(e -> {
             boolean show = showPw.isSelected();
             passwordField.setVisible(!show);
@@ -62,13 +64,22 @@ public class ServerUI extends Application {
             plainField.setManaged(show);
         });
 
-        VBox content = new VBox(8, new Label("MySQL Password:"), passwordField, plainField, showPw);
+        Label pwLabel = new Label("MySQL Password:");
+        pwLabel.getStyleClass().add("field-label");
+
+        VBox content = new VBox(8, pwLabel, passwordField, plainField, showPw);
         content.setPadding(new Insets(10));
         dialog.getDialogPane().setContent(content);
 
         ButtonType connectBtn = new ButtonType("Connect", ButtonBar.ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes().addAll(connectBtn, ButtonType.CANCEL);
         dialog.setResultConverter(btn -> btn == connectBtn ? passwordField.getText() : null);
+
+        // theme the popup to match the server control panel (pine header, gold accent, themed buttons)
+        DialogPane pane = dialog.getDialogPane();
+        java.net.URL css = getClass().getResource("/gui/ServerPort.css");
+        if (css != null) pane.getStylesheets().add(css.toExternalForm());
+        pane.getStyleClass().add("help-dialog");
 
         Optional<String> result = dialog.showAndWait();
         if (!result.isPresent() || result.get() == null) {

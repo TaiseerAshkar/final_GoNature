@@ -374,6 +374,7 @@ public class BookingController {
         ButtonType joinBtn   = new ButtonType("Join Waiting List", ButtonBar.ButtonData.YES);
         ButtonType cancelBtn = new ButtonType("Cancel",            ButtonBar.ButtonData.NO);
         alert.getButtonTypes().setAll(joinBtn, cancelBtn);
+        ThemeManager.styleDialog(alert);
         Optional<ButtonType> response = alert.showAndWait();
         if (response.isPresent() && response.get() == joinBtn) {
             ChatClient.lastBookingResult = null;

@@ -42,6 +42,7 @@ public class ClientUI extends Application {
         dialog.setTitle("Connect to Server");
         dialog.setHeaderText("Enter Server IP Address");
         dialog.setContentText("IP:");
+        gui.ThemeManager.styleDialog(dialog);
 
         Optional<String> result = dialog.showAndWait();
         if (!result.isPresent()) { Platform.exit(); return; }

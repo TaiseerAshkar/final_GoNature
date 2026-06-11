@@ -172,6 +172,7 @@ public class MyOrdersController {
         ButtonType yesBtn = new ButtonType("Yes, Cancel Order", ButtonBar.ButtonData.YES);
         ButtonType noBtn  = new ButtonType("Keep Order",        ButtonBar.ButtonData.NO);
         confirm.getButtonTypes().setAll(yesBtn, noBtn);
+        ThemeManager.styleDialog(confirm);
         Optional<ButtonType> response = confirm.showAndWait();
         if (!response.isPresent() || response.get() != yesBtn) return;
 
