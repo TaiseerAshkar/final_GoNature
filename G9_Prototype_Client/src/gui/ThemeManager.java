@@ -3,6 +3,8 @@ package gui;
 import javafx.collections.ListChangeListener;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonBar;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.DialogPane;
 import javafx.stage.Window;
@@ -100,6 +102,8 @@ public final class ThemeManager {
         } else {
             classes.remove(DARK_CLASS);
         }
+        // global polish pass: vector brand icons + button micro-motion (idempotent per node)
+        UiPolish.decorate(scene);
     }
 
     /**
@@ -117,16 +121,24 @@ public final class ThemeManager {
         btn.setOnAction(e -> toggle());
     }
 
-    /** updates a single toggle button's glyph to match the live state. */
+    /** updates a single toggle button's glyph to match the live state (vector sun / moon). */
     private static void refreshIcon(Button btn) {
-        if (btn != null) btn.setText(iconText());
+        if (btn == null) return;
+        // toggles on the dark-pine header bar need the fixed cream icon; ghost-style toggles
+        // (login screen, light parchment hero) use the theme-adaptive colour instead, so the
+        // moon reads pine-on-parchment in light mode rather than invisible cream-on-cream
+        boolean onLightSurface = btn.getStyleClass().contains("btn-ghost");
+        String[] tint = onLightSurface ? new String[0] : new String[] { Icons.CREAM };
+        btn.setGraphic(darkMode ? Icons.sun(15, tint) : Icons.moon(15, tint));
+        btn.setText("");
     }
 
     /**
-     * @return the glyph a toggle button should show: a sun while dark mode is on
-     *         (click to go light) and a moon while light mode is on (click to go dark)
+     * @return always the empty string — toggle buttons now carry a vector sun/moon
+     *         <em>graphic</em> (set by {@link #refreshIcon}), so legacy callers that still do
+     *         {@code btn.setText(iconText())} after toggling stay harmless no-ops
      */
-    public static String iconText() { return darkMode ? "☀" : "🌙"; }
+    public static String iconText() { return ""; }
 
     /**
      * applies the shared topographic theme to a popup dialog — works for {@link javafx.scene.control.Alert},
@@ -150,8 +162,37 @@ public final class ThemeManager {
         }
         if (!pane.getStyleClass().contains("help-dialog")) pane.getStyleClass().add("help-dialog");
 
+        // modern baseline for every themed popup: wide enough that no button text truncates,
+        // and without the legacy blue Alert icon (the pine header strip carries the look)
+        pane.setMinWidth(460);
+        pane.setGraphic(null);
+
         // the dialog's scene only exists once it's shown — register now if present, and on attach
         if (pane.getScene() != null) register(pane.getScene());
-        pane.sceneProperty().addListener((o, ov, sc) -> { if (sc != null) register(sc); });
+        pane.sceneProperty().addListener((o, ov, sc) -> {
+            if (sc != null) { register(sc); polishDialogButtons(pane); }
+        });
+        polishDialogButtons(pane);
+    }
+
+    /**
+     * button polish for themed popups, idempotent: every bar button keeps its preferred width
+     * (no more "Yes, Cancel Or…" ellipsis), and dismissive choices (CANCEL_CLOSE / NO) get the
+     * neutral bark style so the primary action stands out. runs again on scene attach because
+     * the button nodes are created by the skin.
+     */
+    private static void polishDialogButtons(DialogPane pane) {
+        for (ButtonType bt : pane.getButtonTypes()) {
+            javafx.scene.Node n = pane.lookupButton(bt);
+            if (!(n instanceof Button)) continue;
+            Button b = (Button) n;
+            b.setMinWidth(Button.USE_PREF_SIZE);
+            ButtonBar.ButtonData data = bt.getButtonData();
+            boolean dismissive = data != null
+                && (data.isCancelButton() || data == ButtonBar.ButtonData.NO);
+            if (dismissive && !b.getStyleClass().contains("btn-dialog-neutral")) {
+                b.getStyleClass().add("btn-dialog-neutral");
+            }
+        }
     }
 }

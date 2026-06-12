@@ -72,6 +72,10 @@ public class TodayReservationsController {
         colEmail.setCellValueFactory(d ->
             new SimpleStringProperty(d.getValue().getEmail()));
 
+        tableOrders.setPlaceholder(EmptyState.of(Icons.calendar(34),
+            "No reservations for today",
+            "Bookings for today's date will appear here."));
+
         loadData();
     }
 

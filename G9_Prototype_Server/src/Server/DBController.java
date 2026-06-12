@@ -235,8 +235,7 @@ public class DBController {
             System.out.println("[getAvailableSpots] ERROR — connection is null");
             return -1;
         }
-        try {
-            PreparedStatement st = connection.prepareStatement(
+        try (PreparedStatement st = connection.prepareStatement(
                 "SELECT p.capacity - COALESCE(SUM(o.num_visitors), 0) AS available " +
                 "FROM parks p " +
                 "LEFT JOIN orders o " +
@@ -246,16 +245,27 @@ public class DBController {
                 "       AND TIME(o.visit_time) < ADDTIME(TIME(?), SEC_TO_TIME(p.visit_duration_hours * 3600)) " +
                 "       AND ADDTIME(TIME(o.visit_time), SEC_TO_TIME(p.visit_duration_hours * 3600)) > TIME(?) " +
                 "WHERE p.id = ? " +
-                "GROUP BY p.id, p.capacity");
+                "GROUP BY p.id, p.capacity")) {
             st.setString(1, visitDate);
             st.setString(2, visitTime);
             st.setString(3, visitTime);
             st.setInt(4, parkId);
-            ResultSet rs = st.executeQuery();
-            if (rs.next()) {
-                int result = rs.getInt("available");
-                System.out.printf("[getAvailableSpots] result=%d%n", result);
-                return result;
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next()) {
+                    int result = rs.getInt("available");
+                    System.out.printf("[getAvailableSpots] result=%d%n", result);
+                    // overlapping bookings (walk-ins, waiting-list promotions, multi-hour visit
+                    // windows) can push the occupied sum past capacity, making this negative.
+                    // negative means "overbooked", NOT "error" — clamp to 0 free spots so the
+                    // callers' -1 error sentinel stays unambiguous and full slots route to the
+                    // waiting-list offer instead of a bogus "could not check capacity" error.
+                    if (result < 0) {
+                        System.out.printf("[getAvailableSpots] slot overbooked by %d — clamping to 0%n",
+                            -result);
+                        result = 0;
+                    }
+                    return result;
+                }
             }
             // No rows means park ID doesn't exist in the parks table
             System.out.printf("[getAvailableSpots] WARN — no row for parkId=%d (park not found)%n", parkId);

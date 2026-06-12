@@ -425,7 +425,10 @@ public class EntryControlController {
     }
 
     private void setCheckInError(String msg) {
-        lblCheckInMessage.setStyle("-fx-font-size: 12px; -fx-text-fill: #c62828;");
+        // theme class instead of a hardcoded red so the message stays readable in dark mode
+        lblCheckInMessage.setStyle("-fx-font-size: 12px;");
+        lblCheckInMessage.getStyleClass().remove("lbl-error");
+        lblCheckInMessage.getStyleClass().add("lbl-error");
         lblCheckInMessage.setText(msg);
     }
 

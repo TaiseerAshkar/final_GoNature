@@ -63,6 +63,10 @@ public class WaitingListController {
         colAddedOn.setCellValueFactory(d ->
             new SimpleStringProperty(d.getValue().getCreatedAt()));
 
+        tableWaiting.setPlaceholder(EmptyState.of(Icons.hourglass(34),
+            "Waiting list is clear",
+            "Visitors waiting for a freed slot will appear here."));
+
         loadData();
     }
 

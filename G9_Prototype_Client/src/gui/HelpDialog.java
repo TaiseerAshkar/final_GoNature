@@ -1,21 +1,31 @@
 package gui;
 
-import javafx.scene.control.Alert;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonBar;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.Dialog;
 import javafx.scene.control.DialogPane;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 
 import java.net.URL;
 
 /**
  * shared builder for the in-app Help popups shown from every screen's "Help ?" control.
  *
- * <p>previously each controller built its own plain-white {@link Alert} with an unstyled
- * {@link TextArea}. this helper centralises that into one themed popup: it attaches the
- * application stylesheet ({@code gonature.css}) to the dialog pane and tags it with the
- * {@code help-dialog} / {@code help-text} style classes, so the popup picks up the
- * topographic look — pine header, parchment body, trail-marker gold accent — and follows
- * the active light/dark theme automatically (the global watcher in {@link ThemeManager}
- * adds the {@code dark-mode} class to every open window, this dialog included).
+ * <p>every controller routes through {@link #show(String, String)}, so the popup's look is
+ * defined once, here. it renders the same premium card as the Connect / Login dialogs: a deep-pine
+ * hero banner with a trail-marker gold accent line and a gold "?" badge, a short context line
+ * (derived from the caller's title), and a scrollable reading panel below.
+ *
+ * <p>built on a plain {@link Dialog} (not {@link javafx.scene.control.Alert}) so no stray
+ * "message" label is injected. unlike the launch dialogs, the Help popup <em>follows the active
+ * theme</em>: the {@code help-adaptive} marker class lets it render dark in dark mode and light in
+ * light mode (see the {@code .dark-mode.help-dialog.help-adaptive} rule in {@code gonature.css}).
  */
 public final class HelpDialog {
 
@@ -23,17 +33,47 @@ public final class HelpDialog {
     private HelpDialog() {}
 
     /**
-     * shows a scrollable, themed Help popup.
+     * shows a scrollable, themed Help popup with the branded hero banner.
      *
-     * @param title   the header text (e.g. {@code "GoNature — Help (VISITOR)"})
-     * @param content the help body text shown in the scrollable area
+     * @param title   the caller's title (e.g. {@code "GoNature — Help (VISITOR)"}); the
+     *                {@code "GoNature — "} prefix is stripped to form the hero's context line
+     * @param content the help body text shown in the scrollable reading panel
      */
     public static void show(String title, String content) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("GoNature — Help");
-        alert.setHeaderText(title);
-        alert.setGraphic(null);   // drop the default blue 'i' icon — the pine header carries the look
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("GoNature — Help");
 
+        // derive a short context line ("GoNature — Help (VISITOR)" → "Help (VISITOR)")
+        String context = (title == null) ? "" : title.trim();
+        if (context.startsWith("GoNature — ")) context = context.substring("GoNature — ".length());
+        if (context.isEmpty()) context = "National Park Reservation System";
+
+        // ── trail-marker "?" badge ──
+        Label badge = new Label("?");
+        badge.setStyle("-fx-min-width: 36; -fx-min-height: 36; -fx-pref-width: 36; -fx-pref-height: 36; "
+            + "-fx-alignment: center; -fx-font-size: 20px; -fx-font-weight: bold; "
+            + "-fx-text-fill: #123D2C; -fx-background-color: #EBDFA8; -fx-background-radius: 18; "
+            + "-fx-border-color: rgba(206,155,54,0.65); -fx-border-radius: 18; -fx-border-width: 1;");
+
+        Label heroTitle = new Label("Help & Guidance");
+        heroTitle.setStyle("-fx-font-family: -park-font-display; -fx-font-size: 21px; "
+            + "-fx-font-weight: bold; -fx-text-fill: #F5F1E4;");
+        Label heroSub = new Label(context);
+        heroSub.setStyle("-fx-font-size: 11px; -fx-font-weight: bold; "
+            + "-fx-text-fill: rgba(245,241,228,0.82);");
+        VBox heroText = new VBox(2, heroTitle, heroSub);
+        heroText.setAlignment(Pos.CENTER_LEFT);
+
+        HBox hero = new HBox(13, badge, heroText);
+        hero.setAlignment(Pos.CENTER_LEFT);
+        hero.setPadding(new Insets(16, 22, 15, 22));
+        hero.setMaxWidth(Double.MAX_VALUE);
+        hero.setStyle("-fx-background-color: linear-gradient(to right, -park-pine-dark, #164A33, -park-pine); "
+            + "-fx-background-radius: 12 12 0 0; "
+            + "-fx-border-color: transparent transparent -park-gold transparent; "
+            + "-fx-border-width: 0 0 3 0;");
+
+        // ── scrollable help body (inset reading panel via .help-text) ──
         TextArea ta = new TextArea(content);
         ta.setEditable(false);
         ta.setWrapText(true);
@@ -41,19 +81,35 @@ public final class HelpDialog {
         ta.setPrefWidth(470);
         ta.getStyleClass().add("help-text");
 
-        DialogPane pane = alert.getDialogPane();
-        pane.setContent(ta);
-        pane.setMinWidth(510);
-        pane.getStyleClass().add("help-dialog");
+        VBox body = new VBox(ta);
+        body.setPadding(new Insets(16, 18, 16, 18));
+
+        // ── card wrapper: pine hero on top, themed body below ──
+        VBox card = new VBox(hero, body);
+        card.setMaxWidth(Double.MAX_VALUE);
+        card.setStyle("-fx-background-color: -park-surface; -fx-background-radius: 12; "
+            + "-fx-border-color: -park-border; -fx-border-radius: 12; -fx-border-width: 1;");
+
+        DialogPane pane = dialog.getDialogPane();
+        pane.setContent(card);
+        pane.setMinWidth(540);
+        // help-dialog = themed look · help-adaptive = follow light/dark theme (opt out of force-light)
+        pane.getStyleClass().addAll("help-dialog", "help-adaptive");
 
         // attach the app stylesheet so the .help-dialog rules (and theme tokens) resolve
         URL css = HelpDialog.class.getResource("/gui/gonature.css");
         if (css != null) pane.getStylesheets().add(css.toExternalForm());
 
-        // make sure the global theme watcher is live so the popup opens already matching
-        // the current light/dark preference rather than flashing the wrong palette
-        ThemeManager.register(pane.getScene());
+        // single pine "Got it" button — CANCEL_CLOSE so Esc / window-X also dismiss the popup
+        ButtonType gotIt = new ButtonType("Got it", ButtonBar.ButtonData.CANCEL_CLOSE);
+        pane.getButtonTypes().add(gotIt);
+        Button gotItBtn = (Button) pane.lookupButton(gotIt);
+        if (gotItBtn != null) gotItBtn.getStyleClass().add("btn-gotit");
 
-        alert.showAndWait();
+        // open already matching the current light/dark preference, and keep following theme changes
+        ThemeManager.register(pane.getScene());
+        pane.sceneProperty().addListener((o, ov, sc) -> { if (sc != null) ThemeManager.register(sc); });
+
+        dialog.showAndWait();
     }
 }

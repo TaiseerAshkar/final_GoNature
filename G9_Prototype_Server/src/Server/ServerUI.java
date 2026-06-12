@@ -4,6 +4,7 @@ import gui.ServerPortFrameController;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
@@ -40,16 +41,41 @@ public class ServerUI extends Application {
     public void start(Stage primaryStage) throws Exception {
         Dialog<String> dialog = new Dialog<>();
         dialog.setTitle("Database Login");
-        dialog.setHeaderText("Enter MySQL Password");
+
+        // ── branded pine hero banner (matches the client "Connect to GoNature" dialog) ──
+        Label brand = new Label("GoNature");
+        brand.setGraphic(pineLogo(26));
+        brand.setGraphicTextGap(11);
+        brand.setStyle("-fx-font-family: -park-font-display; -fx-font-size: 23px; "
+            + "-fx-font-weight: bold; -fx-text-fill: #F5F1E4;");
+        Label tagline = new Label("NATIONAL PARK RESERVATION SYSTEM");
+        tagline.setStyle("-fx-font-size: 11px; -fx-font-weight: bold; "
+            + "-fx-text-fill: rgba(245,241,228,0.82);");
+        VBox hero = new VBox(3, brand, tagline);
+        hero.setAlignment(Pos.CENTER_LEFT);
+        hero.setPadding(new Insets(18, 22, 16, 22));
+        hero.setMaxWidth(Double.MAX_VALUE);
+        hero.setStyle("-fx-background-color: linear-gradient(to right, -park-pine-dark, #164A33, -park-pine); "
+            + "-fx-background-radius: 12 12 0 0; "
+            + "-fx-border-color: transparent transparent -park-gold transparent; "
+            + "-fx-border-width: 0 0 3 0;");
+
+        // ── password field + show/hide toggle ──
+        Label fieldLabel = new Label("MYSQL PASSWORD");
+        fieldLabel.getStyleClass().add("section-label");
 
         PasswordField passwordField = new PasswordField();
         passwordField.setPromptText("Password");
         passwordField.getStyleClass().add("text-field");
+        passwordField.setMaxWidth(Double.MAX_VALUE);
+        passwordField.setStyle("-fx-font-size: 14px; -fx-padding: 9 12;");
 
         // plain text field shares the same binding — shown when "Show password" is ticked
         TextField plainField = new TextField();
         plainField.setPromptText("Password");
         plainField.getStyleClass().add("text-field");
+        plainField.setMaxWidth(Double.MAX_VALUE);
+        plainField.setStyle("-fx-font-size: 14px; -fx-padding: 9 12;");
         plainField.setVisible(false);
         plainField.setManaged(false);
         plainField.textProperty().bindBidirectional(passwordField.textProperty());
@@ -64,23 +90,32 @@ public class ServerUI extends Application {
             plainField.setManaged(show);
         });
 
-        Label pwLabel = new Label("MySQL Password:");
-        pwLabel.getStyleClass().add("field-label");
+        Label hint = new Label("Enter the MySQL database password to start the server.");
+        hint.getStyleClass().add("lbl-hint");
+        hint.setWrapText(true);
 
-        VBox content = new VBox(8, pwLabel, passwordField, plainField, showPw);
-        content.setPadding(new Insets(10));
-        dialog.getDialogPane().setContent(content);
+        VBox form = new VBox(9, fieldLabel, passwordField, plainField, showPw, hint);
+        form.setPadding(new Insets(18, 22, 18, 22));
+
+        // ── card wrapper: pine hero on top, parchment form below ──
+        VBox card = new VBox(hero, form);
+        card.setMaxWidth(Double.MAX_VALUE);
+        card.setStyle("-fx-background-color: -park-surface; -fx-background-radius: 12; "
+            + "-fx-border-color: -park-border; -fx-border-radius: 12; -fx-border-width: 1;");
+        dialog.getDialogPane().setContent(card);
 
         ButtonType connectBtn = new ButtonType("Connect", ButtonBar.ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes().addAll(connectBtn, ButtonType.CANCEL);
         dialog.setResultConverter(btn -> btn == connectBtn ? passwordField.getText() : null);
 
-        // theme the popup to match the server control panel (pine header, gold accent, themed buttons)
+        // themed popup: pine/gold accents, themed Connect/Cancel buttons (matches client)
         DialogPane pane = dialog.getDialogPane();
-        pane.setMinWidth(400);
+        pane.setMinWidth(460);
         java.net.URL css = getClass().getResource("/gui/ServerPort.css");
         if (css != null) pane.getStylesheets().add(css.toExternalForm());
         pane.getStyleClass().add("help-dialog");
+
+        Platform.runLater(passwordField::requestFocus);
 
         Optional<String> result = dialog.showAndWait();
         if (!result.isPresent() || result.get() == null) {
@@ -92,6 +127,25 @@ public class ServerUI extends Application {
 
         ServerPortFrameController frame = new ServerPortFrameController();
         frame.start(primaryStage);
+    }
+
+    /**
+     * builds the warm-cream vector pine logomark used in the hero banner — the same 24-grid
+     * path as the client's {@code Icons.pine}, inlined here so the server stays dependency-free.
+     *
+     * @param size rendered size in px
+     * @return the scaled logomark node
+     */
+    private static javafx.scene.Node pineLogo(double size) {
+        javafx.scene.shape.SVGPath p = new javafx.scene.shape.SVGPath();
+        p.setContent("M12 2 L17.5 9.5 L14.5 9.5 L19.5 16.5 L13.2 16.5 L13.2 21 L10.8 21 "
+            + "L10.8 16.5 L4.5 16.5 L9.5 9.5 L6.5 9.5 Z");
+        p.setFill(javafx.scene.paint.Color.web("#F5F1E4"));
+        double s = size / 24.0;
+        p.setScaleX(s);
+        p.setScaleY(s);
+        // Group so the scale is reflected in layout bounds (a bare scaled path misaligns)
+        return new javafx.scene.Group(p);
     }
 
     /**

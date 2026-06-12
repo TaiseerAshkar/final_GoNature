@@ -18,41 +18,41 @@
 
 /* ── Global / Root + colour tokens ──────────────────────────── */
 .root {
-    /* surfaces */
-    -park-parchment:    #F3EFE3;   /* screen background (warm paper) */
-    -park-parchment-2:  #E9E2CF;   /* gradient low-end */
-    -park-surface:      #FCFBF6;   /* cards / panels (warm white) */
-    -park-surface-2:    #F4F0E4;   /* inset rows / subtle fills */
+    /* surfaces — cleaner warm linen / natural paper */
+    -park-parchment:    #F4F1E6;   /* screen background (warm paper) */
+    -park-parchment-2:  #E7E0CD;   /* gradient low-end */
+    -park-surface:      #FEFDF8;   /* cards / panels (warm white) */
+    -park-surface-2:    #F2EEE0;   /* inset rows / subtle fills */
 
-    /* greens */
-    -park-pine:         #2E6B40;   /* primary anchor */
-    -park-pine-700:     #36794A;   /* primary hover */
-    -park-pine-900:     #16301F;   /* primary pressed */
-    -park-pine-dark:    #1F3D2B;   /* header bar / dark pine */
-    -park-olive:        #5B6B36;   /* secondary / neutral-earth */
-    -park-olive-700:    #6B7C41;
-    -park-sage:         #DCE5CE;   /* selection tint */
-    -park-sage-2:       #C9D6B3;
+    /* greens — deep evergreen / spruce (richer, cooler signature) */
+    -park-pine:         #1C6B4C;   /* primary anchor */
+    -park-pine-700:     #277E5C;   /* primary hover */
+    -park-pine-900:     #0F3727;   /* primary pressed */
+    -park-pine-dark:    #123D2C;   /* header bar / dark pine */
+    -park-olive:        #586A37;   /* secondary / neutral-earth */
+    -park-olive-700:    #687C44;
+    -park-sage:         #DCE8CF;   /* selection tint */
+    -park-sage-2:       #C6D6AF;
 
-    /* accents */
-    -park-gold:         #C8962E;   /* trail-marker accent */
-    -park-gold-700:     #B6841F;
-    -park-gold-900:     #8F6815;
-    -park-lake:         #2B6E8F;   /* info / navigation (muted lake blue) */
-    -park-lake-700:     #246080;
-    -park-lake-900:     #1A4860;
-    -park-rust:         #A23B23;   /* danger (earthy red) */
-    -park-rust-700:     #8C311C;
-    -park-rust-900:     #6E2514;
-    -park-amber:        #B5791F;   /* warning */
+    /* accents — warm honey-brass trail marker */
+    -park-gold:         #CE9B36;   /* trail-marker accent */
+    -park-gold-700:     #B8851F;
+    -park-gold-900:     #916615;
+    -park-lake:         #2A7392;   /* info / navigation (fresh lake blue) */
+    -park-lake-700:     #246380;
+    -park-lake-900:     #1A4B63;
+    -park-rust:         #A83C20;   /* danger (earthy red) */
+    -park-rust-700:     #8E3019;
+    -park-rust-900:     #6C2412;
+    -park-amber:        #B97C1C;   /* warning */
     -park-amber-700:    #9E6717;
 
     /* lines + text */
-    -park-line:         #E4DDC9;   /* contour line / soft divider */
-    -park-border:       #D9D2BE;   /* card / field borders */
-    -park-text:         #20271F;   /* primary text (warm near-black) */
-    -park-text-mid:     #4F5A4A;   /* secondary text (olive-grey) */
-    -park-text-muted:   #8A8F7E;   /* hints / placeholders */
+    -park-line:         #E6DFCB;   /* contour line / soft divider */
+    -park-border:       #D7CFB9;   /* card / field borders */
+    -park-text:         #1D2A20;   /* primary text (warm near-black) */
+    -park-text-mid:     #4C5847;   /* secondary text (olive-grey) */
+    -park-text-muted:   #888E7B;   /* hints / placeholders */
 
     /* typography */
     -park-font-body:    "Segoe UI", "Inter", "Arial", sans-serif;
@@ -72,7 +72,7 @@
 
 /* ── Header bar ─────────────────────────────────────────────── */
 .header-bar {
-    -fx-background-color: linear-gradient(to right, -park-pine-dark, #25492F, -park-pine);
+    -fx-background-color: linear-gradient(to right, -park-pine-dark, #164A33, -park-pine);
     -fx-padding: 13 22;
     /* trail-marker gold accent line under the bar */
     -fx-border-color: transparent transparent -park-gold transparent;
@@ -294,7 +294,7 @@
 
 /* GHOST — subtle pine outline for small actions inside cards. */
 .btn-ghost {
-    -fx-background-color: transparent;
+    -fx-background-color: -park-surface;
     -fx-text-fill: -park-pine;
     -fx-border-color: -park-sage-2;
     -fx-border-radius: 6;
@@ -304,6 +304,7 @@
     -fx-font-size: 11px;
     -fx-padding: 5 12;
     -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(31,61,43,0.14), 4, 0, 0, 1);
 }
 .btn-ghost:hover {
     -fx-background-color: -park-sage;
@@ -589,7 +590,7 @@
 }
 /* pine header strip with the trail-marker gold underline */
 .help-dialog > .header-panel {
-    -fx-background-color: linear-gradient(to right, -park-pine-dark, #25492F, -park-pine);
+    -fx-background-color: linear-gradient(to right, -park-pine-dark, #164A33, -park-pine);
     -fx-padding: 16 22;
     -fx-border-color: transparent transparent -park-gold transparent;
     -fx-border-width: 0 0 3 0;
@@ -634,7 +635,8 @@
 .help-dialog .button-bar .button:hover  { -fx-background-color: -park-pine-700; }
 .help-dialog .button-bar .button:pressed { -fx-background-color: -park-pine-900; }
 
-/* plain content/message text uses the theme token (dark text on the light parchment surface). */
+/* plain content/message text uses the dark theme token (readable near-black on light parchment) —
+   exactly like the server SQL password dialog. only short field labels get the pine accent (below). */
 .help-dialog > .content.label,
 .help-dialog > .content .label,
 .help-dialog .label { -fx-text-fill: -park-text; }
@@ -653,14 +655,28 @@
    dark-on-dark. redefining the tokens on the pane (specificity 0,2,0 beats ".dark-mode" 0,1,0)
    makes the surface, text and accents all resolve to their light values for the dialog subtree. */
 .dark-mode.help-dialog {
-    -park-surface:    #FCFBF6;
-    -park-surface-2:  #F4F0E4;
-    -park-parchment:  #F3EFE3;
-    -park-text:       #20271F;
-    -park-text-mid:   #4F5A4A;
-    -park-text-muted: #8A8F7E;
-    -park-line:       #E4DDC9;
-    -park-border:     #D9D2BE;
+    -park-surface:    #FEFDF8;
+    -park-surface-2:  #F2EEE0;
+    -park-parchment:  #F4F1E6;
+    -park-text:       #1D2A20;
+    -park-text-mid:   #4C5847;
+    -park-text-muted: #888E7B;
+    -park-line:       #E6DFCB;
+    -park-border:     #D7CFB9;
+    -fx-background-color: -park-surface;
+}
+/* EXCEPTION: the in-app Help popup opts INTO dark mode. The marker class .help-adaptive
+   (specificity 0,3,0) beats the force-light block above (0,2,0), restoring the dark forest
+   palette so the Help dialog renders dark in dark mode and light in light mode. */
+.dark-mode.help-dialog.help-adaptive {
+    -park-surface:    #1C2B22;
+    -park-surface-2:  #243429;
+    -park-parchment:  #121C16;
+    -park-text:       #EAE5D6;
+    -park-text-mid:   #B6BCA8;
+    -park-text-muted: #8A917D;
+    -park-line:       #2D3C31;
+    -park-border:     #33442F;
     -fx-background-color: -park-surface;
 }
 /* a second CANCEL / secondary button in the bar reads as neutral bark, not pine */
@@ -668,6 +684,23 @@
     -fx-background-color: #6B6A52;
 }
 .help-dialog .button-bar .button:cancel-button:hover { -fx-background-color: #7B795E; }
+/* dismissive choices (No / Keep / Cancel) — neutral bark, tagged by ThemeManager.styleDialog
+   so the primary action is the only pine button in the bar */
+.help-dialog .button-bar .button.btn-dialog-neutral         { -fx-background-color: #6B6A52; }
+.help-dialog .button-bar .button.btn-dialog-neutral:hover   { -fx-background-color: #7B795E; }
+.help-dialog .button-bar .button.btn-dialog-neutral:pressed { -fx-background-color: #595844; }
+/* destructive confirmations ("Yes, Cancel Order") — rust, tagged by the calling controller */
+.help-dialog .button-bar .button.btn-dialog-danger         { -fx-background-color: -park-rust; }
+.help-dialog .button-bar .button.btn-dialog-danger:hover   { -fx-background-color: #B8472C; }
+.help-dialog .button-bar .button.btn-dialog-danger:pressed { -fx-background-color: -park-rust-900; }
+/* dialog body copy: slightly larger with breathing room between lines */
+.help-dialog > .content.label,
+.help-dialog > .content .label { -fx-font-size: 13.5px; -fx-line-spacing: 3px; -fx-wrap-text: true; }
+/* the Help "Got it" button is a close button (so Esc / window-X dismiss it) but stays pine,
+   not bark — declared after the neutral/cancel rules so it wins at equal specificity. */
+.help-dialog .button-bar .button.btn-gotit         { -fx-background-color: -park-pine; -fx-text-fill: white; }
+.help-dialog .button-bar .button.btn-gotit:hover   { -fx-background-color: -park-pine-700; }
+.help-dialog .button-bar .button.btn-gotit:pressed { -fx-background-color: -park-pine-900; }
 
 
 /* ── Table view ──────────────────────────────────────────────── */
@@ -681,7 +714,7 @@
 }
 
 .table-view .column-header-background {
-    -fx-background-color: linear-gradient(to right, -park-pine-dark, #25492F, -park-pine);
+    -fx-background-color: linear-gradient(to right, -park-pine-dark, #164A33, -park-pine);
     -fx-background-radius: 12 12 0 0;
 }
 
@@ -883,7 +916,7 @@
 /* ── ScrollBar ───────────────────────────────────────────────── */
 .scroll-bar:vertical .track,
 .scroll-bar:horizontal .track {
-    -fx-background-color: #E9E2CF;
+    -fx-background-color: -park-parchment-2;
     -fx-background-radius: 4;
     -fx-border-color: transparent;
 }
@@ -1217,22 +1250,22 @@
    while the pine header and gold/lake/rust accents stay intact.
    ============================================================ */
 .dark-mode {
-    -park-parchment:    #141E18;
-    -park-parchment-2:  #10180F;
-    -park-surface:      #1D2A22;
-    -park-surface-2:    #243228;
-    -park-line:         #2C3A2F;
-    -park-border:       #33422F;
-    -park-text:         #E7E2D3;
+    -park-parchment:    #121C16;
+    -park-parchment-2:  #0D140C;
+    -park-surface:      #1C2B22;
+    -park-surface-2:    #243429;
+    -park-line:         #2D3C31;
+    -park-border:       #33442F;
+    -park-text:         #EAE5D6;
     -park-text-mid:     #B6BCA8;
     -park-text-muted:   #8A917D;
-    -park-sage:         #2A3B2C;
-    -park-sage-2:       #34492F;
-    -fx-background-color: #141E18;
+    -park-sage:         #2A3D2D;
+    -park-sage-2:       #354B30;
+    -fx-background-color: #121C16;
 }
 .dark-mode.screen-bg {
     -fx-background-color:
-        linear-gradient(to bottom right, #141E18 0%, #10180F 100%);
+        linear-gradient(to bottom right, #121C16 0%, #0D140C 100%);
 }
 
 /* Generic fallback so any unclassed label stays readable on dark surfaces. */
@@ -1241,12 +1274,12 @@
 /* Re-assert nicer shades for titles / accents over the fallback. */
 .dark-mode .screen-title,
 .dark-mode .card-title,
-.dark-mode .login-card-title { -fx-text-fill: #BFE0C2; }
-.dark-mode .login-title      { -fx-text-fill: #CDEBCF; }
+.dark-mode .login-card-title { -fx-text-fill: #B2DEC0; }
+.dark-mode .login-title      { -fx-text-fill: #C4EBCF; }
 .dark-mode .screen-subtitle,
 .dark-mode .hero-tagline      { -fx-text-fill: -park-text-mid; }
 .dark-mode .section-label     { -fx-text-fill: -park-gold; }
-.dark-mode .field-label       { -fx-text-fill: #9CCBA4; }
+.dark-mode .field-label       { -fx-text-fill: #95CFA8; }
 .dark-mode .lbl-detail-key    { -fx-text-fill: -park-text-mid; }
 .dark-mode .lbl-hint          { -fx-text-fill: -park-text-muted; }
 .dark-mode .check-box         { -fx-text-fill: -park-text-mid; }
@@ -1291,7 +1324,7 @@
 .dark-mode .tab-pane .tab:hover               { -fx-background-color: -park-sage; }
 .dark-mode .tab-pane .tab:selected            { -fx-background-color: -park-surface; }
 .dark-mode .tab-pane .tab .tab-label          { -fx-text-fill: -park-text-mid; }
-.dark-mode .tab-pane .tab:selected .tab-label { -fx-text-fill: #BFE0C2; }
+.dark-mode .tab-pane .tab:selected .tab-label { -fx-text-fill: #B2DEC0; }
 
 /* Charts: plot background and grid lines are fixed light tones. */
 .dark-mode .chart-plot-background       { -fx-background-color: -park-surface-2; }
@@ -1306,3 +1339,52 @@
 .dark-mode .chip-noshow    { -fx-background-color: rgba(158,158,158,0.18); -fx-text-fill: #9e9e9e; }
 .dark-mode .chip-completed { -fx-background-color: rgba(100,181,246,0.18); -fx-text-fill: #64b5f6; }
 .dark-mode .chip-waiting   { -fx-background-color: rgba(100,181,246,0.14); -fx-text-fill: #90caf9; }
+
+
+/* ============================================================
+   Polish layer — vector icons, toasts, empty states
+   ============================================================ */
+
+/* ── Vector icons (Icons.java SVGPaths) ─────────────────────── */
+/* theme-adaptive accent: pine in light mode, soft mint in dark */
+.ikon-stroke { -fx-stroke: -park-pine; }
+.ikon-fill   { -fx-fill:   -park-pine; }
+.dark-mode .ikon-stroke { -fx-stroke: #95CFA8; }
+.dark-mode .ikon-fill   { -fx-fill:   #95CFA8; }
+/* fixed warm-cream — icons on the always-pine header/hero surfaces;
+   declared after the dark rules so it wins in both modes */
+.ikon-cream,            .ikon-stroke.ikon-cream { -fx-stroke: #F5F1E4; }
+.ikon-fill.ikon-cream   { -fx-fill: #F5F1E4; -fx-stroke: transparent; }
+.dark-mode .ikon-stroke.ikon-cream { -fx-stroke: #F5F1E4; }
+.dark-mode .ikon-fill.ikon-cream   { -fx-fill:   #F5F1E4; }
+
+/* ── Toast notifications (Toast.java) ───────────────────────── */
+/* fixed colour pills + white text → identical readability in light AND dark mode.
+   literal colours on purpose: toast popups live outside the themed scene graph. */
+.toast {
+    -fx-background-radius: 10;
+    -fx-padding: 11 18 11 14;
+    -fx-effect: dropshadow(gaussian, rgba(15,30,20,0.40), 16, 0, 0, 5);
+    -fx-cursor: hand;
+}
+.toast .label {
+    -fx-text-fill: #FFFFFF;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}
+.toast-success { -fx-background-color: #1C6B4C; }
+.toast-error   { -fx-background-color: #A83C20; }
+.toast-info    { -fx-background-color: #2A7392; }
+
+/* ── Designed empty states (EmptyState.java) ────────────────── */
+.empty-title {
+    -fx-font-family: -park-font-display;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -park-text-mid;
+    -fx-padding: 4 0 0 0;
+}
+.empty-hint {
+    -fx-font-size: 12px;
+    -fx-text-fill: -park-text-muted;
+}
