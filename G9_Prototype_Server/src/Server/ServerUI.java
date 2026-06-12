@@ -55,7 +55,7 @@ public class ServerUI extends Application {
         hero.setAlignment(Pos.CENTER_LEFT);
         hero.setPadding(new Insets(18, 22, 16, 22));
         hero.setMaxWidth(Double.MAX_VALUE);
-        hero.setStyle("-fx-background-color: linear-gradient(to right, -park-pine-dark, #164A33, -park-pine); "
+        hero.setStyle("-fx-background-color: linear-gradient(to right, -park-pine-dark, #0C5F51, -park-pine); "
             + "-fx-background-radius: 12 12 0 0; "
             + "-fx-border-color: transparent transparent -park-gold transparent; "
             + "-fx-border-width: 0 0 3 0;");

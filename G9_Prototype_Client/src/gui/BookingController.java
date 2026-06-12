@@ -366,11 +366,46 @@ public class BookingController {
     private void offerWaitingList(BookingRequest req) {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle("Park Fully Booked");
-        alert.setHeaderText(req.getParkName() + " has no available spots\n" +
-            "on " + req.getVisitDate() + " at " + req.getVisitTime() + ".");
-        alert.setContentText(
-            "Would you like to join the waiting list?\n" +
-            "You'll be notified at " + req.getEmail() + " if a spot opens up.");
+        alert.setHeaderText(req.getParkName() + " is fully booked for this slot");
+
+        // ── branded body: hourglass mark + pitch + booking-facts card (no plain content text) ──
+        Label pitch = new Label("Join the waiting list?");
+        pitch.getStyleClass().add("card-title");
+        Label pitchSub = new Label(
+            "If a spot frees up you're booked automatically and notified by email.");
+        pitchSub.getStyleClass().add("screen-subtitle");
+        pitchSub.setWrapText(true);
+        javafx.scene.layout.VBox pitchBox = new javafx.scene.layout.VBox(3, pitch, pitchSub);
+        javafx.scene.layout.HBox top = new javafx.scene.layout.HBox(14,
+            Icons.hourglass(36), pitchBox);
+        top.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+
+        javafx.scene.layout.GridPane facts = new javafx.scene.layout.GridPane();
+        facts.setHgap(18);
+        facts.setVgap(7);
+        String[][] rows = {
+            { "PARK",      req.getParkName() },
+            { "DATE",      req.getVisitDate() + "  at  " + req.getVisitTime() },
+            { "VISITORS",  String.valueOf(req.getNumVisitors()) },
+            { "NOTIFY AT", req.getEmail() },
+        };
+        for (int i = 0; i < rows.length; i++) {
+            Label k = new Label(rows[i][0]);
+            k.getStyleClass().add("section-label");
+            Label v = new Label(rows[i][1]);
+            v.setStyle("-fx-font-weight: bold;");
+            facts.add(k, 0, i);
+            facts.add(v, 1, i);
+        }
+        javafx.scene.layout.VBox factsCard = new javafx.scene.layout.VBox(facts);
+        factsCard.setPadding(new javafx.geometry.Insets(12, 16, 12, 16));
+        factsCard.setStyle("-fx-background-color: -park-surface-2; -fx-background-radius: 10; "
+            + "-fx-border-color: -park-line; -fx-border-radius: 10; -fx-border-width: 1;");
+
+        javafx.scene.layout.VBox body = new javafx.scene.layout.VBox(14, top, factsCard);
+        body.setPadding(new javafx.geometry.Insets(6, 4, 4, 4));
+        alert.getDialogPane().setContent(body);
+
         ButtonType joinBtn   = new ButtonType("Join Waiting List", ButtonBar.ButtonData.YES);
         ButtonType cancelBtn = new ButtonType("Cancel",            ButtonBar.ButtonData.NO);
         alert.getButtonTypes().setAll(joinBtn, cancelBtn);

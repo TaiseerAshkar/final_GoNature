@@ -18,41 +18,42 @@
 
 /* ── Global / Root + colour tokens ──────────────────────────── */
 .root {
-    /* surfaces — cleaner warm linen / natural paper */
-    -park-parchment:    #F4F1E6;   /* screen background (warm paper) */
-    -park-parchment-2:  #E7E0CD;   /* gradient low-end */
-    -park-surface:      #FEFDF8;   /* cards / panels (warm white) */
-    -park-surface-2:    #F2EEE0;   /* inset rows / subtle fills */
+    /* surfaces — layered warmth: sand page → ivory cards → white fields (Riverstone) */
+    -park-parchment:    #FAF7F0;   /* screen background (warm sand) */
+    -park-parchment-2:  #EAE1CB;   /* gradient low-end (deeper, so screens aren't flat) */
+    -park-surface:      #FCF9F0;   /* cards / panels (warm ivory — no more white walls) */
+    -park-surface-2:    #F1ECDC;   /* inset rows / subtle fills */
+    -park-field:        #FFFFFF;   /* input fields — the only pure white, so they pop */
 
-    /* greens — deep evergreen / spruce (richer, cooler signature) */
-    -park-pine:         #1C6B4C;   /* primary anchor */
-    -park-pine-700:     #277E5C;   /* primary hover */
-    -park-pine-900:     #0F3727;   /* primary pressed */
-    -park-pine-dark:    #123D2C;   /* header bar / dark pine */
-    -park-olive:        #586A37;   /* secondary / neutral-earth */
-    -park-olive-700:    #687C44;
-    -park-sage:         #DCE8CF;   /* selection tint */
-    -park-sage-2:       #C6D6AF;
+    /* petrol teal — deep riverstone signature (was evergreen) */
+    -park-pine:         #0E7C6B;   /* primary anchor */
+    -park-pine-700:     #129382;   /* primary hover */
+    -park-pine-900:     #07443A;   /* primary pressed */
+    -park-pine-dark:    #0B4A40;   /* header bar / deep petrol */
+    -park-olive:        #707C54;   /* secondary / neutral-earth */
+    -park-olive-700:    #7E8B60;
+    -park-sage:         #D8EBE6;   /* selection tint (teal mist) */
+    -park-sage-2:       #BCDAD2;
 
-    /* accents — warm honey-brass trail marker */
-    -park-gold:         #CE9B36;   /* trail-marker accent */
-    -park-gold-700:     #B8851F;
-    -park-gold-900:     #916615;
-    -park-lake:         #2A7392;   /* info / navigation (fresh lake blue) */
-    -park-lake-700:     #246380;
-    -park-lake-900:     #1A4B63;
-    -park-rust:         #A83C20;   /* danger (earthy red) */
-    -park-rust-700:     #8E3019;
-    -park-rust-900:     #6C2412;
-    -park-amber:        #B97C1C;   /* warning */
+    /* accents — golden sand trail marker */
+    -park-gold:         #D9A441;   /* trail-marker accent */
+    -park-gold-700:     #C08C28;
+    -park-gold-900:     #8A6212;
+    -park-lake:         #3380A6;   /* info / navigation (fresh lake blue) */
+    -park-lake-700:     #2C7090;
+    -park-lake-900:     #1E516B;
+    -park-rust:         #B54A33;   /* danger (warm clay) */
+    -park-rust-700:     #9A3C27;
+    -park-rust-900:     #76301E;
+    -park-amber:        #BE8418;   /* warning */
     -park-amber-700:    #9E6717;
 
     /* lines + text */
-    -park-line:         #E6DFCB;   /* contour line / soft divider */
-    -park-border:       #D7CFB9;   /* card / field borders */
-    -park-text:         #1D2A20;   /* primary text (warm near-black) */
-    -park-text-mid:     #4C5847;   /* secondary text (olive-grey) */
-    -park-text-muted:   #888E7B;   /* hints / placeholders */
+    -park-line:         #E5DCC6;   /* contour line / soft divider */
+    -park-border:       #DCD3BB;   /* card / field borders (firmer, cards read as objects) */
+    -park-text:         #22302C;   /* primary text (deep stone) */
+    -park-text-mid:     #51625C;   /* secondary text (stone-grey) */
+    -park-text-muted:   #79817A;   /* hints / placeholders */
 
     /* typography */
     -park-font-body:    "Segoe UI", "Inter", "Arial", sans-serif;
@@ -72,7 +73,7 @@
 
 /* ── Header bar ─────────────────────────────────────────────── */
 .header-bar {
-    -fx-background-color: linear-gradient(to right, -park-pine-dark, #164A33, -park-pine);
+    -fx-background-color: linear-gradient(to right, -park-pine-dark, #0C5F51, -park-pine);
     -fx-padding: 13 22;
     /* trail-marker gold accent line under the bar */
     -fx-border-color: transparent transparent -park-gold transparent;
@@ -304,7 +305,7 @@
     -fx-font-size: 11px;
     -fx-padding: 5 12;
     -fx-cursor: hand;
-    -fx-effect: dropshadow(gaussian, rgba(31,61,43,0.14), 4, 0, 0, 1);
+    -fx-effect: dropshadow(gaussian, rgba(11,74,64,0.14), 4, 0, 0, 1);
 }
 .btn-ghost:hover {
     -fx-background-color: -park-sage;
@@ -358,9 +359,11 @@
 
 /* ── Cards / panels ─────────────────────────────────────────── */
 .card {
-    -fx-background-color: -park-surface;
+    /* soft top-light sheen: brighter at the top settling into ivory — cards feel crafted,
+       not flat. derive() keeps it theme-aware (in dark mode it's a subtle dark gloss). */
+    -fx-background-color: linear-gradient(to bottom, derive(-park-surface, 60%), -park-surface);
     -fx-background-radius: 16;
-    -fx-effect: dropshadow(gaussian, rgba(31,61,43,0.12), 20, 0, 0, 5);
+    -fx-effect: dropshadow(gaussian, rgba(11,74,64,0.14), 20, 0, 0, 5);
     -fx-padding: 20;
     /* trail-blaze gold accent down the left edge */
     -fx-border-color: transparent transparent transparent -park-gold;
@@ -535,9 +538,9 @@
     -fx-font-weight: bold;
 }
 .chip-confirmed { -fx-background-color: -park-sage;  -fx-text-fill: -park-pine;       }
-.chip-pending   { -fx-background-color: #F3E6C8;     -fx-text-fill: #8A6516;          }
-.chip-completed { -fx-background-color: #E4E1D4;     -fx-text-fill: -park-olive;      }
-.chip-cancelled { -fx-background-color: #ECD6CE;     -fx-text-fill: -park-rust;       }
+.chip-pending   { -fx-background-color: #F5E7C8;     -fx-text-fill: #8A6212;          }
+.chip-completed { -fx-background-color: #E8E4D6;     -fx-text-fill: -park-olive;      }
+.chip-cancelled { -fx-background-color: #F1DAD2;     -fx-text-fill: -park-rust;       }
 .chip-noshow    { -fx-background-color: #E8E5E2;     -fx-text-fill: #616161;          }
 .chip-waiting   { -fx-background-color: #D6E4EA;     -fx-text-fill: -park-lake-900;   }
 
@@ -590,7 +593,7 @@
 }
 /* pine header strip with the trail-marker gold underline */
 .help-dialog > .header-panel {
-    -fx-background-color: linear-gradient(to right, -park-pine-dark, #164A33, -park-pine);
+    -fx-background-color: linear-gradient(to right, -park-pine-dark, #0C5F51, -park-pine);
     -fx-padding: 16 22;
     -fx-border-color: transparent transparent -park-gold transparent;
     -fx-border-width: 0 0 3 0;
@@ -636,47 +639,56 @@
 .help-dialog .button-bar .button:pressed { -fx-background-color: -park-pine-900; }
 
 /* plain content/message text uses the dark theme token (readable near-black on light parchment) —
-   exactly like the server SQL password dialog. only short field labels get the pine accent (below). */
+   exactly like the server SQL password dialog. only short field labels get the pine accent (below).
+   IMPORTANT: the raw Text-node rule is scoped to .content ONLY — a bare ".help-dialog .text"
+   selector paints the inner Text node of EVERY label and button, overriding their -fx-text-fill
+   (a rule on the Text node beats the colour the parent control propagates). that was the bug that
+   kept turning the white header title and button captions dark. */
 .help-dialog > .content.label,
 .help-dialog > .content .label,
 .help-dialog .label { -fx-text-fill: -park-text; }
-.help-dialog > .content .text,
-.help-dialog .text  { -fx-fill: -park-text; }
+.help-dialog > .content .text { -fx-fill: -park-text; }
 /* custom accent labels keep their pine & gold tints (declared later → win over the line above). */
 .help-dialog .card-title      { -fx-text-fill: -park-pine-dark; }
 .help-dialog .field-label     { -fx-text-fill: -park-pine; }
 .help-dialog .section-label   { -fx-text-fill: -park-gold-900; }
 .help-dialog .screen-subtitle { -fx-text-fill: -park-text-mid; }
-/* re-assert header text to white — source order wins over same-specificity generic .label rules above */
+/* re-assert header text to white — including the Text node itself, so no generic .text rule
+   can ever repaint it dark again. same guarantee for button captions. */
 .help-dialog > .header-panel > .label,
 .help-dialog > .header-panel .label { -fx-text-fill: #FFFFFF; }
+.help-dialog > .header-panel .label .text,
+.help-dialog > .header-panel .text  { -fx-fill: #FFFFFF; }
+.help-dialog .button-bar .button .text { -fx-fill: #FFFFFF; }
 /* KEY: popups stay on the LIGHT parchment palette even when the app is in dark mode, so every
    client dialog matches the always-light server dialog — crisp dark text on warm parchment, never
    dark-on-dark. redefining the tokens on the pane (specificity 0,2,0 beats ".dark-mode" 0,1,0)
    makes the surface, text and accents all resolve to their light values for the dialog subtree. */
 .dark-mode.help-dialog {
-    -park-surface:    #FEFDF8;
-    -park-surface-2:  #F2EEE0;
-    -park-parchment:  #F4F1E6;
-    -park-text:       #1D2A20;
-    -park-text-mid:   #4C5847;
-    -park-text-muted: #888E7B;
-    -park-line:       #E6DFCB;
-    -park-border:     #D7CFB9;
+    -park-surface:    #FCF9F0;
+    -park-surface-2:  #F1ECDC;
+    -park-field:      #FFFFFF;
+    -park-parchment:  #FAF7F0;
+    -park-text:       #22302C;
+    -park-text-mid:   #51625C;
+    -park-text-muted: #79817A;
+    -park-line:       #E5DCC6;
+    -park-border:     #DCD3BB;
     -fx-background-color: -park-surface;
 }
 /* EXCEPTION: the in-app Help popup opts INTO dark mode. The marker class .help-adaptive
    (specificity 0,3,0) beats the force-light block above (0,2,0), restoring the dark forest
    palette so the Help dialog renders dark in dark mode and light in light mode. */
 .dark-mode.help-dialog.help-adaptive {
-    -park-surface:    #1C2B22;
-    -park-surface-2:  #243429;
-    -park-parchment:  #121C16;
-    -park-text:       #EAE5D6;
-    -park-text-mid:   #B6BCA8;
-    -park-text-muted: #8A917D;
-    -park-line:       #2D3C31;
-    -park-border:     #33442F;
+    -park-surface:    #182622;
+    -park-surface-2:  #20312C;
+    -park-field:      #20312C;
+    -park-parchment:  #0F1B18;
+    -park-text:       #E8E6DA;
+    -park-text-mid:   #B2BCB2;
+    -park-text-muted: #879188;
+    -park-line:       #283A35;
+    -park-border:     #2F443E;
     -fx-background-color: -park-surface;
 }
 /* a second CANCEL / secondary button in the bar reads as neutral bark, not pine */
@@ -714,7 +726,7 @@
 }
 
 .table-view .column-header-background {
-    -fx-background-color: linear-gradient(to right, -park-pine-dark, #164A33, -park-pine);
+    -fx-background-color: linear-gradient(to right, -park-pine-dark, #0C5F51, -park-pine);
     -fx-background-radius: 12 12 0 0;
 }
 
@@ -1249,23 +1261,31 @@
    a deep charcoal-green so every surface follows automatically,
    while the pine header and gold/lake/rust accents stay intact.
    ============================================================ */
+/* input surfaces are the only pure white in light mode — they pop against ivory cards.
+   declared here (after the component rules) so it wins at equal specificity. */
+.text-field, .password-field, .text-area, .text-area .content,
+.combo-box-base, .date-picker > .text-field {
+    -fx-background-color: -park-field;
+}
+
 .dark-mode {
-    -park-parchment:    #121C16;
-    -park-parchment-2:  #0D140C;
-    -park-surface:      #1C2B22;
-    -park-surface-2:    #243429;
-    -park-line:         #2D3C31;
-    -park-border:       #33442F;
-    -park-text:         #EAE5D6;
-    -park-text-mid:     #B6BCA8;
-    -park-text-muted:   #8A917D;
-    -park-sage:         #2A3D2D;
-    -park-sage-2:       #354B30;
-    -fx-background-color: #121C16;
+    -park-parchment:    #0F1B18;
+    -park-parchment-2:  #0B1513;
+    -park-surface:      #182622;
+    -park-surface-2:    #20312C;
+    -park-field:        #20312C;
+    -park-line:         #283A35;
+    -park-border:       #2F443E;
+    -park-text:         #E8E6DA;
+    -park-text-mid:     #B2BCB2;
+    -park-text-muted:   #879188;
+    -park-sage:         #21403A;
+    -park-sage-2:       #2B524A;
+    -fx-background-color: #0F1B18;
 }
 .dark-mode.screen-bg {
     -fx-background-color:
-        linear-gradient(to bottom right, #121C16 0%, #0D140C 100%);
+        linear-gradient(to bottom right, #0F1B18 0%, #0B1513 100%);
 }
 
 /* Generic fallback so any unclassed label stays readable on dark surfaces. */
@@ -1274,12 +1294,12 @@
 /* Re-assert nicer shades for titles / accents over the fallback. */
 .dark-mode .screen-title,
 .dark-mode .card-title,
-.dark-mode .login-card-title { -fx-text-fill: #B2DEC0; }
-.dark-mode .login-title      { -fx-text-fill: #C4EBCF; }
+.dark-mode .login-card-title { -fx-text-fill: #A9DCD2; }
+.dark-mode .login-title      { -fx-text-fill: #BBE7DE; }
 .dark-mode .screen-subtitle,
 .dark-mode .hero-tagline      { -fx-text-fill: -park-text-mid; }
 .dark-mode .section-label     { -fx-text-fill: -park-gold; }
-.dark-mode .field-label       { -fx-text-fill: #95CFA8; }
+.dark-mode .field-label       { -fx-text-fill: #8FCFC2; }
 .dark-mode .lbl-detail-key    { -fx-text-fill: -park-text-mid; }
 .dark-mode .lbl-hint          { -fx-text-fill: -park-text-muted; }
 .dark-mode .check-box         { -fx-text-fill: -park-text-mid; }
@@ -1324,7 +1344,7 @@
 .dark-mode .tab-pane .tab:hover               { -fx-background-color: -park-sage; }
 .dark-mode .tab-pane .tab:selected            { -fx-background-color: -park-surface; }
 .dark-mode .tab-pane .tab .tab-label          { -fx-text-fill: -park-text-mid; }
-.dark-mode .tab-pane .tab:selected .tab-label { -fx-text-fill: #B2DEC0; }
+.dark-mode .tab-pane .tab:selected .tab-label { -fx-text-fill: #A9DCD2; }
 
 /* Charts: plot background and grid lines are fixed light tones. */
 .dark-mode .chart-plot-background       { -fx-background-color: -park-surface-2; }
@@ -1333,7 +1353,7 @@
 
 /* Status chips — light-coloured backgrounds look like floating islands on dark
    surfaces; replace with a subtle tinted dark pill and a vivid text colour. */
-.dark-mode .chip-confirmed { -fx-background-color: rgba(76,175,80,0.18);   -fx-text-fill: #4caf50; }
+.dark-mode .chip-confirmed { -fx-background-color: rgba(46,191,165,0.18);  -fx-text-fill: #2EBFA5; }
 .dark-mode .chip-pending   { -fx-background-color: rgba(255,152,0,0.18);   -fx-text-fill: #ff9800; }
 .dark-mode .chip-cancelled { -fx-background-color: rgba(244,67,54,0.18);   -fx-text-fill: #f44336; }
 .dark-mode .chip-noshow    { -fx-background-color: rgba(158,158,158,0.18); -fx-text-fill: #9e9e9e; }
@@ -1349,8 +1369,8 @@
 /* theme-adaptive accent: pine in light mode, soft mint in dark */
 .ikon-stroke { -fx-stroke: -park-pine; }
 .ikon-fill   { -fx-fill:   -park-pine; }
-.dark-mode .ikon-stroke { -fx-stroke: #95CFA8; }
-.dark-mode .ikon-fill   { -fx-fill:   #95CFA8; }
+.dark-mode .ikon-stroke { -fx-stroke: #8FCFC2; }
+.dark-mode .ikon-fill   { -fx-fill:   #8FCFC2; }
 /* fixed warm-cream — icons on the always-pine header/hero surfaces;
    declared after the dark rules so it wins in both modes */
 .ikon-cream,            .ikon-stroke.ikon-cream { -fx-stroke: #F5F1E4; }
@@ -1372,9 +1392,9 @@
     -fx-font-size: 13px;
     -fx-font-weight: bold;
 }
-.toast-success { -fx-background-color: #1C6B4C; }
-.toast-error   { -fx-background-color: #A83C20; }
-.toast-info    { -fx-background-color: #2A7392; }
+.toast-success { -fx-background-color: #0E7C6B; }
+.toast-error   { -fx-background-color: #B54A33; }
+.toast-info    { -fx-background-color: #3380A6; }
 
 /* ── Designed empty states (EmptyState.java) ────────────────── */
 .empty-title {

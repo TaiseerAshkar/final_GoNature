@@ -34,10 +34,10 @@
               StackPane.alignment="BOTTOM_CENTER">
 
             <!-- trail-marker sun -->
-            <Circle centerX="420" centerY="46" radius="22" fill="#C8962E" opacity="0.85"/>
+            <Circle centerX="420" centerY="46" radius="22" fill="#D9A441" opacity="0.85"/>
 
             <!-- back ridge (olive) — extends to 1400 so it fills any window width -->
-            <Polygon fill="#6B7C41" opacity="0.95">
+            <Polygon fill="#7E8B60" opacity="0.95">
                 <points>
                     <Double fx:value="0"/>    <Double fx:value="124"/>
                     <Double fx:value="0"/>    <Double fx:value="74"/>
@@ -62,7 +62,7 @@
             </Polygon>
 
             <!-- front ridge (pine) — extends to 1400 -->
-            <Polygon fill="#2E6B40">
+            <Polygon fill="#0E7C6B">
                 <points>
                     <Double fx:value="0"/>    <Double fx:value="124"/>
                     <Double fx:value="0"/>    <Double fx:value="98"/>
