@@ -52,8 +52,8 @@ public final class HelpDialog {
         Label badge = new Label("?");
         badge.setStyle("-fx-min-width: 36; -fx-min-height: 36; -fx-pref-width: 36; -fx-pref-height: 36; "
             + "-fx-alignment: center; -fx-font-size: 20px; -fx-font-weight: bold; "
-            + "-fx-text-fill: #123D2C; -fx-background-color: #EBDFA8; -fx-background-radius: 18; "
-            + "-fx-border-color: rgba(206,155,54,0.65); -fx-border-radius: 18; -fx-border-width: 1;");
+            + "-fx-text-fill: #0B4A40; -fx-background-color: #F0E4BE; -fx-background-radius: 18; "
+            + "-fx-border-color: rgba(217,164,65,0.65); -fx-border-radius: 18; -fx-border-width: 1;");
 
         Label heroTitle = new Label("Help & Guidance");
         heroTitle.setStyle("-fx-font-family: -park-font-display; -fx-font-size: 21px; "
@@ -68,7 +68,7 @@ public final class HelpDialog {
         hero.setAlignment(Pos.CENTER_LEFT);
         hero.setPadding(new Insets(16, 22, 15, 22));
         hero.setMaxWidth(Double.MAX_VALUE);
-        hero.setStyle("-fx-background-color: linear-gradient(to right, -park-pine-dark, #164A33, -park-pine); "
+        hero.setStyle("-fx-background-color: linear-gradient(to right, -park-pine-dark, #0C5F51, -park-pine); "
             + "-fx-background-radius: 12 12 0 0; "
             + "-fx-border-color: transparent transparent -park-gold transparent; "
             + "-fx-border-width: 0 0 3 0;");

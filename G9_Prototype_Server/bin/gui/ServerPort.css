@@ -15,31 +15,32 @@
 
 /* ── Root + colour tokens ───────────────────────────────────── */
 .root {
-    -park-parchment:    #F4F1E6;
-    -park-parchment-2:  #E7E0CD;
-    -park-surface:      #FEFDF8;
-    -park-surface-2:    #F2EEE0;
+    -park-parchment:    #FAF7F0;
+    -park-parchment-2:  #EAE1CB;
+    -park-surface:      #FCF9F0;
+    -park-surface-2:    #F1ECDC;
+    -park-field:        #FFFFFF;
 
-    -park-pine:         #1C6B4C;
-    -park-pine-700:     #277E5C;
-    -park-pine-900:     #0F3727;
-    -park-pine-dark:    #123D2C;
+    -park-pine:         #0E7C6B;
+    -park-pine-700:     #129382;
+    -park-pine-900:     #07443A;
+    -park-pine-dark:    #0B4A40;
 
-    -park-gold:         #CE9B36;
-    -park-gold-700:     #B8851F;
-    -park-gold-900:     #916615;
-    -park-amber:        #B97C1C;
+    -park-gold:         #D9A441;
+    -park-gold-700:     #C08C28;
+    -park-gold-900:     #8A6212;
+    -park-amber:        #BE8418;
     -park-amber-700:    #9E6717;
-    -park-rust:         #A83C20;
-    -park-rust-900:     #6C2412;
-    -park-lake:         #2A7392;
-    -park-lake-900:     #1A4B63;
+    -park-rust:         #B54A33;
+    -park-rust-900:     #76301E;
+    -park-lake:         #3380A6;
+    -park-lake-900:     #1E516B;
 
-    -park-line:         #E6DFCB;
-    -park-border:       #D7CFB9;
-    -park-text:         #1D2A20;
-    -park-text-mid:     #4C5847;
-    -park-text-muted:   #888E7B;
+    -park-line:         #E5DCC6;
+    -park-border:       #DCD3BB;
+    -park-text:         #22302C;
+    -park-text-mid:     #51625C;
+    -park-text-muted:   #79817A;
 
     -park-font-body:    "Segoe UI", "Inter", "Arial", sans-serif;
     -park-font-display: "Bahnschrift SemiBold", "Bahnschrift",
@@ -75,10 +76,10 @@
     -fx-font-size: 11px;
     -fx-font-weight: bold;
     -fx-text-fill: -park-pine;
-    -fx-background-color: #DCE8CF;
+    -fx-background-color: #D8EBE6;
     -fx-background-radius: 20;
     -fx-padding: 4 12;
-    -fx-border-color: rgba(28,107,76,0.32);
+    -fx-border-color: rgba(14,124,107,0.32);
     -fx-border-radius: 20;
     -fx-border-width: 1;
 }
@@ -86,7 +87,7 @@
 
 /* ── Cards ──────────────────────────────────────────────────── */
 .card {
-    -fx-background-color: -park-surface;
+    -fx-background-color: linear-gradient(to bottom, derive(-park-surface, 60%), -park-surface);
     -fx-background-radius: 12;
     -fx-effect: dropshadow(gaussian, rgba(31,61,43,0.12), 16, 0, 0, 4);
     -fx-border-color: -park-border;
@@ -96,7 +97,7 @@
 
 /* Pine card-header strip with a trail-marker gold accent underline. */
 .card-head {
-    -fx-background-color: linear-gradient(to right, -park-pine-dark, #164A33, -park-pine);
+    -fx-background-color: linear-gradient(to right, -park-pine-dark, #0C5F51, -park-pine);
     -fx-background-radius: 12 12 0 0;
     -fx-border-color: transparent transparent -park-gold transparent;
     -fx-border-width: 0 0 2 0;
@@ -165,7 +166,7 @@
 }
 
 .text-field {
-    -fx-background-color: -park-surface;
+    -fx-background-color: -park-field;
     -fx-background-radius: 8;
     -fx-border-color: -park-border;
     -fx-border-radius: 8;
@@ -269,8 +270,8 @@
 .log-connection .content, .log-notif .content {
     -fx-background-radius: 0 0 11 11;
 }
-/* Connection log — soft pine-tinted paper. */
-.log-connection .content { -fx-background-color: #F1F4EC; }
+/* Connection log — soft teal-tinted paper. */
+.log-connection .content { -fx-background-color: #EEF4F2; }
 /* Live notifications — soft lake-tinted paper. */
 .log-notif .content      { -fx-background-color: #EBF1F4; }
 
@@ -281,7 +282,7 @@
 }
 /* pine header strip with the trail-marker gold underline */
 .help-dialog > .header-panel {
-    -fx-background-color: linear-gradient(to right, -park-pine-dark, #164A33, -park-pine);
+    -fx-background-color: linear-gradient(to right, -park-pine-dark, #0C5F51, -park-pine);
     -fx-padding: 16 22;
     -fx-border-color: transparent transparent -park-gold transparent;
     -fx-border-width: 0 0 3 0;
