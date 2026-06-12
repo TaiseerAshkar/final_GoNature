@@ -12,9 +12,11 @@ import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -29,7 +31,11 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.Separator;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.shape.Rectangle;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Duration;
@@ -51,6 +57,8 @@ import java.util.stream.Collectors;
  */
 public class VisitorController {
 
+    @FXML private StackPane       heroBanner;
+    @FXML private Label           lblEyebrow;
     @FXML private Label           lblWelcome;
     @FXML private Label           lblRoleBadge;
     @FXML private Label           lblInfo;
@@ -59,11 +67,18 @@ public class VisitorController {
     // header controls
     @FXML private Label           lblSessionTimer;
     @FXML private Button          btnTheme;
-    @FXML private Button          btnConfirmVisit;
+
+    // action tiles (built in code → see buildActionTiles)
+    @FXML private GridPane        actionGrid;
+    private Button                btnConfirmVisit;   // kept so we can mark it done
+    private Label                 lblConfirmTitle;
+    private Label                 lblConfirmDesc;
 
     // notification panel
+    @FXML private Label           lblNotifTitle;
     @FXML private Label           lblNotifBadge;
-    @FXML private Label           lblNoNotif;
+    @FXML private Button          btnRefreshNotif;
+    @FXML private VBox            boxNoNotif;
     @FXML private ListView<String> lstNotifications;
 
     /** ticks once a second to refresh the logged-in-duration label in the header. */
@@ -83,20 +98,48 @@ public class VisitorController {
         lblRoleBadge.setText(s.getRole());
         switch (s.getRole()) {
             case "GUIDE":
+                lblEyebrow.setText("GUIDE DASHBOARD");
                 lblInfo.setText(
                     "As a certified guide you can lead group visits and book solo visits.\n" +
                     "You enter free when leading a group.");
                 break;
             case "SUBSCRIBER":
+                lblEyebrow.setText("MEMBER DASHBOARD");
                 lblInfo.setText(
                     "Family Member Club — your ID gives you a 15% discount on walk-in visits,\n" +
                     "on top of the standard 15% advance-booking discount.");
                 break;
             default: // VISITOR
+                lblEyebrow.setText("VISITOR DASHBOARD");
                 lblInfo.setText(
                     "As a visitor you can browse available parks,\n" +
                     "book visits, and manage your existing reservations.");
         }
+
+        // round the hero banner's corners and clip the ridgeline inside them
+        if (heroBanner != null) {
+            Rectangle clip = new Rectangle();
+            clip.widthProperty().bind(heroBanner.widthProperty());
+            clip.heightProperty().bind(heroBanner.heightProperty());
+            clip.setArcWidth(32);
+            clip.setArcHeight(32);
+            heroBanner.setClip(clip);
+        }
+
+        // build the professional action-tile grid (icon chip + title + description)
+        buildActionTiles();
+
+        // notification card chrome
+        lblNotifTitle.setGraphic(Icons.inbox(18));
+        lblNotifTitle.setGraphicTextGap(8);
+        btnRefreshNotif.setGraphic(Icons.refresh(13));
+        btnRefreshNotif.setGraphicTextGap(6);
+
+        // designed empty state for the inbox
+        boxNoNotif.getChildren().setAll(EmptyState.of(
+            Icons.inbox(34),
+            "No notifications yet",
+            "They'll appear here after booking, cancellation, or when a waiting-list spot opens."));
 
         // wrap long notification lines so they don't get clipped
         lstNotifications.setCellFactory(lv -> new ListCell<>() {
@@ -114,6 +157,80 @@ public class VisitorController {
         checkUpcomingReminders();
         updateUpcomingCount();
         refreshNotifications();
+    }
+
+    // ── Action-tile grid ──────────────────────────────────────────────────────
+
+    /**
+     * builds the home-screen action grid: a compact 2-up grid of tiles, each a small
+     * colour icon-chip beside a bold title and a short muted description. "Book a Visit"
+     * carries a filled pine chip to read as the primary action without changing size.
+     */
+    private void buildActionTiles() {
+        if (actionGrid == null) return;
+
+        Button book = tile("Book a Visit", "Reserve a park visit",
+            Icons.pine(20, Icons.CREAM), "tile-chip-pine", this::handleBookVisit);
+        book.getStyleClass().add("action-tile-green");
+
+        Button view = tile("View My Reservations", "See and manage bookings",
+            Icons.clipboard(20, "ikon-teal"), "tile-chip-teal", this::handleViewOrders);
+        view.getStyleClass().add("action-tile-green");
+
+        // confirm tile keeps label refs so it can switch to a "done" state after confirming
+        lblConfirmTitle = new Label("Confirm My Visit");
+        lblConfirmTitle.getStyleClass().add("tile-title");
+        lblConfirmDesc = new Label("Lock in tomorrow's visit");
+        lblConfirmDesc.getStyleClass().add("tile-desc");
+        btnConfirmVisit = assembleTile(Icons.checkCircle(20, "ikon-lake"),
+            "tile-chip-lake", lblConfirmTitle, lblConfirmDesc);
+        btnConfirmVisit.getStyleClass().add("action-tile-lake");
+        btnConfirmVisit.setOnAction(this::handleConfirmVisit);
+
+        Button exit = tile("Register My Exit", "Log your departure",
+            Icons.exit(20, "ikon-gold"), "tile-chip-gold", this::handleRegisterExit);
+        exit.getStyleClass().add("action-tile-gold");
+
+        Button cancel = tile("Cancel a Reservation", "Cancel an upcoming booking",
+            Icons.xCircle(20, "ikon-rust"), "tile-chip-rust", this::handleViewOrders);
+        cancel.getStyleClass().add("action-tile-rust");
+
+        actionGrid.add(book,            0, 0);
+        actionGrid.add(view,            1, 0);
+        actionGrid.add(btnConfirmVisit, 0, 1);
+        actionGrid.add(exit,            1, 1);
+        actionGrid.add(cancel,          0, 2);
+        GridPane.setColumnSpan(cancel, 2);
+    }
+
+    /** builds a compact action tile (chip + title + short description). */
+    private Button tile(String title, String desc, Node icon, String chipClass,
+                        EventHandler<ActionEvent> handler) {
+        Label t = new Label(title);
+        t.getStyleClass().add("tile-title");
+        Label d = new Label(desc);
+        d.getStyleClass().add("tile-desc");
+        Button b = assembleTile(icon, chipClass, t, d);
+        b.setOnAction(handler);
+        return b;
+    }
+
+    /** assembles a chip + (title over description) into a horizontal {@code .action-tile}. */
+    private Button assembleTile(Node icon, String chipClass, Label title, Label desc) {
+        StackPane chip = new StackPane(icon);
+        chip.getStyleClass().addAll("tile-chip", chipClass);
+
+        VBox text = new VBox(1, title, desc);
+        text.setAlignment(Pos.CENTER_LEFT);
+
+        HBox row = new HBox(11, chip, text);
+        row.setAlignment(Pos.CENTER_LEFT);
+
+        Button b = new Button();
+        b.setGraphic(row);
+        b.getStyleClass().add("action-tile");
+        b.setMaxWidth(Double.MAX_VALUE);
+        return b;
     }
 
     // ── Header: theme toggle + session timer ──────────────────────────────────
@@ -231,8 +348,8 @@ public class VisitorController {
         lblNotifBadge.setManaged(count > 0);
 
         boolean empty = count == 0;
-        lblNoNotif.setVisible(empty);
-        lblNoNotif.setManaged(empty);
+        boxNoNotif.setVisible(empty);
+        boxNoNotif.setManaged(empty);
         lstNotifications.setVisible(!empty);
         lstNotifications.setManaged(!empty);
 
@@ -396,7 +513,8 @@ public class VisitorController {
         }
         if (anyConfirmed && btnConfirmVisit != null) {
             btnConfirmVisit.setDisable(true);
-            btnConfirmVisit.setText("✓ Visit Already Confirmed");
+            if (lblConfirmTitle != null) lblConfirmTitle.setText("Visit Confirmed");
+            if (lblConfirmDesc != null)  lblConfirmDesc.setText("Your booking is locked in");
         }
         refreshNotifications();
     }

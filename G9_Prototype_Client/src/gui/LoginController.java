@@ -39,6 +39,12 @@ public class LoginController {
     @FXML
     public void initialize() {
         ThemeManager.installToggle(btnTheme);
+
+        // Pressing Enter in any input field triggers sign-in, same as clicking "Sign In".
+        if (txtIdentifier != null)     txtIdentifier.setOnAction(this::handleLogin);
+        if (txtStaffUsername != null)  txtStaffUsername.setOnAction(this::handleLogin);
+        if (txtPassword != null)       txtPassword.setOnAction(this::handleLogin);
+        if (txtPasswordVisible != null) txtPasswordVisible.setOnAction(this::handleLogin);
     }
 
     /** @return true when the Staff tab is the active selection */

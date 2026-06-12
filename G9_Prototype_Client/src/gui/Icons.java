@@ -55,6 +55,18 @@ public final class Icons {
       + "L13.7 4.6 A2 2 0 0 0 10.3 4.6 Z";
     private static final String INFO_CIRCLE =
         "M12 11 V16 M12 8 V8.01 M21 12 A9 9 0 1 1 3 12 A9 9 0 1 1 21 12 Z";
+    private static final String CLIPBOARD =
+        "M9 4.5 H15 V6.5 H9 Z "
+      + "M9 5.5 H7 A1.5 1.5 0 0 0 5.5 7 V19 A1.5 1.5 0 0 0 7 20.5 H17 "
+      + "A1.5 1.5 0 0 0 18.5 19 V7 A1.5 1.5 0 0 0 17 5.5 H15 "
+      + "M8.5 10.5 H15.5 M8.5 14 H15.5 M8.5 17 H12.5";
+    private static final String X_CIRCLE =
+        "M21 12 A9 9 0 1 1 3 12 A9 9 0 1 1 21 12 Z M9 9 L15 15 M15 9 L9 15";
+    private static final String DOOR_EXIT =
+        "M13 3.5 H6.5 A2 2 0 0 0 4.5 5.5 V18.5 A2 2 0 0 0 6.5 20.5 H13 "
+      + "M10 12 H20 M16.5 8.5 L20 12 L16.5 15.5";
+    private static final String REFRESH =
+        "M20.5 12 A8.5 8.5 0 1 1 17.4 5.4 M20.5 4.5 V10 H15";
 
     /* ── factories ──────────────────────────────────────────────── */
 
@@ -101,6 +113,26 @@ public final class Icons {
     /** @return stroked info-circle icon (info toasts) */
     public static Node infoCircle(double size, String... extraClasses) {
         return stroke(INFO_CIRCLE, size, extraClasses);
+    }
+
+    /** @return stroked clipboard icon (view / manage reservations) */
+    public static Node clipboard(double size, String... extraClasses) {
+        return stroke(CLIPBOARD, size, extraClasses);
+    }
+
+    /** @return stroked x-in-circle icon (cancel / remove actions) */
+    public static Node xCircle(double size, String... extraClasses) {
+        return stroke(X_CIRCLE, size, extraClasses);
+    }
+
+    /** @return stroked door-with-arrow icon (register exit / leave) */
+    public static Node exit(double size, String... extraClasses) {
+        return stroke(DOOR_EXIT, size, extraClasses);
+    }
+
+    /** @return stroked circular-arrow icon (refresh / reload) */
+    public static Node refresh(double size, String... extraClasses) {
+        return stroke(REFRESH, size, extraClasses);
     }
 
     /* ── internals ──────────────────────────────────────────────── */
