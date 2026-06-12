@@ -15,30 +15,31 @@
 
 /* ── Root + colour tokens ───────────────────────────────────── */
 .root {
-    -park-parchment:    #F3EFE3;
-    -park-parchment-2:  #E9E2CF;
-    -park-surface:      #FCFBF6;
-    -park-surface-2:    #F4F0E4;
+    -park-parchment:    #F4F1E6;
+    -park-parchment-2:  #E7E0CD;
+    -park-surface:      #FEFDF8;
+    -park-surface-2:    #F2EEE0;
 
-    -park-pine:         #2E6B40;
-    -park-pine-700:     #36794A;
-    -park-pine-900:     #16301F;
-    -park-pine-dark:    #1F3D2B;
+    -park-pine:         #1C6B4C;
+    -park-pine-700:     #277E5C;
+    -park-pine-900:     #0F3727;
+    -park-pine-dark:    #123D2C;
 
-    -park-gold:         #C8962E;
-    -park-gold-700:     #B6841F;
-    -park-amber:        #B5791F;
+    -park-gold:         #CE9B36;
+    -park-gold-700:     #B8851F;
+    -park-gold-900:     #916615;
+    -park-amber:        #B97C1C;
     -park-amber-700:    #9E6717;
-    -park-rust:         #A23B23;
-    -park-rust-900:     #6E2514;
-    -park-lake:         #2B6E8F;
-    -park-lake-900:     #1A4860;
+    -park-rust:         #A83C20;
+    -park-rust-900:     #6C2412;
+    -park-lake:         #2A7392;
+    -park-lake-900:     #1A4B63;
 
-    -park-line:         #E4DDC9;
-    -park-border:       #D9D2BE;
-    -park-text:         #20271F;
-    -park-text-mid:     #4F5A4A;
-    -park-text-muted:   #8A8F7E;
+    -park-line:         #E6DFCB;
+    -park-border:       #D7CFB9;
+    -park-text:         #1D2A20;
+    -park-text-mid:     #4C5847;
+    -park-text-muted:   #888E7B;
 
     -park-font-body:    "Segoe UI", "Inter", "Arial", sans-serif;
     -park-font-display: "Bahnschrift SemiBold", "Bahnschrift",
@@ -74,10 +75,10 @@
     -fx-font-size: 11px;
     -fx-font-weight: bold;
     -fx-text-fill: -park-pine;
-    -fx-background-color: #DCE5CE;
+    -fx-background-color: #DCE8CF;
     -fx-background-radius: 20;
     -fx-padding: 4 12;
-    -fx-border-color: rgba(46,107,64,0.30);
+    -fx-border-color: rgba(28,107,76,0.32);
     -fx-border-radius: 20;
     -fx-border-width: 1;
 }
@@ -95,7 +96,7 @@
 
 /* Pine card-header strip with a trail-marker gold accent underline. */
 .card-head {
-    -fx-background-color: linear-gradient(to right, -park-pine-dark, #25492F, -park-pine);
+    -fx-background-color: linear-gradient(to right, -park-pine-dark, #164A33, -park-pine);
     -fx-background-radius: 12 12 0 0;
     -fx-border-color: transparent transparent -park-gold transparent;
     -fx-border-width: 0 0 2 0;
@@ -136,6 +137,31 @@
     -fx-font-weight: bold;
     -fx-text-fill: -park-pine;
     -fx-font-size: 13px;
+}
+
+/* uppercase micro-heading + hint (mirrors the client "Connect to GoNature" dialog) */
+.section-label {
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -park-gold-900;
+}
+.lbl-hint {
+    -fx-font-size: 11px;
+    -fx-text-fill: -park-text-muted;
+}
+
+/* vector icons + designed empty states (mirrors the client polish layer) */
+.ikon-stroke { -fx-stroke: -park-pine; }
+.empty-title {
+    -fx-font-family: -park-font-display;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -park-text-mid;
+    -fx-padding: 4 0 0 0;
+}
+.empty-hint {
+    -fx-font-size: 12px;
+    -fx-text-fill: -park-text-muted;
 }
 
 .text-field {
@@ -255,7 +281,7 @@
 }
 /* pine header strip with the trail-marker gold underline */
 .help-dialog > .header-panel {
-    -fx-background-color: linear-gradient(to right, -park-pine-dark, #25492F, -park-pine);
+    -fx-background-color: linear-gradient(to right, -park-pine-dark, #164A33, -park-pine);
     -fx-padding: 16 22;
     -fx-border-color: transparent transparent -park-gold transparent;
     -fx-border-width: 0 0 3 0;
@@ -291,12 +317,14 @@
 .help-dialog .button-bar .button:cancel-button:hover { -fx-background-color: #7B795E; }
 /* re-assert the field label's pine accent (declared later, equal specificity → wins) */
 .help-dialog .field-label { -fx-text-fill: -park-pine; }
+/* gold micro-heading must beat the generic ".help-dialog .label" rule above */
+.help-dialog .section-label { -fx-text-fill: -park-gold-900; }
 
 
 /* ── ScrollBars (match the parchment theme) ─────────────────── */
 .scroll-bar:vertical .track,
 .scroll-bar:horizontal .track {
-    -fx-background-color: #E9E2CF;
+    -fx-background-color: -park-parchment-2;
     -fx-background-radius: 4;
     -fx-border-color: transparent;
 }

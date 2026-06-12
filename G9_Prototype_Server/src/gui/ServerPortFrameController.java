@@ -75,6 +75,36 @@ public class ServerPortFrameController {
         colHost.setCellValueFactory(d   -> new SimpleStringProperty(d.getValue()[1]));
         colStatus.setCellValueFactory(d -> new SimpleStringProperty(d.getValue()[2]));
         clientTable.setItems(clientList);
+        clientTable.setPlaceholder(emptyState());
+    }
+
+    /**
+     * builds the designed empty state for the clients table — a pine vector monitor icon,
+     * a short headline, and a hint — replacing the bare "No clients connected." text.
+     * styled via the {@code empty-title} / {@code empty-hint} classes in {@code ServerPort.css}.
+     */
+    private static javafx.scene.Node emptyState() {
+        javafx.scene.shape.SVGPath icon = new javafx.scene.shape.SVGPath();
+        icon.setContent("M4.5 5 H19.5 A1.5 1.5 0 0 1 21 6.5 V15 A1.5 1.5 0 0 1 19.5 16.5 "
+            + "H4.5 A1.5 1.5 0 0 1 3 15 V6.5 A1.5 1.5 0 0 1 4.5 5 Z M9 20 H15 M12 16.5 V20");
+        icon.setFill(javafx.scene.paint.Color.TRANSPARENT);
+        icon.setStrokeWidth(1.7);
+        icon.setStrokeLineCap(javafx.scene.shape.StrokeLineCap.ROUND);
+        icon.setStrokeLineJoin(javafx.scene.shape.StrokeLineJoin.ROUND);
+        icon.getStyleClass().add("ikon-stroke");
+        double s = 34.0 / 24.0;
+        icon.setScaleX(s);
+        icon.setScaleY(s);
+
+        Label title = new Label("No clients connected");
+        title.getStyleClass().add("empty-title");
+        Label hint = new Label("Connected GoNature clients will appear here.");
+        hint.getStyleClass().add("empty-hint");
+
+        javafx.scene.layout.VBox box =
+            new javafx.scene.layout.VBox(7, new javafx.scene.Group(icon), title, hint);
+        box.setAlignment(javafx.geometry.Pos.CENTER);
+        return box;
     }
 
     /**

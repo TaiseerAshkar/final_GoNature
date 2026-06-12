@@ -86,6 +86,10 @@ public class MyOrdersController {
             new SimpleStringProperty(cell.getValue().getStatus()));
         UiCells.applyStatusChip(colStatus);
 
+        tableOrders.setPlaceholder(EmptyState.of(Icons.calendar(34),
+            "No reservations yet",
+            "Load your orders above, or book a new park visit."));
+
         // only active orders can be cancelled or shown as QR;
         // only tomorrow's active orders can be confirmed
         tableOrders.getSelectionModel().selectedItemProperty().addListener(
@@ -173,6 +177,9 @@ public class MyOrdersController {
         ButtonType noBtn  = new ButtonType("Keep Order",        ButtonBar.ButtonData.NO);
         confirm.getButtonTypes().setAll(yesBtn, noBtn);
         ThemeManager.styleDialog(confirm);
+        // destructive confirmation reads rust, so it can't be mistaken for the safe choice
+        javafx.scene.Node yesNode = confirm.getDialogPane().lookupButton(yesBtn);
+        if (yesNode != null) yesNode.getStyleClass().add("btn-dialog-danger");
         Optional<ButtonType> response = confirm.showAndWait();
         if (!response.isPresent() || response.get() != yesBtn) return;
 
@@ -201,9 +208,9 @@ public class MyOrdersController {
                 + "Your reserved slot remains counted; cancellation confirmation sent to your email.");
 
             loadOrders(txtVisitorId.getText().trim());
+            Toast.success("Order #" + selected.getId() + " cancelled.");
         } else {
-            lblMessage.setStyle("-fx-text-fill: #b71c1c;");
-            lblMessage.setText(ChatClient.lastCancelError != null
+            Toast.error(ChatClient.lastCancelError != null
                 ? ChatClient.lastCancelError
                 : "Could not cancel this order. Please try again.");
         }
@@ -234,13 +241,11 @@ public class MyOrdersController {
                 + ". You're all set — see you there!");
             // reload so the status chip refreshes from PENDING to CONFIRMED
             loadOrders(txtVisitorId.getText().trim());
-            lblMessage.setStyle("");   // fall back to the theme-aware .lbl-success style
-            lblMessage.setText("Visit confirmed! Order #" + selected.getId()
+            Toast.success("Visit confirmed! Order #" + selected.getId()
                 + " is now confirmed.");
             btnConfirmVisit.setDisable(true);
         } else {
-            lblMessage.setStyle("-fx-text-fill: #c62828;");
-            lblMessage.setText(ChatClient.lastConfirmVisitError != null
+            Toast.error(ChatClient.lastConfirmVisitError != null
                 ? ChatClient.lastConfirmVisitError
                 : "Could not confirm visit. Please try again.");
         }

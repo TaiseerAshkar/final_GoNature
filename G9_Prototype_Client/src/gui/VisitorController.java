@@ -461,10 +461,9 @@ public class VisitorController {
             dlg.initOwner(lblWelcome.getScene().getWindow());
 
         DialogPane pane = dlg.getDialogPane();
-        pane.getStylesheets().add(getClass().getResource("/gui/gonature.css").toExternalForm());
         pane.setPrefWidth(400);
-        // keep the picker consistent with the app's current light/dark theme
-        pane.sceneProperty().addListener((o, ov, sc) -> { if (sc != null) ThemeManager.register(sc); });
+        // pine/gold theme + always-light parchment, follows the active light/dark theme
+        ThemeManager.styleDialog(dlg);
 
         ButtonType confirmType = new ButtonType("Register Exit", ButtonBar.ButtonData.OK_DONE);
         pane.getButtonTypes().addAll(confirmType, ButtonType.CANCEL);

@@ -96,6 +96,10 @@ public class ServiceRepController {
         UiCells.applyStatusChip(colStatus);
         colBookedOn.setCellValueFactory(d ->
             new SimpleStringProperty(d.getValue().getCreatedAt()));
+
+        tableOrders.setPlaceholder(EmptyState.of(Icons.calendar(34),
+            "No live orders loaded",
+            "Click \"Load Orders\" to fetch the current reservations."));
     }
 
     // ── Header: theme toggle + session timer ──────────────────────────────────
@@ -231,10 +235,8 @@ public class ServiceRepController {
         DialogPane pane = dlg.getDialogPane();
         pane.setContent(grid);
         pane.setPrefWidth(430);
-        pane.getStyleClass().add("help-dialog");   // pine + gold themed header & buttons
-        java.net.URL guideCss = getClass().getResource("/gui/gonature.css");
-        if (guideCss != null) pane.getStylesheets().add(guideCss.toExternalForm());
-        ThemeManager.register(pane.getScene());     // follow the active light/dark theme
+        // pine/gold themed header & buttons, always-light parchment, follows the active theme
+        ThemeManager.styleDialog(dlg);
 
         // Keep Register button disabled until the three required fields are non-empty
         javafx.scene.Node okBtn = dlg.getDialogPane().lookupButton(submitBtn);
@@ -271,7 +273,7 @@ public class ServiceRepController {
                 new RegisterGuideRequest(id, first, last, email, phone)));
 
             if (ChatClient.lastGuideRegisterSuccess != null) {
-                lblResult.setText("✅ " + ChatClient.lastGuideRegisterSuccess);
+                Toast.success(ChatClient.lastGuideRegisterSuccess);
                 return;
             }
             // Server returned an error — show it inline and let the rep correct

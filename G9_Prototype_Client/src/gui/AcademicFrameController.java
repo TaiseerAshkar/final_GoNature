@@ -414,9 +414,9 @@ public class AcademicFrameController {
         });
 
         table.getColumns().addAll(colId, colName, colEmail, colStatus, colActions);
-        Label placeholder = new Label("No guides registered yet.");
-        placeholder.getStyleClass().add("empty-state");
-        table.setPlaceholder(placeholder);
+        table.setPlaceholder(EmptyState.of(Icons.inbox(34),
+            "No guides registered yet",
+            "Guides registered by service reps will appear here."));
 
         Button btnRefresh = new Button("🔄  Refresh");
         btnRefresh.getStyleClass().add("btn-teal");
@@ -572,9 +572,9 @@ public class AcademicFrameController {
         });
 
         table.getColumns().addAll(colPark, colBy, colValues, colDate, colActions);
-        Label placeholder = new Label("No pending settings requests.");
-        placeholder.getStyleClass().add("empty-state");
-        table.setPlaceholder(placeholder);
+        table.setPlaceholder(EmptyState.of(Icons.inbox(34),
+            "All caught up",
+            "Pending park-settings requests will appear here."));
 
         Button btnRefresh = new Button("🔄  Refresh");
         btnRefresh.getStyleClass().add("btn-teal");
