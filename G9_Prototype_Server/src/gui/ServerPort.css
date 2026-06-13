@@ -322,6 +322,71 @@
 .help-dialog .section-label { -fx-text-fill: -park-gold-900; }
 
 
+/* ── Theme toggle button (moon / sun) ───────────────────────── */
+.btn-theme {
+    -fx-background-color: -park-surface;
+    -fx-text-fill: -park-pine;
+    -fx-border-color: rgba(14,124,107,0.35);
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-border-width: 1.5;
+    -fx-font-size: 13px;
+    -fx-padding: 4 12;
+    -fx-cursor: hand;
+}
+.btn-theme:hover  { -fx-background-color: #E7F1EE; -fx-border-color: -park-pine; }
+.btn-theme:pressed { -fx-background-color: #D8EBE6; }
+
+
+/* ============================================================
+   DARK MODE  ("Night Trail")
+   Added to the root node by the toggle in ServerPortFrameController.
+   Re-tunes the colour tokens so every surface follows automatically,
+   while the pine/lake card headers and accent buttons stay intact.
+   ============================================================ */
+.dark-mode {
+    -park-parchment:    #0F1B18;
+    -park-parchment-2:  #0B1513;
+    -park-surface:      #182622;
+    -park-surface-2:    #20312C;
+    -park-field:        #20312C;
+    -park-line:         #283A35;
+    -park-border:       #2F443E;
+    -park-text:         #E8E6DA;
+    -park-text-mid:     #B2BCB2;
+    -park-text-muted:   #879188;
+    -fx-background-color: #0F1B18;
+}
+.server-bg.dark-mode {
+    -fx-background-color: linear-gradient(to bottom right, #0F1B18 0%, #0B1513 100%);
+}
+
+/* titles / labels that referenced the fixed dark-pine token need a lighter tint */
+.dark-mode .app-title   { -fx-text-fill: #BBE7DE; }
+.dark-mode .field-label { -fx-text-fill: #8FCFC2; }
+.dark-mode .table-view .column-header .label { -fx-text-fill: #A9DCD2; }
+.dark-mode .ikon-stroke { -fx-stroke: #8FCFC2; }
+
+/* the "● LIVE" pill is a fixed light tint in light mode → flip to a dark teal wash */
+.dark-mode .live-pill {
+    -fx-text-fill: #8FCFC2;
+    -fx-background-color: rgba(46,191,165,0.18);
+    -fx-border-color: rgba(46,191,165,0.40);
+}
+
+/* log paper backgrounds are fixed light tones → dark tinted paper in dark mode */
+.dark-mode .log-connection .content { -fx-background-color: #16241F; }
+.dark-mode .log-notif .content      { -fx-background-color: #15222A; }
+
+/* theme button in dark mode */
+.dark-mode .btn-theme {
+    -fx-background-color: -park-surface;
+    -fx-text-fill: #8FCFC2;
+    -fx-border-color: rgba(143,207,194,0.40);
+}
+.dark-mode .btn-theme:hover { -fx-background-color: -park-surface-2; }
+
+
 /* ── ScrollBars (match the parchment theme) ─────────────────── */
 .scroll-bar:vertical .track,
 .scroll-bar:horizontal .track {

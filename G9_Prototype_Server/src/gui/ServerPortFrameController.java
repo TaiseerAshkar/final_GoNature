@@ -39,6 +39,7 @@ public class ServerPortFrameController {
     @FXML private Label       lblServerStatus;
     @FXML private Button      btnStart;
     @FXML private Button      btnStop;
+    @FXML private Button      btnTheme;
     @FXML private TextArea    txtLog;
     @FXML private TextArea    txtSimLog;
     @FXML private TableView<String[]>             clientTable;
@@ -51,6 +52,9 @@ public class ServerPortFrameController {
 
     /** the running EchoServer; null when the server is stopped. */
     private static Server.EchoServer activeServer;
+
+    /** whether the dark theme is currently active on the control panel. */
+    private boolean darkMode = false;
 
     /** observable backing list for the connected-clients table. */
     private static final ObservableList<String[]> clientList =
@@ -76,6 +80,28 @@ public class ServerPortFrameController {
         colStatus.setCellValueFactory(d -> new SimpleStringProperty(d.getValue()[2]));
         clientTable.setItems(clientList);
         clientTable.setPlaceholder(emptyState());
+    }
+
+    /**
+     * toggles the control panel between the light and dark "Night Trail" themes by adding
+     * or removing the {@code dark-mode} style class on the scene root. the button glyph
+     * flips between a moon (currently light) and a sun (currently dark).
+     *
+     * @param event the button-click event
+     */
+    @FXML
+    public void toggleTheme(ActionEvent event) {
+        if (btnTheme == null || btnTheme.getScene() == null) return;
+        Parent root = btnTheme.getScene().getRoot();
+        darkMode = !darkMode;
+        if (darkMode) {
+            if (!root.getStyleClass().contains("dark-mode"))
+                root.getStyleClass().add("dark-mode");
+            btnTheme.setText("☀");
+        } else {
+            root.getStyleClass().remove("dark-mode");
+            btnTheme.setText("🌙");
+        }
     }
 
     /**
