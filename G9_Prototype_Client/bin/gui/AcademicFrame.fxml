@@ -41,6 +41,8 @@
                         styleClass="btn-marker" style="-fx-padding:9 18;"/>
                 <Button text="⚙️  Pending Approvals"      onAction="#handlePendingApprovals"
                         styleClass="btn-blue" style="-fx-padding:9 18;"/>
+                <Button text="🎉  Pending Promotions"     onAction="#handlePendingPromotions"
+                        styleClass="btn-marker" style="-fx-padding:9 18;"/>
                 <Button text="📊  View Reports Dashboard" onAction="#handleViewReports"
                         styleClass="btn-teal" style="-fx-padding:9 18;"/>
             </HBox>

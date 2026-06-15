@@ -57,6 +57,10 @@
             <Button fx:id="btnParkSettings" text="⚙️  Park Settings"
                     maxWidth="Infinity" onAction="#handleParkSettings"
                     disable="true" styleClass="btn-secondary"/>
+
+            <Button fx:id="btnPromotions" text="🎉  Promotions"
+                    maxWidth="Infinity" onAction="#handlePromotions"
+                    disable="true" styleClass="btn-secondary"/>
         </VBox>
     </VBox>
 </VBox>

@@ -21,6 +21,7 @@
                    styleClass="app-subtitle"/>
         </VBox>
         <Region HBox.hgrow="ALWAYS"/>
+        <Button fx:id="btnTheme" text="🌙" onAction="#toggleTheme" styleClass="btn-theme"/>
         <Label text="● LIVE" styleClass="live-pill"/>
     </HBox>
 

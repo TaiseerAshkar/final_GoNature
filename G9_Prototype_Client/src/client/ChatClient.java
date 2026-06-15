@@ -6,6 +6,7 @@ import logic.CancelResult;
 import logic.EntryResult;
 import logic.GuideDetail;
 import logic.ParkSettingsRequest;
+import logic.Promotion;
 import logic.LoginResult;
 import logic.Message;
 import logic.OrderDetail;
@@ -108,6 +109,15 @@ public class ChatClient extends AbstractClient {
     public static List<ParkSettingsRequest>    lastPendingSettings       = null;
     public static String                       lastSettingsActionSuccess = null;
     public static String                       lastSettingsActionFail    = null;
+
+    // ── Promotions approval workflow ──────────────────────────────────────────
+    public static String          lastPromotionSubmitSuccess = null;
+    public static String          lastPromotionSubmitFail    = null;
+    public static List<Promotion> lastParkPromotions         = null;
+    public static List<Promotion> lastPendingPromotions      = null;
+    public static List<Promotion> lastActivePromotions       = null;
+    public static String          lastPromotionActionSuccess = null;
+    public static String          lastPromotionActionFail    = null;
 
     /**
      * @param host     the server hostname or IP address
@@ -309,6 +319,35 @@ public class ChatClient extends AbstractClient {
             case "SETTINGS_REJECT_FAIL":
                 lastSettingsActionSuccess = null;
                 lastSettingsActionFail    = (String) m.getData();
+                break;
+
+            // ── Promotions approval workflow ─────────────────────────────────
+            case "PROMOTION_SUBMITTED":
+                lastPromotionSubmitSuccess = (String) m.getData();
+                lastPromotionSubmitFail    = null;
+                break;
+            case "PROMOTION_SUBMIT_FAIL":
+                lastPromotionSubmitSuccess = null;
+                lastPromotionSubmitFail    = (String) m.getData();
+                break;
+            case "PROMOTIONS_FOR_PARK_LIST":
+                lastParkPromotions = (List<Promotion>) m.getData();
+                break;
+            case "PENDING_PROMOTIONS_LIST":
+                lastPendingPromotions = (List<Promotion>) m.getData();
+                break;
+            case "ACTIVE_PROMOTIONS_LIST":
+                lastActivePromotions = (List<Promotion>) m.getData();
+                break;
+            case "PROMOTION_APPROVE_SUCCESS":
+            case "PROMOTION_REJECT_SUCCESS":
+                lastPromotionActionSuccess = String.valueOf(m.getData());
+                lastPromotionActionFail    = null;
+                break;
+            case "PROMOTION_APPROVE_FAIL":
+            case "PROMOTION_REJECT_FAIL":
+                lastPromotionActionSuccess = null;
+                lastPromotionActionFail    = (String) m.getData();
                 break;
         }
         // All field assignments above are complete — NOW unblock the waiting thread.

@@ -89,7 +89,7 @@
 
         <!-- brand sits above the ridgeline -->
         <VBox alignment="TOP_CENTER" spacing="2" StackPane.alignment="TOP_CENTER"
-              style="-fx-padding: 30 0 0 0;">
+              style="-fx-padding: 8 0 0 0;">
             <Label text="GoNature" styleClass="login-title"/>
             <Label text="NATIONAL PARK RESERVATION SYSTEM" styleClass="hero-tagline"
                    style="-fx-font-weight: bold;"/>

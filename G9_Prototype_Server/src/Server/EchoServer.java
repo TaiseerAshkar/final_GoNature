@@ -13,6 +13,7 @@ import logic.OrderDetail;
 import logic.Park;
 import logic.GuideDetail;
 import logic.ParkSettingsRequest;
+import logic.Promotion;
 import logic.RegisterGuideRequest;
 import logic.RegisterRequest;
 import logic.RegisterResult;
@@ -65,6 +66,19 @@ public class EchoServer extends AbstractServer {
      */
     private static final java.util.Set<String> activeSessions =
         java.util.Collections.newSetFromMap(new java.util.concurrent.ConcurrentHashMap<>());
+
+    /**
+     * Per-park mutex objects used to serialise concurrent BOOK_ORDER requests for the
+     * same park at the JVM level.  A new sentinel {@code Object} is created lazily on
+     * first access via {@code computeIfAbsent} and is never removed, so the same
+     * reference is reused for the lifetime of the server.
+     *
+     * <p>Combined with {@link DBController#checkAndBook}'s {@code SELECT … FOR UPDATE}
+     * transaction this provides two independent layers of protection against
+     * double-booking the last available slot.
+     */
+    private static final java.util.concurrent.ConcurrentHashMap<Integer, Object> parkLocks =
+        new java.util.concurrent.ConcurrentHashMap<>();
 
     /**
      * @param port the port number to listen on
@@ -156,46 +170,51 @@ public class EchoServer extends AbstractServer {
                         client.sendToClient(new Message("BOOKING_ERROR", validationError));
                         break;
                     }
-                    int available = DBController.getInstance()
-                        .getAvailableSpots(req.getParkId(), req.getVisitDate(), req.getVisitTime());
-                    if (available < 0) {
-                        client.sendToClient(new Message("BOOKING_ERROR",
-                            "Could not check park capacity. Please try again."));
-                        break;
-                    }
-                    if (available < req.getNumVisitors()) {
-                        client.sendToClient(new Message("BOOKING_FULL", null));
-                        break;
-                    }
-                    // Enforce the park's max_orders cap for this time slot — treat a full
-                    // booking table the same as full capacity (offer the waiting list).
-                    Park bookingPark = DBController.getInstance().getParkById(req.getParkId());
-                    if (bookingPark != null) {
-                        int activeOrders = DBController.getInstance()
-                            .countActiveOrders(req.getParkId(), req.getVisitDate(), req.getVisitTime());
-                        if (activeOrders >= 0 && activeOrders >= bookingPark.getMaxOrders()) {
+
+                    // Acquire the per-park JVM lock before entering the DB transaction.
+                    // This is the first of two concurrency layers: it serialises all booking
+                    // attempts for the same park on this server so that at most one thread
+                    // runs checkAndBook() for a given park at any time.  The second layer is
+                    // the SELECT ... FOR UPDATE inside checkAndBook() itself.
+                    Object parkLock = parkLocks.computeIfAbsent(req.getParkId(), id -> new Object());
+                    int orderId = -1;
+                    synchronized (parkLock) {
+                        try {
+                            orderId = DBController.getInstance().checkAndBook(req);
+                        } catch (java.sql.SQLException e) {
+                            System.out.println("[BOOK_ORDER] checkAndBook SQL error: " + e.getMessage());
+                            client.sendToClient(new Message("BOOKING_ERROR",
+                                "We couldn't complete your booking. Please try again."));
+                            break;
+                        }
+                        if (orderId == 0) {
                             client.sendToClient(new Message("BOOKING_FULL", null));
                             break;
                         }
+                        if (orderId < 0) {
+                            client.sendToClient(new Message("BOOKING_ERROR",
+                                "We couldn't complete your booking. Please try again."));
+                            break;
+                        }
                     }
-                    int orderId;
-                    try {
-                        orderId = DBController.getInstance().createOrder(req);
-                    } catch (RuntimeException e) {
-                        System.out.println("createOrder error: " + e.getMessage());
-                        client.sendToClient(new Message("BOOKING_ERROR",
-                            "We couldn't complete your booking. Please try again."));
-                        break;
-                    }
-                    if (orderId < 0) {
-                        client.sendToClient(new Message("BOOKING_ERROR",
-                            "We couldn't complete your booking. Please try again."));
-                        break;
-                    }
+                    // Lock released — booking is committed in the DB.
+                    // All remaining work (response + email) is outside the critical section.
+
+                    // Price preview for the confirmation screen: base price before any promotion,
+                    // final price after the best active promotion for the visit date.
+                    double[] quote = DBController.getInstance().quotePrebookedPrice(
+                        req.getParkId(), req.getVisitDate(), req.getOrderType(),
+                        req.getNumVisitors(), req.getVisitorId());
+                    logic.Promotion bookPromo = DBController.getInstance()
+                        .getBestActivePromotion(req.getParkId(), req.getVisitDate());
+                    double bookPromoPct  = (bookPromo != null) ? bookPromo.getDiscountPercent() : 0.0;
+                    String bookPromoDesc = (bookPromo != null) ? bookPromo.getDescription() : "";
+
                     client.sendToClient(new Message("BOOKING_CONFIRMED",
                         new BookingResult(orderId, "CONFIRMED", req.getParkName(),
                             req.getVisitDate(), req.getVisitTime(),
-                            req.getNumVisitors(), req.getOrderType(), req.getEmail())));
+                            req.getNumVisitors(), req.getOrderType(), req.getEmail(),
+                            quote[0], quote[1], bookPromoPct, bookPromoDesc)));
 
                     // ── Booking confirmation notification — fires for EVERY successful booking ──
                     // Look up the visitor's name for a personalised email.
@@ -761,6 +780,103 @@ public class EchoServer extends AbstractServer {
                         client.sendToClient(new Message("SETTINGS_REJECT_SUCCESS", reqId));
                     else
                         client.sendToClient(new Message("SETTINGS_REJECT_FAIL", rejectErr));
+                    break;
+                }
+
+                // ── Promotions approval workflow ─────────────────────────────────────
+
+                case "SUBMIT_PROMOTION": {
+                    if (!(incoming.getData() instanceof Promotion)) {
+                        client.sendToClient(new Message("PROMOTION_SUBMIT_FAIL",
+                            "We couldn't read your promotion. Please try again."));
+                        break;
+                    }
+                    Promotion promo = (Promotion) incoming.getData();
+                    // Re-validate server-side (mirrors PromotionsController rules).
+                    if (promo.getDescription() == null || promo.getDescription().trim().isEmpty()) {
+                        client.sendToClient(new Message("PROMOTION_SUBMIT_FAIL",
+                            "Please enter a promotion description.")); break;
+                    }
+                    if (promo.getDiscountPercent() <= 0 || promo.getDiscountPercent() > 50) {
+                        client.sendToClient(new Message("PROMOTION_SUBMIT_FAIL",
+                            "Discount must be between 1 and 50 percent.")); break;
+                    }
+                    if (promo.getStartDate() == null || promo.getStartDate().isEmpty()
+                            || promo.getEndDate() == null || promo.getEndDate().isEmpty()) {
+                        client.sendToClient(new Message("PROMOTION_SUBMIT_FAIL",
+                            "Please choose both a start and an end date.")); break;
+                    }
+                    if (promo.getEndDate().compareTo(promo.getStartDate()) < 0) {
+                        client.sendToClient(new Message("PROMOTION_SUBMIT_FAIL",
+                            "End date must be on or after the start date.")); break;
+                    }
+                    String promoErr = DBController.getInstance().submitPromotion(promo);
+                    if (promoErr == null)
+                        client.sendToClient(new Message("PROMOTION_SUBMITTED",
+                            "Promotion submitted for department manager approval."));
+                    else
+                        client.sendToClient(new Message("PROMOTION_SUBMIT_FAIL", promoErr));
+                    break;
+                }
+
+                case "GET_PROMOTIONS_FOR_PARK": {
+                    if (!(incoming.getData() instanceof Integer)) {
+                        client.sendToClient(new Message("PROMOTIONS_FOR_PARK_LIST",
+                            new java.util.ArrayList<Promotion>()));
+                        break;
+                    }
+                    int pkId = (Integer) incoming.getData();
+                    List<Promotion> mine = DBController.getInstance().getPromotionsForPark(pkId);
+                    client.sendToClient(new Message("PROMOTIONS_FOR_PARK_LIST", mine));
+                    break;
+                }
+
+                case "GET_PENDING_PROMOTIONS": {
+                    List<Promotion> pendingPromos =
+                        DBController.getInstance().getPendingPromotions();
+                    client.sendToClient(new Message("PENDING_PROMOTIONS_LIST", pendingPromos));
+                    break;
+                }
+
+                case "GET_ACTIVE_PROMOTIONS": {
+                    if (!(incoming.getData() instanceof Integer)) {
+                        client.sendToClient(new Message("ACTIVE_PROMOTIONS_LIST",
+                            new java.util.ArrayList<Promotion>()));
+                        break;
+                    }
+                    int activeParkId = (Integer) incoming.getData();
+                    String todayStr = LocalDate.now().toString();
+                    List<Promotion> active =
+                        DBController.getInstance().getActivePromotions(activeParkId, todayStr);
+                    client.sendToClient(new Message("ACTIVE_PROMOTIONS_LIST", active));
+                    break;
+                }
+
+                case "APPROVE_PROMOTION": {
+                    if (!(incoming.getData() instanceof Integer)) {
+                        client.sendToClient(new Message("PROMOTION_APPROVE_FAIL",
+                            "We couldn't identify that promotion. Please refresh and try again.")); break;
+                    }
+                    int promoId = (Integer) incoming.getData();
+                    String approveErr = DBController.getInstance().approvePromotion(promoId);
+                    if (approveErr == null)
+                        client.sendToClient(new Message("PROMOTION_APPROVE_SUCCESS", promoId));
+                    else
+                        client.sendToClient(new Message("PROMOTION_APPROVE_FAIL", approveErr));
+                    break;
+                }
+
+                case "REJECT_PROMOTION": {
+                    if (!(incoming.getData() instanceof Integer)) {
+                        client.sendToClient(new Message("PROMOTION_REJECT_FAIL",
+                            "We couldn't identify that promotion. Please refresh and try again.")); break;
+                    }
+                    int promoId = (Integer) incoming.getData();
+                    String rejectPromoErr = DBController.getInstance().rejectPromotion(promoId);
+                    if (rejectPromoErr == null)
+                        client.sendToClient(new Message("PROMOTION_REJECT_SUCCESS", promoId));
+                    else
+                        client.sendToClient(new Message("PROMOTION_REJECT_FAIL", rejectPromoErr));
                     break;
                 }
 

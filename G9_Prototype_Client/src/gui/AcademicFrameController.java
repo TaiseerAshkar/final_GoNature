@@ -4,6 +4,7 @@ import client.ChatClient;
 import client.ClientUI;
 import logic.GuideDetail;
 import logic.ParkSettingsRequest;
+import logic.Promotion;
 import logic.Message;
 import logic.Order;
 import logic.OrderDetail;
@@ -604,6 +605,163 @@ public class AcademicFrameController {
 
         refreshRequestsTable(table, statusLbl);
         stage.show();
+    }
+
+    /**
+     * opens a modal panel listing all pending promotion requests across every park.
+     * the department manager can Approve (sets the promotion ACTIVE so it affects pricing)
+     * or Reject (marks it REJECTED). the table refreshes automatically after each action.
+     *
+     * @param event the button-click event
+     */
+    @FXML
+    public void handlePendingPromotions(ActionEvent event) {
+        Stage stage = new Stage();
+        stage.initModality(Modality.WINDOW_MODAL);
+        stage.initOwner(lblUserName.getScene().getWindow());
+        stage.setTitle("GoNature — Pending Promotions");
+
+        Label titleLbl = new Label("🎉  Pending Promotions");
+        titleLbl.getStyleClass().add("screen-title");
+
+        Label statusLbl = new Label("Loading…");
+        statusLbl.getStyleClass().add("lbl-hint");
+
+        TableView<Promotion> table = new TableView<>();
+        table.getStyleClass().add("table-view");
+        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        table.setPrefHeight(320);
+        VBox.setVgrow(table, javafx.scene.layout.Priority.ALWAYS);
+
+        TableColumn<Promotion, String> colPark = new TableColumn<>("Park");
+        TableColumn<Promotion, String> colDesc = new TableColumn<>("Description");
+        TableColumn<Promotion, String> colDisc = new TableColumn<>("Discount");
+        TableColumn<Promotion, String> colFrom = new TableColumn<>("Start");
+        TableColumn<Promotion, String> colTo   = new TableColumn<>("End");
+        TableColumn<Promotion, String> colBy   = new TableColumn<>("Submitted By");
+
+        colPark.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getParkName()));
+        colDesc.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getDescription()));
+        colDisc.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getDiscountLabel()));
+        colFrom.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getStartDate()));
+        colTo.setCellValueFactory(  d -> new SimpleStringProperty(d.getValue().getEndDate()));
+        colBy.setCellValueFactory(  d -> new SimpleStringProperty(d.getValue().getSubmittedBy()));
+
+        TableColumn<Promotion, Void> colActions = new TableColumn<>("Actions");
+        colActions.setMinWidth(190);
+        colActions.setCellFactory(col -> new TableCell<Promotion, Void>() {
+            private final Button btnApprove = new Button("✅  Approve");
+            private final Button btnReject  = new Button("❌  Reject");
+            {
+                btnApprove.getStyleClass().add("btn-primary");
+                btnApprove.setStyle("-fx-font-size:11px; -fx-padding:4 10; -fx-background-radius:6;");
+                btnReject.getStyleClass().add("btn-danger");
+                btnReject.setStyle("-fx-font-size:11px; -fx-padding:4 10; -fx-background-radius:6;");
+
+                btnApprove.setOnAction(e -> {
+                    Promotion p = getTableView().getItems().get(getIndex());
+                    ChatClient.lastPromotionActionSuccess = null;
+                    ChatClient.lastPromotionActionFail    = null;
+                    ClientUI.chat.accept(new Message("APPROVE_PROMOTION", p.getId()));
+                    if (ChatClient.lastPromotionActionSuccess != null) {
+                        statusLbl.getStyleClass().setAll("lbl-success");
+                        statusLbl.setText("✅  Approved: " + p.getDiscountLabel()
+                            + " at " + p.getParkName() + " is now active.");
+                    } else {
+                        statusLbl.getStyleClass().setAll("lbl-error");
+                        statusLbl.setText("❌  " + (ChatClient.lastPromotionActionFail != null
+                            ? ChatClient.lastPromotionActionFail : "Approval failed."));
+                    }
+                    refreshPromotionsTable(table, statusLbl);
+                });
+
+                btnReject.setOnAction(e -> {
+                    Promotion p = getTableView().getItems().get(getIndex());
+                    Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
+                        "Reject the " + p.getDiscountLabel() + " promotion for "
+                        + p.getParkName() + "?",
+                        ButtonType.YES, ButtonType.NO);
+                    confirm.setTitle("Confirm Rejection");
+                    confirm.setHeaderText("The promotion will not be applied.");
+                    ThemeManager.styleDialog(confirm);
+                    confirm.showAndWait().ifPresent(btn -> {
+                        if (btn != ButtonType.YES) return;
+                        ChatClient.lastPromotionActionSuccess = null;
+                        ChatClient.lastPromotionActionFail    = null;
+                        ClientUI.chat.accept(new Message("REJECT_PROMOTION", p.getId()));
+                        if (ChatClient.lastPromotionActionSuccess != null) {
+                            statusLbl.getStyleClass().setAll("lbl-hint");
+                            statusLbl.setText("🗑  Rejected the promotion for " + p.getParkName() + ".");
+                        } else {
+                            statusLbl.getStyleClass().setAll("lbl-error");
+                            statusLbl.setText("❌  " + (ChatClient.lastPromotionActionFail != null
+                                ? ChatClient.lastPromotionActionFail : "Rejection failed."));
+                        }
+                        refreshPromotionsTable(table, statusLbl);
+                    });
+                });
+            }
+
+            @Override protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty) { setGraphic(null); return; }
+                HBox box = new HBox(8, btnApprove, btnReject);
+                box.setAlignment(Pos.CENTER_LEFT);
+                setGraphic(box);
+            }
+        });
+
+        table.getColumns().addAll(colPark, colDesc, colDisc, colFrom, colTo, colBy, colActions);
+        table.setPlaceholder(EmptyState.of(Icons.inbox(34),
+            "All caught up",
+            "Pending promotions submitted by park managers will appear here."));
+
+        Button btnRefresh = new Button("🔄  Refresh");
+        btnRefresh.getStyleClass().add("btn-teal");
+        btnRefresh.setStyle("-fx-font-size:12px; -fx-padding:7 16; -fx-background-radius:8;");
+        btnRefresh.setOnAction(e -> refreshPromotionsTable(table, statusLbl));
+
+        Button btnClose = new Button("Close");
+        btnClose.getStyleClass().add("btn-secondary");
+        btnClose.setStyle("-fx-font-size:12px; -fx-padding:7 16; -fx-background-radius:8;");
+        btnClose.setOnAction(e -> stage.close());
+
+        javafx.scene.layout.Region spacer = new javafx.scene.layout.Region();
+        HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
+        HBox btnBar = new HBox(10, btnRefresh, spacer, btnClose);
+        btnBar.setAlignment(Pos.CENTER_LEFT);
+
+        VBox header = new VBox(3, titleLbl, statusLbl);
+        VBox root = new VBox(14, header, table, btnBar);
+        root.getStyleClass().add("screen-bg");
+        root.setPadding(new Insets(22));
+
+        Scene scene = new Scene(root, 920, 480);
+        java.net.URL css = getClass().getResource("/gui/gonature.css");
+        if (css != null) scene.getStylesheets().add(css.toExternalForm());
+        ThemeManager.register(scene);
+        stage.setScene(scene);
+
+        refreshPromotionsTable(table, statusLbl);
+        stage.show();
+    }
+
+    /** Sends GET_PENDING_PROMOTIONS and reloads the promotions table. */
+    private void refreshPromotionsTable(TableView<Promotion> table, Label statusLbl) {
+        ChatClient.lastPendingPromotions = null;
+        ClientUI.chat.accept(new Message("GET_PENDING_PROMOTIONS", null));
+        List<Promotion> promos = ChatClient.lastPendingPromotions;
+        if (promos != null) {
+            table.getItems().setAll(promos);
+            statusLbl.getStyleClass().setAll("lbl-hint");
+            statusLbl.setText(promos.isEmpty()
+                ? "No pending promotions."
+                : promos.size() + " pending promotion(s) awaiting approval.");
+        } else {
+            table.getItems().clear();
+            statusLbl.getStyleClass().setAll("lbl-error");
+            statusLbl.setText("Could not load promotions — is the server running?");
+        }
     }
 
     /** Sends GET_PENDING_SETTINGS and reloads the requests table. */

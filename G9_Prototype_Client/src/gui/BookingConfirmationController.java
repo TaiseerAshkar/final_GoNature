@@ -44,6 +44,13 @@ public class BookingConfirmationController {
     @FXML private Label lblEmail;
     @FXML private Label lblEmailNote;
 
+    // promotion price card — only shown when an active promotion was applied
+    @FXML private VBox  panePromo;
+    @FXML private Label lblPromoTag;
+    @FXML private Label lblPromoDesc;
+    @FXML private Label lblPriceOriginal;
+    @FXML private Label lblPriceFinal;
+
     /**
      * called by the FXMLLoader after all {@code @FXML} fields have been injected.
      * nothing to do here — all data-binding is done in {@link #populate(BookingResult)}
@@ -90,6 +97,19 @@ public class BookingConfirmationController {
         lblVisitors.setText(r.getNumVisitors() + " visitor" + (r.getNumVisitors() > 1 ? "s" : ""));
         lblType.setText(r.getOrderType());
         lblEmail.setText(r.getEmail());
+
+        // Promotion price card — only for confirmed bookings that carry an active promotion.
+        if (!isWaiting && r.hasPromotion()) {
+            lblPromoTag.setText(String.format("Promotion Applied: %.0f%% off", r.getPromoPercent()));
+            lblPromoDesc.setText(r.getPromoDescription());
+            lblPriceOriginal.setText(String.format("$%.2f", r.getBasePrice()));
+            lblPriceFinal.setText(String.format("$%.2f", r.getFinalPrice()));
+            panePromo.setVisible(true);
+            panePromo.setManaged(true);
+        } else {
+            panePromo.setVisible(false);
+            panePromo.setManaged(false);
+        }
     }
 
     /**

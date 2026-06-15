@@ -41,6 +41,7 @@ public class EmployeeController {
     @FXML private Label  lblStats;
     @FXML private Button btnReports;
     @FXML private Button btnParkSettings;
+    @FXML private Button btnPromotions;
 
     // header controls
     @FXML private Label  lblSessionTimer;
@@ -68,6 +69,7 @@ public class EmployeeController {
                 "manage reservations, and generate reports for your park.");
             btnReports.setDisable(false);
             btnParkSettings.setDisable(false);
+            btnPromotions.setDisable(false);
         } else {
             lblInfo.setText(
                 "As a park employee you can manage visitor check-ins,\n" +
@@ -253,6 +255,16 @@ public class EmployeeController {
     public void handleParkSettings(ActionEvent event) {
         openModal(stage -> new ParkSettingsController().start(stage),
                   "GoNature — Park Settings");
+    }
+
+    /**
+     * opens the Promotions panel so the manager can propose discount promotions for their
+     * assigned park. Promotions require department manager approval before they affect pricing.
+     */
+    @FXML
+    public void handlePromotions(ActionEvent event) {
+        openModal(stage -> new PromotionsController().start(stage),
+                  "GoNature — Promotions");
     }
 
     // ── Utility ───────────────────────────────────────────────────────────────

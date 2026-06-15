@@ -13,6 +13,7 @@ import logic.ReportUsageRow;
 import logic.ReportVisitorRow;
 import logic.GuideDetail;
 import logic.ParkSettingsRequest;
+import logic.Promotion;
 import logic.RegisterGuideRequest;
 import logic.RegisterRequest;
 import logic.RegisterResult;
@@ -310,6 +311,153 @@ public class DBController {
         } catch (SQLException e) {
             System.out.println("countActiveOrders error: " + e.getMessage());
             return -1;
+        }
+    }
+
+    /**
+     * Atomically checks slot availability and inserts a confirmed order in one transaction.
+     *
+     * <p>Uses {@code SELECT ... FOR UPDATE} on the parks row so that any concurrent call
+     * for the same park blocks at the DB level until this transaction commits or rolls back.
+     * Together with the per-park JVM lock in {@link EchoServer}, this eliminates the
+     * check-then-act race that could otherwise allow two visitors to both see one free spot
+     * and both succeed in booking it.
+     *
+     * <p>Return value semantics:
+     * <ul>
+     *   <li>{@code >= 1} — booking confirmed; value is the new order ID</li>
+     *   <li>{@code 0}    — slot is full (capacity or max-orders cap reached)</li>
+     *   <li>{@code -1}   — DB error or park not found</li>
+     * </ul>
+     *
+     * @param req the validated booking request
+     * @return orderId on success, {@code 0} if full, {@code -1} on error
+     * @throws SQLException if a non-recoverable SQL error occurs (caller should surface it)
+     */
+    public int checkAndBook(BookingRequest req) throws SQLException {
+        if (connection == null) return -1;
+
+        boolean oldAutoCommit = connection.getAutoCommit();
+        connection.setAutoCommit(false);
+        try {
+            // Lock the parks row for this park ID.  Any concurrent checkAndBook for the
+            // same park blocks here until we commit or roll back, so both threads cannot
+            // simultaneously read "1 spot free" and both insert an order.
+            int capacity;
+            int maxOrders;
+            int durationHours;
+            try (PreparedStatement st = connection.prepareStatement(
+                    "SELECT capacity, max_orders, visit_duration_hours " +
+                    "FROM parks WHERE id = ? FOR UPDATE")) {
+                st.setInt(1, req.getParkId());
+                try (ResultSet rs = st.executeQuery()) {
+                    if (!rs.next()) {
+                        connection.rollback();
+                        System.out.printf("[checkAndBook] park %d not found%n", req.getParkId());
+                        return -1;
+                    }
+                    capacity      = rs.getInt("capacity");
+                    maxOrders     = rs.getInt("max_orders");
+                    durationHours = rs.getInt("visit_duration_hours");
+                }
+            }
+
+            // Count visitor slots already occupied in the overlapping time window.
+            // This read is consistent within our transaction and sees all previously
+            // committed rows — including any that a just-committed concurrent booking added.
+            int occupied = 0;
+            try (PreparedStatement st = connection.prepareStatement(
+                    "SELECT COALESCE(SUM(num_visitors), 0) AS occupied " +
+                    "FROM orders " +
+                    "WHERE park_id = ? " +
+                    "  AND visit_date = ? " +
+                    "  AND status NOT IN ('no_show', 'cancelled') " +
+                    "  AND TIME(visit_time) < ADDTIME(TIME(?), SEC_TO_TIME(? * 3600)) " +
+                    "  AND ADDTIME(TIME(visit_time), SEC_TO_TIME(? * 3600)) > TIME(?)")) {
+                st.setInt(1,    req.getParkId());
+                st.setString(2, req.getVisitDate());
+                st.setString(3, req.getVisitTime());
+                st.setInt(4,    durationHours);
+                st.setInt(5,    durationHours);
+                st.setString(6, req.getVisitTime());
+                try (ResultSet rs = st.executeQuery()) {
+                    if (rs.next()) occupied = rs.getInt("occupied");
+                }
+            }
+
+            int available = Math.max(0, capacity - occupied);
+            System.out.printf("[checkAndBook] parkId=%d date=%s time=%s"
+                + " capacity=%d occupied=%d available=%d requested=%d%n",
+                req.getParkId(), req.getVisitDate(), req.getVisitTime(),
+                capacity, occupied, available, req.getNumVisitors());
+
+            if (available < req.getNumVisitors()) {
+                connection.rollback();
+                return 0;
+            }
+
+            // Also enforce the max-orders (distinct bookings) cap for this slot.
+            int activeOrders = 0;
+            try (PreparedStatement st = connection.prepareStatement(
+                    "SELECT COUNT(*) AS cnt FROM orders " +
+                    "WHERE park_id = ? " +
+                    "  AND visit_date = ? " +
+                    "  AND status NOT IN ('no_show', 'cancelled') " +
+                    "  AND TIME(visit_time) < ADDTIME(TIME(?), SEC_TO_TIME(? * 3600)) " +
+                    "  AND ADDTIME(TIME(visit_time), SEC_TO_TIME(? * 3600)) > TIME(?)")) {
+                st.setInt(1,    req.getParkId());
+                st.setString(2, req.getVisitDate());
+                st.setString(3, req.getVisitTime());
+                st.setInt(4,    durationHours);
+                st.setInt(5,    durationHours);
+                st.setString(6, req.getVisitTime());
+                try (ResultSet rs = st.executeQuery()) {
+                    if (rs.next()) activeOrders = rs.getInt("cnt");
+                }
+            }
+
+            if (activeOrders >= maxOrders) {
+                connection.rollback();
+                System.out.printf("[checkAndBook] max_orders cap reached (%d)%n", maxOrders);
+                return 0;
+            }
+
+            // Both checks passed — insert the confirmed order.
+            String orderTypeValue = toDbOrderType(req.getOrderType());
+            int orderId;
+            try (PreparedStatement st = connection.prepareStatement(
+                    "INSERT INTO orders " +
+                    "(visitor_id, park_id, visit_date, visit_time, num_visitors, order_type, status, email) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, 'confirmed', ?)",
+                    Statement.RETURN_GENERATED_KEYS)) {
+                st.setString(1, req.getVisitorId());
+                st.setInt(2,    req.getParkId());
+                st.setString(3, req.getVisitDate());
+                st.setString(4, req.getVisitTime());
+                st.setInt(5,    req.getNumVisitors());
+                st.setString(6, orderTypeValue);
+                st.setString(7, req.getEmail());
+                st.executeUpdate();
+                try (ResultSet keys = st.getGeneratedKeys()) {
+                    if (!keys.next()) {
+                        connection.rollback();
+                        return -1;
+                    }
+                    orderId = keys.getInt(1);
+                }
+            }
+
+            connection.commit();
+            System.out.printf("[checkAndBook] committed — orderId=%d parkId=%d%n",
+                orderId, req.getParkId());
+            return orderId;
+
+        } catch (SQLException e) {
+            System.out.printf("[checkAndBook] SQL ERROR — rolling back: %s%n", e.getMessage());
+            try { connection.rollback(); } catch (SQLException ignored) {}
+            throw e;
+        } finally {
+            try { connection.setAutoCommit(oldAutoCommit); } catch (SQLException ignored) {}
         }
     }
 
@@ -957,8 +1105,9 @@ public class DBController {
                 double fullPrice    = rs.getDouble("full_price");
                 boolean isGuide     = isRegisteredGuide(visitorId);
                 boolean isSubscriber = isRegisteredSubscriber(visitorId);
-                double total        = calculateEntryPrice(true, oType, numVis, fullPrice, isGuide, isSubscriber);
-                String note         = buildEntryPricingNote(true, oType, numVis, isGuide, isSubscriber);
+                String  entryDate   = java.time.LocalDate.now().toString();
+                double total        = calculateEntryPrice(parkId, entryDate, true, oType, numVis, fullPrice, isGuide, isSubscriber);
+                String note         = buildEntryPricingNote(parkId, entryDate, true, oType, numVis, isGuide, isSubscriber);
 
                 PreparedStatement upd = connection.prepareStatement(
                     "UPDATE orders SET status='completed', entry_time=NOW() WHERE id=?");
@@ -1037,8 +1186,8 @@ public class DBController {
 
             boolean isGuide      = isRegisteredGuide(visitorId);
             boolean isSubscriber = isRegisteredSubscriber(visitorId);
-            double total = calculateEntryPrice(false, wDisplayType, numVis, fullPrice, isGuide, isSubscriber);
-            String note  = buildEntryPricingNote(false, wDisplayType, numVis, isGuide, isSubscriber);
+            double total = calculateEntryPrice(parkId, today, false, wDisplayType, numVis, fullPrice, isGuide, isSubscriber);
+            String note  = buildEntryPricingNote(parkId, today, false, wDisplayType, numVis, isGuide, isSubscriber);
             return new EntryResult(true, false, orderId, parkName, visitorId,
                 numVis, wDisplayType, total, note);
 
@@ -1077,24 +1226,74 @@ public class DBController {
      * @param isSubscriber {@code true} if the visitor holds a Family Member Club subscription
      * @return the total price to charge
      */
-    private double calculateEntryPrice(boolean prebooked, String orderType,
-                                       int numVisitors, double fullPrice,
+    private double calculateEntryPrice(int parkId, String date, boolean prebooked,
+                                       String orderType, int numVisitors, double fullPrice,
                                        boolean isGuide, boolean isSubscriber) {
+        double subtotal;
+
         // Guide-group pricing is fixed and does not stack with the subscriber discount.
         if ("GROUP".equals(orderType.toUpperCase()) && isGuide) {
             int paying = Math.max(0, numVisitors - 1);
-            return prebooked
+            subtotal = prebooked
                 ? paying * fullPrice * 0.75   // guide free + 25% advance discount
                 : paying * fullPrice * 0.90;  // guide free + 10% walk-in discount
+        } else {
+            // Step 1 — base multiplier: 15% off for pre-booked, full price for walk-in.
+            double baseMultiplier = prebooked ? 0.85 : 1.00;
+            // Step 2 — subscriber stacks an additional 10% on top of whatever base applies.
+            double subscriberMultiplier = isSubscriber ? 0.90 : 1.00;
+            subtotal = numVisitors * fullPrice * baseMultiplier * subscriberMultiplier;
         }
 
-        // Step 1 — base multiplier: 15% off for pre-booked, full price for walk-in.
-        double baseMultiplier = prebooked ? 0.85 : 1.00;
+        // Step 3 — promotional discount: applied AFTER all standard discounts. The largest
+        // active promotion for this park on this date wins (getBestActivePromotion orders by
+        // discount desc); multiple promotions never stack.
+        double promoMultiplier = 1.0 - promoFraction(parkId, date);
+        return subtotal * promoMultiplier;
+    }
 
-        // Step 2 — subscriber stacks an additional 10% on top of whatever base applies.
-        double subscriberMultiplier = isSubscriber ? 0.90 : 1.00;
+    /**
+     * returns the best active promotion's discount as a fraction in {@code [0, 0.5]}
+     * for a park on a date, or {@code 0.0} if no promotion applies.
+     *
+     * @param parkId the park to look up
+     * @param date   the date to test, {@code yyyy-MM-dd}
+     * @return the discount fraction (e.g. {@code 0.10} for a 10%-off promotion)
+     */
+    private double promoFraction(int parkId, String date) {
+        Promotion best = getBestActivePromotion(parkId, date);
+        if (best == null) return 0.0;
+        // Clamp defensively so a bad row can never invert or over-discount the price.
+        return Math.max(0.0, Math.min(0.5, best.getDiscountPercent() / 100.0));
+    }
 
-        return numVisitors * fullPrice * baseMultiplier * subscriberMultiplier;
+    /**
+     * quotes the indicative price for a pre-booked order so the booking-confirmation
+     * screen can show the visitor the price before and after any active promotion.
+     *
+     * <p>uses the same pre-booked discount logic as the gate ({@link #calculateEntryPrice}),
+     * evaluated for the visit date so the preview matches what the visitor will actually pay.
+     *
+     * @param parkId      the park being booked
+     * @param visitDate   the visit date, {@code yyyy-MM-dd} (promotion window is tested against this)
+     * @param orderType   the display order type ({@code SOLO} / {@code FAMILY} / {@code GROUP})
+     * @param numVisitors the number of visitors
+     * @param visitorId   the booker's ID (used to detect guide / subscriber status)
+     * @return {@code [basePrice, finalPrice]} — {@code basePrice} before promotion,
+     *         {@code finalPrice} after the best active promotion
+     */
+    public double[] quotePrebookedPrice(int parkId, String visitDate, String orderType,
+                                        int numVisitors, String visitorId) {
+        Park p = getParkById(parkId);
+        double fullPrice = (p != null) ? p.getFullPrice() : 0.0;
+        boolean isGuide      = isRegisteredGuide(visitorId);
+        boolean isSubscriber = isRegisteredSubscriber(visitorId);
+
+        double finalPrice = calculateEntryPrice(parkId, visitDate, true, orderType,
+                                                numVisitors, fullPrice, isGuide, isSubscriber);
+        double frac = promoFraction(parkId, visitDate);
+        double base = (frac < 1.0) ? finalPrice / (1.0 - frac) : finalPrice;
+        return new double[] { base, finalPrice };
     }
 
     /**
@@ -1103,29 +1302,38 @@ public class DBController {
      * shows each discount component separately so the visitor can see exactly how the
      * total was calculated.
      */
-    private String buildEntryPricingNote(boolean prebooked, String orderType,
-                                         int numVisitors, boolean isGuide, boolean isSubscriber) {
+    private String buildEntryPricingNote(int parkId, String date, boolean prebooked,
+                                         String orderType, int numVisitors,
+                                         boolean isGuide, boolean isSubscriber) {
+        StringBuilder note = new StringBuilder();
+
         // Guide-group note — subscriber discount does not apply here.
         if ("GROUP".equals(orderType.toUpperCase()) && isGuide) {
             int paying = Math.max(0, numVisitors - 1);
-            return prebooked
+            note.append(prebooked
                 ? "Pre-booked group: guide enters free. " + paying + " paying visitor(s) — 25% advance discount."
-                : "Walk-in group: guide enters free. " + paying + " paying visitor(s) — 10% walk-in discount.";
+                : "Walk-in group: guide enters free. " + paying + " paying visitor(s) — 10% walk-in discount.");
+        } else {
+            // Build the note piece by piece so every active component is visible.
+            if (prebooked) {
+                note.append("Pre-booked: 15% advance-booking discount");
+            } else {
+                note.append("Walk-in: full price");
+            }
+            if (isSubscriber) {
+                note.append(" + 10% Family Member Club discount");
+                if (prebooked)
+                    note.append(" (23.5% total discount)");
+            }
+            note.append(".");
         }
 
-        // Build the note piece by piece so every active component is visible.
-        StringBuilder note = new StringBuilder();
-        if (prebooked) {
-            note.append("Pre-booked: 15% advance-booking discount");
-        } else {
-            note.append("Walk-in: full price");
+        // Append the promotion line whenever one is active for this park/date.
+        Promotion promo = getBestActivePromotion(parkId, date);
+        if (promo != null) {
+            note.append(String.format("  🎉 Promotion applied: %.0f%% off — %s.",
+                promo.getDiscountPercent(), promo.getDescription()));
         }
-        if (isSubscriber) {
-            note.append(" + 10% Family Member Club discount");
-            if (prebooked)
-                note.append(" (23.5% total discount)");
-        }
-        note.append(".");
         return note.toString();
     }
 
@@ -1977,5 +2185,200 @@ public class DBController {
             System.out.println("rejectSettingsRequest error: " + e.getMessage());
             return "Something went wrong on our end. Please try again.";
         }
+    }
+
+    // ── Promotions approval workflow ──────────────────────────────────────────
+
+    /**
+     * inserts a new promotion into {@code promotions} with status {@code PENDING}.
+     * the promotion does not affect pricing until a department manager approves it.
+     *
+     * @param promo the proposed promotion from the park manager
+     * @return {@code null} on success; a human-readable error message on failure
+     */
+    public String submitPromotion(Promotion promo) {
+        if (connection == null) return "We can't reach the database right now. Please try again in a moment.";
+        try (PreparedStatement st = connection.prepareStatement(
+                "INSERT INTO promotions " +
+                "(park_id, description, discount_percent, start_date, end_date, status, submitted_by) " +
+                "VALUES (?, ?, ?, ?, ?, 'PENDING', ?)")) {
+            st.setInt(1,    promo.getParkId());
+            st.setString(2, promo.getDescription());
+            st.setDouble(3, promo.getDiscountPercent());
+            st.setString(4, promo.getStartDate());
+            st.setString(5, promo.getEndDate());
+            st.setString(6, promo.getSubmittedBy());
+            st.executeUpdate();
+            return null; // success
+        } catch (SQLException e) {
+            System.out.println("submitPromotion error: " + e.getMessage());
+            return "Something went wrong on our end. Please try again.";
+        }
+    }
+
+    /**
+     * returns all promotions for one park (any status), newest first.
+     * used by the park manager's Promotions screen to show their own history.
+     *
+     * @param parkId the park whose promotions to list
+     * @return list of {@link Promotion}; empty on error or none
+     */
+    public List<Promotion> getPromotionsForPark(int parkId) {
+        List<Promotion> list = new ArrayList<>();
+        if (connection == null) return list;
+        try (PreparedStatement st = connection.prepareStatement(
+                "SELECT pr.id, pr.park_id, p.name AS park_name, pr.description, " +
+                "       pr.discount_percent, " +
+                "       DATE_FORMAT(pr.start_date, '%Y-%m-%d') AS start_date, " +
+                "       DATE_FORMAT(pr.end_date,   '%Y-%m-%d') AS end_date, " +
+                "       pr.status, pr.submitted_by " +
+                "FROM promotions pr JOIN parks p ON p.id = pr.park_id " +
+                "WHERE pr.park_id = ? " +
+                "ORDER BY pr.created_at DESC")) {
+            st.setInt(1, parkId);
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) list.add(readPromotion(rs));
+            }
+        } catch (SQLException e) {
+            System.out.println("getPromotionsForPark error: " + e.getMessage());
+        }
+        return list;
+    }
+
+    /**
+     * returns all {@code PENDING} promotions across every park, newest first.
+     * used by the department manager's Pending Promotions panel.
+     *
+     * @return list of {@link Promotion}; empty on error or none pending
+     */
+    public List<Promotion> getPendingPromotions() {
+        List<Promotion> list = new ArrayList<>();
+        if (connection == null) return list;
+        try (PreparedStatement st = connection.prepareStatement(
+                "SELECT pr.id, pr.park_id, p.name AS park_name, pr.description, " +
+                "       pr.discount_percent, " +
+                "       DATE_FORMAT(pr.start_date, '%Y-%m-%d') AS start_date, " +
+                "       DATE_FORMAT(pr.end_date,   '%Y-%m-%d') AS end_date, " +
+                "       pr.status, pr.submitted_by " +
+                "FROM promotions pr JOIN parks p ON p.id = pr.park_id " +
+                "WHERE pr.status = 'PENDING' " +
+                "ORDER BY pr.created_at DESC")) {
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) list.add(readPromotion(rs));
+            }
+        } catch (SQLException e) {
+            System.out.println("getPendingPromotions error: " + e.getMessage());
+        }
+        return list;
+    }
+
+    /**
+     * returns the promotions that are live for a given park on a given date —
+     * status {@code ACTIVE} and {@code date} within {@code [start_date, end_date]}.
+     * ordered by discount descending so element 0 is the best offer.
+     *
+     * @param parkId the park to look up
+     * @param date   the date to test, {@code yyyy-MM-dd}
+     * @return list of active {@link Promotion}; empty on error or none active
+     */
+    public List<Promotion> getActivePromotions(int parkId, String date) {
+        List<Promotion> list = new ArrayList<>();
+        if (connection == null) return list;
+        try (PreparedStatement st = connection.prepareStatement(
+                "SELECT pr.id, pr.park_id, p.name AS park_name, pr.description, " +
+                "       pr.discount_percent, " +
+                "       DATE_FORMAT(pr.start_date, '%Y-%m-%d') AS start_date, " +
+                "       DATE_FORMAT(pr.end_date,   '%Y-%m-%d') AS end_date, " +
+                "       pr.status, pr.submitted_by " +
+                "FROM promotions pr JOIN parks p ON p.id = pr.park_id " +
+                "WHERE pr.park_id = ? AND pr.status = 'ACTIVE' " +
+                "  AND ? BETWEEN pr.start_date AND pr.end_date " +
+                "ORDER BY pr.discount_percent DESC")) {
+            st.setInt(1, parkId);
+            st.setString(2, date);
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) list.add(readPromotion(rs));
+            }
+        } catch (SQLException e) {
+            System.out.println("getActivePromotions error: " + e.getMessage());
+        }
+        return list;
+    }
+
+    /**
+     * returns the single best (largest-discount) active promotion for a park on a date,
+     * or {@code null} if none applies. wraps {@link #getActivePromotions}.
+     *
+     * @param parkId the park to look up
+     * @param date   the date to test, {@code yyyy-MM-dd}
+     * @return the best {@link Promotion}, or {@code null}
+     */
+    public Promotion getBestActivePromotion(int parkId, String date) {
+        List<Promotion> active = getActivePromotions(parkId, date);
+        return active.isEmpty() ? null : active.get(0);
+    }
+
+    /**
+     * approves a pending promotion by setting its status to {@code ACTIVE}.
+     *
+     * @param promoId the primary key of the {@code promotions} row
+     * @return {@code null} on success; a human-readable error message on failure
+     */
+    public String approvePromotion(int promoId) {
+        return setPromotionStatus(promoId, "ACTIVE");
+    }
+
+    /**
+     * rejects a pending promotion by setting its status to {@code REJECTED}.
+     *
+     * @param promoId the primary key of the {@code promotions} row
+     * @return {@code null} on success; a human-readable error message on failure
+     */
+    public String rejectPromotion(int promoId) {
+        return setPromotionStatus(promoId, "REJECTED");
+    }
+
+    /**
+     * shared helper for {@link #approvePromotion}/{@link #rejectPromotion}: validates the row
+     * is still PENDING, then flips its status.
+     */
+    private String setPromotionStatus(int promoId, String newStatus) {
+        if (connection == null) return "We can't reach the database right now. Please try again in a moment.";
+        try {
+            try (PreparedStatement chk = connection.prepareStatement(
+                    "SELECT status FROM promotions WHERE id = ?")) {
+                chk.setInt(1, promoId);
+                try (ResultSet rs = chk.executeQuery()) {
+                    if (!rs.next())
+                        return "Promotion #" + promoId + " not found.";
+                    if (!"PENDING".equalsIgnoreCase(rs.getString("status")))
+                        return "Promotion #" + promoId + " is no longer pending.";
+                }
+            }
+            try (PreparedStatement st = connection.prepareStatement(
+                    "UPDATE promotions SET status = ? WHERE id = ?")) {
+                st.setString(1, newStatus);
+                st.setInt(2, promoId);
+                st.executeUpdate();
+            }
+            return null; // success
+        } catch (SQLException e) {
+            System.out.println("setPromotionStatus error: " + e.getMessage());
+            return "Something went wrong on our end. Please try again.";
+        }
+    }
+
+    /** maps the current row of a promotions result set (with park_name) to a {@link Promotion}. */
+    private Promotion readPromotion(ResultSet rs) throws SQLException {
+        return new Promotion(
+            rs.getInt("id"),
+            rs.getInt("park_id"),
+            rs.getString("park_name"),
+            rs.getString("description"),
+            rs.getDouble("discount_percent"),
+            rs.getString("start_date"),
+            rs.getString("end_date"),
+            rs.getString("status"),
+            rs.getString("submitted_by"));
     }
 }

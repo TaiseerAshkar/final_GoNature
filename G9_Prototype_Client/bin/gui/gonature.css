@@ -1254,6 +1254,119 @@
 }
 
 
+/* ── Action tiles (home dashboard) ───────────────────────────────
+   Compact ivory tiles laid out 2-up. Each is a small rounded colour
+   "icon chip" beside a bold title and a short muted description. Colour
+   is carried by the chips only, so the grid stays clean and on-palette. */
+.action-tile {
+    -fx-background-color: -park-surface;
+    -fx-background-radius: 12;
+    -fx-border-color: -park-border;
+    -fx-border-radius: 12;
+    -fx-border-width: 1;
+    -fx-padding: 11 13;
+    -fx-cursor: hand;
+    -fx-content-display: graphic-only;   /* content lives in the graphic */
+    -fx-alignment: center-left;
+    -fx-effect: dropshadow(gaussian, rgba(31,61,43,0.06), 6, 0, 0, 2);
+}
+.action-tile:hover {
+    -fx-border-color: -park-pine;
+    -fx-background-color: derive(-park-surface, 20%);
+    -fx-effect: dropshadow(gaussian, rgba(31,61,43,0.14), 12, 0, 0, 4);
+}
+.action-tile:pressed { -fx-background-color: -park-surface-2; }
+.action-tile:focused { -fx-border-color: -park-gold; }
+
+/* per-tile colour wash — a soft tint + matching border so every option carries a
+   little of its own colour (defined after the base rules so they win). */
+.action-tile-green { -fx-background-color: #EFF6F2; -fx-border-color: #CFE6DD; }
+.action-tile-green:hover { -fx-background-color: #E3F0EA; -fx-border-color: -park-pine; }
+.action-tile-lake  { -fx-background-color: #EEF4F8; -fx-border-color: #CFE0EB; }
+.action-tile-lake:hover  { -fx-background-color: #E0ECF3; -fx-border-color: -park-lake; }
+.action-tile-gold  { -fx-background-color: #F7F1E2; -fx-border-color: #E6D6B4; }
+.action-tile-gold:hover  { -fx-background-color: #F1E8D0; -fx-border-color: -park-gold-700; }
+.action-tile-rust  { -fx-background-color: #F8ECE7; -fx-border-color: #E8CBC1; }
+.action-tile-rust:hover  { -fx-background-color: #F2DDD4; -fx-border-color: -park-rust; }
+
+/* icon chip — the one spot of colour on each tile */
+.tile-chip {
+    -fx-background-radius: 9;
+    -fx-min-width: 36;  -fx-min-height: 36;
+    -fx-max-width: 36;  -fx-max-height: 36;
+    -fx-alignment: center;
+}
+.tile-chip-pine { -fx-background-color: -park-pine; }
+.tile-chip-teal { -fx-background-color: #DCEFE9; }
+.tile-chip-lake { -fx-background-color: #DBEAF2; }
+.tile-chip-gold { -fx-background-color: #F3E9CF; }
+.tile-chip-rust { -fx-background-color: #F5DDD4; }
+
+/* tile typography */
+.tile-title { -fx-font-size: 13.5px; -fx-font-weight: bold; -fx-text-fill: -park-text; }
+.tile-desc  { -fx-font-size: 11px;   -fx-text-fill: -park-text-muted; }
+
+/* tile icon accents (stroked icons; colour via extra style class) */
+.ikon-teal  { -fx-stroke: -park-pine;     }
+.ikon-rust  { -fx-stroke: -park-rust;     }
+.ikon-lake  { -fx-stroke: -park-lake;     }
+.ikon-olive { -fx-stroke: -park-olive;    }
+.ikon-gold  { -fx-stroke: -park-gold-700; }
+
+/* small eyebrow above a screen's welcome title — orients the user */
+.welcome-eyebrow {
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -park-gold-900;
+}
+
+/* dark-mode tile + chip + accent variants */
+.dark-mode .action-tile {
+    -fx-background-color: -park-surface;
+    -fx-border-color: -park-border;
+}
+.dark-mode .action-tile:hover   { -fx-background-color: -park-surface-2; -fx-border-color: #8FCFC2; }
+.dark-mode .action-tile:pressed { -fx-background-color: -park-surface-2; }
+.dark-mode .tile-title { -fx-text-fill: -park-text; }
+.dark-mode .tile-desc  { -fx-text-fill: -park-text-muted; }
+.dark-mode .tile-chip-teal { -fx-background-color: rgba(46,191,165,0.16);  }
+.dark-mode .tile-chip-lake { -fx-background-color: rgba(100,181,246,0.16); }
+.dark-mode .tile-chip-gold { -fx-background-color: rgba(217,164,65,0.18);  }
+.dark-mode .tile-chip-rust { -fx-background-color: rgba(181,74,51,0.20);   }
+.dark-mode .ikon-teal       { -fx-stroke: #8FCFC2; }
+.dark-mode .welcome-eyebrow { -fx-text-fill: -park-gold; }
+
+/* dark-mode per-tile washes — translucent so they read on the dark surface */
+.dark-mode .action-tile-green { -fx-background-color: rgba(46,191,165,0.10);  -fx-border-color: rgba(46,191,165,0.28); }
+.dark-mode .action-tile-green:hover { -fx-background-color: rgba(46,191,165,0.18); -fx-border-color: #8FCFC2; }
+.dark-mode .action-tile-lake  { -fx-background-color: rgba(100,181,246,0.10); -fx-border-color: rgba(100,181,246,0.28); }
+.dark-mode .action-tile-lake:hover  { -fx-background-color: rgba(100,181,246,0.18); -fx-border-color: #90CAF9; }
+.dark-mode .action-tile-gold  { -fx-background-color: rgba(217,164,65,0.11);  -fx-border-color: rgba(217,164,65,0.30); }
+.dark-mode .action-tile-gold:hover  { -fx-background-color: rgba(217,164,65,0.20); -fx-border-color: #E0C07A; }
+.dark-mode .action-tile-rust  { -fx-background-color: rgba(181,74,51,0.12);   -fx-border-color: rgba(181,74,51,0.32); }
+.dark-mode .action-tile-rust:hover  { -fx-background-color: rgba(181,74,51,0.22); -fx-border-color: #E59B86; }
+
+
+/* ── Welcome hero banner (topographic theme behind the dashboard title) ──────── */
+.hero-banner {
+    -fx-background-color: linear-gradient(to bottom right, -park-pine-dark, #0C5F51, -park-pine);
+    -fx-background-radius: 16;
+    -fx-effect: dropshadow(gaussian, rgba(11,74,64,0.28), 16, 0, 0, 5);
+}
+.hero-eyebrow {
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #EBD79C;            /* warm trail-marker gold on pine */
+}
+.hero-welcome {
+    -fx-font-family: -park-font-display;
+    -fx-font-size: 25px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #F6F2E6;            /* warm cream */
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.28), 4, 0, 0, 1);
+}
+
+
 /* ============================================================
    DARK MODE  ("Night Trail")
    Activated by adding the `dark-mode` style class to a scene root
