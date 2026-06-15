@@ -236,17 +236,22 @@ public class DBController {
             System.out.println("[getAvailableSpots] ERROR — connection is null");
             return -1;
         }
+        // Pre-booking cap is max_orders (kept below physical capacity to leave room for
+        // walk-ins), measured against the SUM of visitors whose stay-duration window
+        // overlaps the requested time T. An existing order at visit_time occupies the
+        // window [visit_time, visit_time + visit_duration_hours); it overlaps T when its
+        // window contains T. See checkAndBook for the matching enforcement on insert.
         try (PreparedStatement st = connection.prepareStatement(
-                "SELECT p.capacity - COALESCE(SUM(o.num_visitors), 0) AS available " +
+                "SELECT p.max_orders - COALESCE(SUM(o.num_visitors), 0) AS available " +
                 "FROM parks p " +
                 "LEFT JOIN orders o " +
                 "       ON  o.park_id = p.id " +
                 "       AND o.visit_date = ? " +
-                "       AND o.status NOT IN ('no_show', 'cancelled') " +
+                "       AND o.status IN ('confirmed', 'pending') " +
                 "       AND TIME(o.visit_time) < ADDTIME(TIME(?), SEC_TO_TIME(p.visit_duration_hours * 3600)) " +
                 "       AND ADDTIME(TIME(o.visit_time), SEC_TO_TIME(p.visit_duration_hours * 3600)) > TIME(?) " +
                 "WHERE p.id = ? " +
-                "GROUP BY p.id, p.capacity")) {
+                "GROUP BY p.id, p.max_orders")) {
             st.setString(1, visitDate);
             st.setString(2, visitTime);
             st.setString(3, visitTime);
@@ -362,16 +367,18 @@ public class DBController {
                 }
             }
 
-            // Count visitor slots already occupied in the overlapping time window.
-            // This read is consistent within our transaction and sees all previously
-            // committed rows — including any that a just-committed concurrent booking added.
+            // Sum the visitors from confirmed/pending orders whose stay-duration window
+            // overlaps the requested time T. An order at visit_time occupies the window
+            // [visit_time, visit_time + durationHours); it overlaps T when its window
+            // contains T. The pre-booking cap is max_orders (held below physical capacity
+            // to reserve room for walk-ins at the gate), NOT the physical capacity.
             int occupied = 0;
             try (PreparedStatement st = connection.prepareStatement(
                     "SELECT COALESCE(SUM(num_visitors), 0) AS occupied " +
                     "FROM orders " +
                     "WHERE park_id = ? " +
                     "  AND visit_date = ? " +
-                    "  AND status NOT IN ('no_show', 'cancelled') " +
+                    "  AND status IN ('confirmed', 'pending') " +
                     "  AND TIME(visit_time) < ADDTIME(TIME(?), SEC_TO_TIME(? * 3600)) " +
                     "  AND ADDTIME(TIME(visit_time), SEC_TO_TIME(? * 3600)) > TIME(?)")) {
                 st.setInt(1,    req.getParkId());
@@ -385,40 +392,15 @@ public class DBController {
                 }
             }
 
-            int available = Math.max(0, capacity - occupied);
+            int available = Math.max(0, maxOrders - occupied);
             System.out.printf("[checkAndBook] parkId=%d date=%s time=%s"
-                + " capacity=%d occupied=%d available=%d requested=%d%n",
+                + " maxOrders=%d overlapping=%d available=%d requested=%d (capacity=%d)%n",
                 req.getParkId(), req.getVisitDate(), req.getVisitTime(),
-                capacity, occupied, available, req.getNumVisitors());
+                maxOrders, occupied, available, req.getNumVisitors(), capacity);
 
-            if (available < req.getNumVisitors()) {
+            // Full when overlapping visitors + new requested visitors exceed max_orders.
+            if (occupied + req.getNumVisitors() > maxOrders) {
                 connection.rollback();
-                return 0;
-            }
-
-            // Also enforce the max-orders (distinct bookings) cap for this slot.
-            int activeOrders = 0;
-            try (PreparedStatement st = connection.prepareStatement(
-                    "SELECT COUNT(*) AS cnt FROM orders " +
-                    "WHERE park_id = ? " +
-                    "  AND visit_date = ? " +
-                    "  AND status NOT IN ('no_show', 'cancelled') " +
-                    "  AND TIME(visit_time) < ADDTIME(TIME(?), SEC_TO_TIME(? * 3600)) " +
-                    "  AND ADDTIME(TIME(visit_time), SEC_TO_TIME(? * 3600)) > TIME(?)")) {
-                st.setInt(1,    req.getParkId());
-                st.setString(2, req.getVisitDate());
-                st.setString(3, req.getVisitTime());
-                st.setInt(4,    durationHours);
-                st.setInt(5,    durationHours);
-                st.setString(6, req.getVisitTime());
-                try (ResultSet rs = st.executeQuery()) {
-                    if (rs.next()) activeOrders = rs.getInt("cnt");
-                }
-            }
-
-            if (activeOrders >= maxOrders) {
-                connection.rollback();
-                System.out.printf("[checkAndBook] max_orders cap reached (%d)%n", maxOrders);
                 return 0;
             }
 
@@ -623,6 +605,59 @@ public class DBController {
     }
 
     /**
+     * returns all PENDING orders for a visitor that are awaiting waitlist-promotion confirmation
+     * and whose 1-hour deadline has not yet passed.
+     *
+     * <p>these are orders that were created by {@link #promoteFromWaitingList} — the visitor
+     * was notified that a spot opened and must confirm within 1 hour. the
+     * {@link OrderDetail#getConfirmationDeadline()} field carries the exact deadline.
+     *
+     * @param visitorId the visitor's government ID
+     * @return list of pending waitlist-promotion orders; empty if none or on error
+     */
+    public List<OrderDetail> getPendingWaitlistOrders(String visitorId) {
+        List<OrderDetail> list = new ArrayList<>();
+        if (connection == null) return list;
+        try {
+            PreparedStatement st = connection.prepareStatement(
+                "SELECT o.id, p.name AS park_name, o.visitor_id, " +
+                "       DATE_FORMAT(o.visit_date, '%Y-%m-%d')               AS visit_date, " +
+                "       TIME_FORMAT(o.visit_time, '%H:%i')                   AS visit_time, " +
+                "       o.num_visitors, " +
+                "       CASE UPPER(o.order_type) " +
+                "           WHEN 'INDIVIDUAL' THEN 'SOLO' WHEN 'SOLO' THEN 'SOLO' " +
+                "           WHEN 'FAMILY' THEN 'FAMILY' WHEN 'GROUP' THEN 'GROUP' " +
+                "           ELSE UPPER(o.order_type) END                      AS order_type, " +
+                "       UPPER(o.status)                                        AS status, " +
+                "       o.email, " +
+                "       DATE_FORMAT(o.created_at, '%Y-%m-%d %H:%i')          AS created_at, " +
+                "       DATE_FORMAT(wl.confirmation_deadline, '%Y-%m-%d %H:%i') AS confirmation_deadline " +
+                "FROM orders o " +
+                "JOIN parks p        ON p.id  = o.park_id " +
+                "JOIN waiting_list wl ON wl.order_id = o.id " +
+                "WHERE o.visitor_id = ? " +
+                "  AND o.status = 'pending' " +
+                "  AND wl.status = 'NOTIFIED' " +
+                "  AND wl.confirmation_deadline > NOW() " +
+                "ORDER BY wl.confirmation_deadline ASC");
+            st.setString(1, visitorId);
+            ResultSet rs = st.executeQuery();
+            while (rs.next()) {
+                list.add(new OrderDetail(
+                    rs.getInt("id"),              rs.getString("park_name"),
+                    rs.getString("visitor_id"),   rs.getString("visit_date"),
+                    rs.getString("visit_time"),   rs.getInt("num_visitors"),
+                    rs.getString("order_type"),   rs.getString("status"),
+                    rs.getString("email"),         rs.getString("created_at"),
+                    rs.getString("confirmation_deadline")));
+            }
+        } catch (SQLException e) {
+            System.out.println("getPendingWaitlistOrders error: " + e.getMessage());
+        }
+        return list;
+    }
+
+    /**
      * cancels an order and notifies the first waiting-list entry for the freed slot.
      * only pending/confirmed orders may be cancelled — completed/already-cancelled rows are rejected.
      *
@@ -715,6 +750,7 @@ public class DBController {
                 "SELECT id, visitor_id, num_visitors, order_type " +
                 "FROM waiting_list " +
                 "WHERE park_id = ? AND visit_date = ? AND visit_time = ? " +
+                "  AND COALESCE(status, 'WAITING') = 'WAITING' " +
                 "ORDER BY created_at ASC, id ASC");
             st.setInt(1, parkId);
             st.setDate(2, visitDate);
@@ -738,13 +774,14 @@ public class DBController {
 
         String email = getVisitorEmail(visitorId);
 
-        // create the confirmed order for the promoted visitor
+        // create the HELD order for the promoted visitor — status 'pending' means the slot is
+        // reserved (it counts against capacity) but the visitor must confirm within 1 hour.
         int newOrderId;
         try {
             PreparedStatement ins = connection.prepareStatement(
                 "INSERT INTO orders " +
                 "(visitor_id, park_id, visit_date, visit_time, num_visitors, order_type, status, email) " +
-                "VALUES (?, ?, ?, ?, ?, ?, 'confirmed', ?)",
+                "VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)",
                 Statement.RETURN_GENERATED_KEYS);
             ins.setString(1, visitorId);
             ins.setInt(2,    parkId);
@@ -761,14 +798,20 @@ public class DBController {
             return null;   // leave the visitor on the waiting list if the order couldn't be created
         }
 
-        // remove them from the waiting list now that they hold a confirmed order
+        // mark them NOTIFIED and open the 1-hour confirmation window. the row stays in the
+        // waiting_list (it is no longer a plain WAITING entry) and links to the held order so
+        // the timer service can release the slot if the deadline passes without confirmation.
         try {
-            PreparedStatement del = connection.prepareStatement(
-                "DELETE FROM waiting_list WHERE id = ?");
-            del.setInt(1, wlId);
-            del.executeUpdate();
+            PreparedStatement upd = connection.prepareStatement(
+                "UPDATE waiting_list " +
+                "SET status = 'NOTIFIED', order_id = ?, notified_at = NOW(), " +
+                "    promoted_at = NOW(), confirmation_deadline = NOW() + INTERVAL 1 HOUR " +
+                "WHERE id = ?");
+            upd.setInt(1, newOrderId);
+            upd.setInt(2, wlId);
+            upd.executeUpdate();
         } catch (SQLException e) {
-            System.out.println("promoteFromWaitingList (delete) error: " + e.getMessage());
+            System.out.println("promoteFromWaitingList (notify update) error: " + e.getMessage());
         }
 
         // resolve the park name for the notification
@@ -784,9 +827,19 @@ public class DBController {
 
         // server simulation log line
         gui.ServerPortFrameController.logSimulation(String.format(
-            "🎟️ Waiting-list promotion → Order #%d confirmed for visitor %s at %s on %s %s%s",
+            "🎟️ Waiting-list promotion → Order #%d held (pending confirm) for visitor %s at %s on %s %s%s",
             newOrderId, visitorId, parkName, dateStr, timeStr,
             (email.isEmpty() ? " (no email on file)" : " — notified " + email)));
+
+        // simulation popup on the server console
+        WaitlistTimerService.showSimulationPopup(
+            email.isEmpty() ? visitorId : email,
+            "Simulation - A spot opened up for " + parkName + " on " + dateStr + " at " + timeStr +
+            ". Please confirm within 1 hour. Notification sent to " +
+            (email.isEmpty() ? "(no email on file)" : email));
+
+        // start the exact 1-hour confirmation countdown for this entry
+        WaitlistTimerService.getInstance().schedulePromotionTimeout(wlId);
 
         // real email notification (no-op if no address on file)
         if (!email.isEmpty()) {
@@ -807,6 +860,169 @@ public class DBController {
         }
 
         return email.isEmpty() ? null : email;
+    }
+
+    // ── Waiting-list 1-hour confirmation window ──────────────────────────────
+
+    /**
+     * lightweight holder for a promoted (NOTIFIED) waiting-list entry, used by
+     * {@link WaitlistTimerService} to enforce the 1-hour confirmation window.
+     */
+    public static class PromotedEntry {
+        public final int    wlId;
+        public final int    orderId;
+        public final String visitorId;
+        public final int    parkId;
+        public final String parkName;
+        public final Date   visitDate;
+        public final Time   visitTime;
+        public final String visitDateStr;
+        public final String visitTimeStr;
+        public final String email;
+
+        PromotedEntry(int wlId, int orderId, String visitorId, int parkId, String parkName,
+                      Date visitDate, Time visitTime, String visitDateStr, String visitTimeStr,
+                      String email) {
+            this.wlId = wlId; this.orderId = orderId; this.visitorId = visitorId;
+            this.parkId = parkId; this.parkName = parkName;
+            this.visitDate = visitDate; this.visitTime = visitTime;
+            this.visitDateStr = visitDateStr; this.visitTimeStr = visitTimeStr;
+            this.email = (email == null) ? "" : email;
+        }
+    }
+
+    /** column list shared by the NOTIFIED-entry lookups. */
+    private static final String NOTIFIED_SELECT =
+        "SELECT wl.id, wl.order_id, wl.visitor_id, wl.park_id, p.name AS park_name, " +
+        "       wl.visit_date, wl.visit_time " +
+        "FROM waiting_list wl JOIN parks p ON p.id = wl.park_id " +
+        "WHERE wl.status = 'NOTIFIED' ";
+
+    /** maps a NOTIFIED waiting_list row (joined with parks) to a {@link PromotedEntry}. */
+    private PromotedEntry readPromotedEntry(ResultSet rs) throws SQLException {
+        Date date = rs.getDate("visit_date");
+        Time time = rs.getTime("visit_time");
+        return new PromotedEntry(
+            rs.getInt("id"), rs.getInt("order_id"), rs.getString("visitor_id"),
+            rs.getInt("park_id"), rs.getString("park_name"), date, time,
+            new java.text.SimpleDateFormat("yyyy-MM-dd").format(date),
+            new java.text.SimpleDateFormat("HH:mm").format(time),
+            getVisitorEmail(rs.getString("visitor_id")));
+    }
+
+    /**
+     * returns every promoted (NOTIFIED) entry whose 1-hour confirmation window has elapsed.
+     * the scheduled sweep in {@link WaitlistTimerService} calls this every few minutes.
+     *
+     * @return expired NOTIFIED entries; empty if none or on DB error
+     */
+    public List<PromotedEntry> getExpiredNotifiedEntries() {
+        List<PromotedEntry> list = new ArrayList<>();
+        if (connection == null) return list;
+        try (PreparedStatement st = connection.prepareStatement(
+                NOTIFIED_SELECT +
+                "AND wl.confirmation_deadline IS NOT NULL AND wl.confirmation_deadline < NOW()")) {
+            ResultSet rs = st.executeQuery();
+            while (rs.next()) list.add(readPromotedEntry(rs));
+        } catch (SQLException e) {
+            System.out.println("getExpiredNotifiedEntries error: " + e.getMessage());
+        }
+        return list;
+    }
+
+    /**
+     * returns the NOTIFIED entry with the given waiting_list id, or {@code null} if it is no
+     * longer in the NOTIFIED state (visitor confirmed, or it was already released).
+     *
+     * @param wlId the waiting_list row id
+     * @return the entry, or {@code null}
+     */
+    public PromotedEntry getNotifiedEntryById(int wlId) {
+        if (connection == null) return null;
+        try (PreparedStatement st = connection.prepareStatement(NOTIFIED_SELECT + "AND wl.id = ?")) {
+            st.setInt(1, wlId);
+            ResultSet rs = st.executeQuery();
+            if (rs.next()) return readPromotedEntry(rs);
+        } catch (SQLException e) {
+            System.out.println("getNotifiedEntryById error: " + e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * releases an expired promotion: cancels the held PENDING order, removes the waiting-list
+     * row, then offers the freed slot to the next visitor in line (which starts their own
+     * 1-hour window). idempotent — if the visitor confirmed first (order no longer pending),
+     * nothing is cancelled and {@code false} is returned.
+     *
+     * @param e the expired promoted entry
+     * @return {@code true} if the slot was released and re-offered; {@code false} if already handled
+     */
+    public synchronized boolean expireWaitlistEntry(PromotedEntry e) {
+        if (connection == null) return false;
+        // only cancel while still pending — guards against a race with a last-second confirmation
+        try (PreparedStatement st = connection.prepareStatement(
+                "UPDATE orders SET status = 'cancelled' WHERE id = ? AND status = 'pending'")) {
+            st.setInt(1, e.orderId);
+            if (st.executeUpdate() == 0) return false;   // visitor confirmed first — leave it alone
+        } catch (SQLException ex) {
+            System.out.println("expireWaitlistEntry (cancel) error: " + ex.getMessage());
+            return false;
+        }
+        // drop the expired entry from the waiting list
+        try (PreparedStatement del = connection.prepareStatement(
+                "DELETE FROM waiting_list WHERE id = ?")) {
+            del.setInt(1, e.wlId);
+            del.executeUpdate();
+        } catch (SQLException ex) {
+            System.out.println("expireWaitlistEntry (delete) error: " + ex.getMessage());
+        }
+        // offer the freed slot to the next waiting visitor (no-op if the queue is empty)
+        promoteFromWaitingList(e.parkId, e.visitDate, e.visitTime);
+        return true;
+    }
+
+    /**
+     * confirms a promoted visitor's held order, if still inside the 1-hour window.
+     * on success the held PENDING order becomes CONFIRMED and the waiting-list row is removed.
+     *
+     * @param orderId the held order the visitor is confirming
+     * @return {@code "CONFIRMED"} on success, {@code "EXPIRED"} if the window has passed,
+     *         or {@code "NOT_PROMOTION"} if this order is not a waiting-list promotion
+     */
+    public synchronized String confirmPromotedVisit(int orderId) {
+        if (connection == null) return "NOT_PROMOTION";
+        int     wlId    = -1;
+        boolean expired = false;
+        try (PreparedStatement st = connection.prepareStatement(
+                "SELECT id, (confirmation_deadline IS NOT NULL AND confirmation_deadline < NOW()) AS expired " +
+                "FROM waiting_list WHERE order_id = ? AND status = 'NOTIFIED'")) {
+            st.setInt(1, orderId);
+            ResultSet rs = st.executeQuery();
+            if (!rs.next()) return "NOT_PROMOTION";
+            wlId    = rs.getInt("id");
+            expired = rs.getBoolean("expired");
+        } catch (SQLException e) {
+            System.out.println("confirmPromotedVisit (lookup) error: " + e.getMessage());
+            return "NOT_PROMOTION";
+        }
+        if (expired) return "EXPIRED";
+
+        try (PreparedStatement up = connection.prepareStatement(
+                "UPDATE orders SET status = 'confirmed' WHERE id = ? AND status = 'pending'")) {
+            up.setInt(1, orderId);
+            up.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println("confirmPromotedVisit (confirm) error: " + e.getMessage());
+        }
+        try (PreparedStatement del = connection.prepareStatement(
+                "DELETE FROM waiting_list WHERE id = ?")) {
+            del.setInt(1, wlId);
+            del.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println("confirmPromotedVisit (cleanup) error: " + e.getMessage());
+        }
+        return "CONFIRMED";
     }
 
     /**
@@ -1874,7 +2090,7 @@ public class DBController {
                 "       'WAITING'            AS status, " +
                 "       DATE_FORMAT(wl.created_at, '%Y-%m-%d %H:%i') AS created_at " +
                 "FROM waiting_list wl JOIN parks p ON p.id = wl.park_id " +
-                "WHERE wl.park_id = ? " +
+                "WHERE wl.park_id = ? AND COALESCE(wl.status, 'WAITING') = 'WAITING' " +
                 "ORDER BY wl.visit_date, wl.visit_time, wl.created_at");
             st.setInt(1, parkId);
             ResultSet rs = st.executeQuery();

@@ -176,9 +176,9 @@ public class EntryControlController {
         lblCheckInMessage.setText("");
 
         String visitorId = txtVisitorId.getText().trim();
-        if (visitorId.isEmpty()) {
-            setCheckInError("Please enter a Visitor ID."); return;
-        }
+        if (visitorId.isEmpty())             { setCheckInError("Please enter a Visitor ID."); return; }
+        if (!visitorId.matches("\\d+"))      { setCheckInError("ID must contain numbers only."); return; }
+        if (visitorId.length() != 9)         { setCheckInError("ID must be exactly 9 digits."); return; }
         if (selectedPark == null) {
             setCheckInError("No park assigned to your account."); return;
         }
@@ -255,7 +255,9 @@ public class EntryControlController {
         lblCheckInMessage.setText("");
 
         String visitorId = txtVisitorId.getText().trim();
-        if (visitorId.isEmpty()) { setCheckInError("Please enter a Visitor ID."); return; }
+        if (visitorId.isEmpty())             { setCheckInError("Please enter a Visitor ID."); return; }
+        if (!visitorId.matches("\\d+"))      { setCheckInError("ID must contain numbers only."); return; }
+        if (visitorId.length() != 9)         { setCheckInError("ID must be exactly 9 digits."); return; }
         if (selectedPark == null) { setCheckInError("No park assigned to your account."); return; }
 
         String orderType = cboOrderType.getValue();
@@ -333,7 +335,9 @@ public class EntryControlController {
         lblExitMessage.setText("");
 
         String visitorId = txtExitVisitorId.getText().trim();
-        if (visitorId.isEmpty()) { setExitMessage("Please enter a Visitor ID.", false); return; }
+        if (visitorId.isEmpty())        { setExitMessage("Please enter a Visitor ID.", false); return; }
+        if (!visitorId.matches("\\d+")) { setExitMessage("ID must contain numbers only.", false); return; }
+        if (visitorId.length() != 9)    { setExitMessage("ID must be exactly 9 digits.", false); return; }
 
         Park exitPark = cboExitPark.getValue();
         if (exitPark == null) { setExitMessage("Please select a park.", false); return; }
@@ -393,6 +397,7 @@ public class EntryControlController {
         Scene scene = new Scene(root);
         ThemeManager.register(scene);
         stage.setScene(scene);
+        stage.centerOnScreen();
         stage.show();
     }
 

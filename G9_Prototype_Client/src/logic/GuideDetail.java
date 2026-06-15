@@ -46,8 +46,8 @@ public class GuideDetail implements Serializable {
     /** @return the guide's last name */
     public String getLastName()    { return lastName; }
 
-    /** @return the guide's full name, formatted as "First Last" */
-    public String getFullName()    { return firstName + " " + lastName; }
+    /** @return the guide's full name, formatted as "First Last" with each word capitalized */
+    public String getFullName()    { return UserSession.capitalize(firstName) + " " + UserSession.capitalize(lastName); }
 
     /** @return the guide's contact email, or an empty string if none was provided */
     public String getEmail()       { return email; }

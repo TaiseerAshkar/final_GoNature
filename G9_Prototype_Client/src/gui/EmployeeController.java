@@ -393,6 +393,7 @@ public class EmployeeController {
         Scene scene = new Scene(root);
         ThemeManager.register(scene);   // apply the current light/dark theme to this screen
         primaryStage.setScene(scene);
+        primaryStage.centerOnScreen();
         primaryStage.show();
         Animations.introduce(root);     // subtle fade-and-rise on load
     }

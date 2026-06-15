@@ -5,6 +5,7 @@ import client.ClientUI;
 import logic.Message;
 import logic.RegisterRequest;
 import logic.RegisterResult;
+import logic.UserSession;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -36,10 +37,23 @@ public class RegisterController {
     @FXML private Label     lblError;
     @FXML private Button    btnTheme;
 
-    /** wires the header dark-mode toggle so the theme can be switched from this screen too. */
+    /** wires the header dark-mode toggle and phone real-time validation. */
     @FXML
     public void initialize() {
         ThemeManager.installToggle(btnTheme);
+
+        // Real-time phone validation: clear error once the field is valid, flag immediately if non-digit typed.
+        txtPhone.textProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal.isEmpty()) return;
+            if (!newVal.matches("\\d*")) {
+                lblError.setText("Phone number must contain numbers only.");
+            } else if (newVal.length() > 10) {
+                // Strip the extra character so the field stays at 10 digits max.
+                txtPhone.setText(oldVal);
+            } else {
+                lblError.setText("");
+            }
+        });
     }
 
     /**
@@ -67,14 +81,17 @@ public class RegisterController {
         // ── Personal information validation ──────────────────────────────────
         String idNumber = txtIdNumber.getText().trim();
         if (idNumber.isEmpty())           { setError("ID number is required.");         return; }
-        if (!idNumber.matches("\\d{5,15}")) { setError("ID number must be 5–15 digits."); return; }
+        if (!idNumber.matches("\\d+"))  { setError("ID number must contain numbers only."); return; }
+        if (idNumber.length() != 9)     { setError("ID number must be exactly 9 digits."); return; }
 
-        String firstName = txtFirstName.getText().trim();
+        String firstName = UserSession.capitalize(txtFirstName.getText().trim());
         if (firstName.isEmpty()) { setError("First name is required."); return; }
+        if (!firstName.matches("[\\p{L} '-]+")) { setError("Name must contain letters only."); return; }
         if (firstName.length() > 50) { setError("First name must be 50 characters or fewer."); return; }
 
-        String lastName = txtLastName.getText().trim();
+        String lastName = UserSession.capitalize(txtLastName.getText().trim());
         if (lastName.isEmpty()) { setError("Last name is required."); return; }
+        if (!lastName.matches("[\\p{L} '-]+")) { setError("Name must contain letters only."); return; }
         if (lastName.length() > 50) { setError("Last name must be 50 characters or fewer."); return; }
 
         String email = txtEmail.getText().trim();
@@ -84,8 +101,9 @@ public class RegisterController {
         }
 
         String phone = txtPhone.getText().trim();
-        if (phone.isEmpty())             { setError("Phone number is required.");         return; }
-        if (!phone.matches("\\d{9,15}")) { setError("Phone must be 9–15 digits only.");   return; }
+        if (phone.isEmpty())           { setError("Phone number is required.");                      return; }
+        if (!phone.matches("\\d+"))    { setError("Phone number must contain numbers only.");        return; }
+        if (phone.length() != 10)      { setError("Phone number must be exactly 10 digits.");        return; }
 
         // ── Subscriber validation ────────────────────────────────────────────
         boolean subscriber = chkSubscriber.isSelected();
@@ -207,6 +225,7 @@ public class RegisterController {
         Scene scene = new Scene(root);
         ThemeManager.register(scene);
         stage.setScene(scene);
+        stage.centerOnScreen();
         stage.show();
     }
 }

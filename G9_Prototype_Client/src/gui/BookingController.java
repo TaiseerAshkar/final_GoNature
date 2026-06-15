@@ -160,7 +160,9 @@ public class BookingController {
 
         final String parkIdStr = String.valueOf(park.getId());
         final String dateStr   = date.format(DATE_FMT);
-        final int    capacity  = park.getCapacity();
+        // Pre-booking availability is measured against max_orders (the booking cap that
+        // leaves headroom for gate walk-ins), not the physical capacity.
+        final int    capacity  = park.getMaxOrders();
 
         lblAvailability.getStyleClass().setAll("lbl-loading");
         lblAvailability.setStyle("");
@@ -500,6 +502,7 @@ public class BookingController {
         Scene scene = new Scene(root);
         ThemeManager.register(scene);
         stage.setScene(scene);
+        stage.centerOnScreen();
         stage.show();
     }
 }

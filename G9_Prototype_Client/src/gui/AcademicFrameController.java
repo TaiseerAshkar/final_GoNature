@@ -446,6 +446,7 @@ public class AcademicFrameController {
         stage.setScene(scene);
 
         refreshGuideTable(table, statusLbl);
+        stage.centerOnScreen();
         stage.show();
     }
 
@@ -604,6 +605,7 @@ public class AcademicFrameController {
         stage.setScene(scene);
 
         refreshRequestsTable(table, statusLbl);
+        stage.centerOnScreen();
         stage.show();
     }
 
@@ -743,6 +745,7 @@ public class AcademicFrameController {
         stage.setScene(scene);
 
         refreshPromotionsTable(table, statusLbl);
+        stage.centerOnScreen();
         stage.show();
     }
 
@@ -871,6 +874,7 @@ public class AcademicFrameController {
         ThemeManager.register(scene);   // apply the current light/dark theme to this screen
         primaryStage.setTitle("GoNature — Management Dashboard");
         primaryStage.setScene(scene);
+        primaryStage.centerOnScreen();
         primaryStage.show();
         Animations.introduce(root);     // subtle fade-and-rise on load
     }

@@ -327,6 +327,20 @@ public class EchoServer extends AbstractServer {
                     break;
                 }
 
+                case "GET_PENDING_WAITLIST_ORDERS": {
+                    String wlVisitorId = (incoming.getData() instanceof String)
+                        ? (String) incoming.getData() : null;
+                    if (wlVisitorId == null || wlVisitorId.trim().isEmpty()) {
+                        client.sendToClient(new Message("PENDING_WAITLIST_ORDERS",
+                            new java.util.ArrayList<>()));
+                        break;
+                    }
+                    List<OrderDetail> pendingPromos = DBController.getInstance()
+                        .getPendingWaitlistOrders(wlVisitorId.trim());
+                    client.sendToClient(new Message("PENDING_WAITLIST_ORDERS", pendingPromos));
+                    break;
+                }
+
                 case "CANCEL_ORDER": {
                     if (!(incoming.getData() instanceof Integer)) {
                         client.sendToClient(new Message("CANCEL_FAIL", "We couldn't identify that order. Please refresh and try again."));
@@ -692,6 +706,19 @@ public class EchoServer extends AbstractServer {
                         client.sendToClient(new Message("CONFIRM_VISIT_FAIL", "We couldn't identify that order. Please refresh and try again."));
                         break;
                     }
+                    // Waiting-list promotion path: a held order awaiting confirmation within 1 hour.
+                    String promoStatus = DBController.getInstance().confirmPromotedVisit(orderId);
+                    if ("EXPIRED".equals(promoStatus)) {
+                        client.sendToClient(new Message("CONFIRM_VISIT_FAIL",
+                            "Sorry, your 1-hour window has expired. Your spot has been given to the next person."));
+                        break;
+                    }
+                    if ("CONFIRMED".equals(promoStatus)) {
+                        ReminderService.getInstance().confirmVisit(orderId);
+                        client.sendToClient(new Message("CONFIRM_VISIT_OK", orderId));
+                        break;
+                    }
+                    // Not a promotion — ordinary day-before reminder confirmation.
                     ReminderService.getInstance().confirmVisit(orderId);
                     // also flip the order's status from pending -> confirmed in the DB so it
                     // shows as CONFIRMED in the visitor's My Orders (no-op if already confirmed)
@@ -983,6 +1010,7 @@ public class EchoServer extends AbstractServer {
         DBController db = DBController.getInstance();
         db.connect();
         ReminderService.getInstance().runStartupCheck(db);
+        WaitlistTimerService.getInstance().start(db);
     }
 
     /** logs the shutdown event to stdout. */

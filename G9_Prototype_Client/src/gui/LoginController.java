@@ -81,7 +81,7 @@ public class LoginController {
         } else {
             String id = txtIdentifier != null ? txtIdentifier.getText().trim() : "";
             if (id.isEmpty()) {
-                setError("Please enter your ID number to sign in.");
+                setError("Please enter your ID number.");
                 return;
             }
             loginAsVisitor(id);
@@ -125,18 +125,19 @@ public class LoginController {
      * @param id the raw identifier entered by the user
      */
     private void loginAsVisitor(String id) {
-        if (!id.matches("\\d{5,15}")) {
-            setError("If you're a staff member, please enter your password too. "
-                   + "Visitors should enter a 5–15 digit ID number.");
+        if (!id.matches("\\d+")) {
+            setError("ID must contain numbers only.");
+            return;
+        }
+        if (id.length() != 9) {
+            setError("ID must be exactly 9 digits.");
             return;
         }
         ChatClient.lastLoginResult = null;
         ChatClient.lastLoginError  = null;
         ClientUI.chat.accept(new Message("LOGIN_VISITOR", id));
         if (ChatClient.lastLoginResult != null) onLoginSuccess();
-        else setError(ChatClient.lastLoginError != null
-                ? ChatClient.lastLoginError
-                : "That ID number isn't registered. Please check it, or create an account to get started.");
+        else setError("ID not found. Please register first.");
     }
 
     /**
@@ -149,10 +150,16 @@ public class LoginController {
         ChatClient.lastLoginResult = null;
         ChatClient.lastLoginError  = null;
         ClientUI.chat.accept(new Message("LOGIN_USER", new String[]{username, password}));
-        if (ChatClient.lastLoginResult != null) onLoginSuccess();
-        else setError(ChatClient.lastLoginError != null
-                ? ChatClient.lastLoginError
-                : "Incorrect password");
+        if (ChatClient.lastLoginResult != null) {
+            onLoginSuccess();
+        } else {
+            String reason = ChatClient.lastLoginError;
+            if (reason != null && reason.contains("ID not registered")) {
+                setError("Username not found.");
+            } else {
+                setError("Incorrect password. Please try again.");
+            }
+        }
     }
 
     /**
@@ -223,7 +230,7 @@ public class LoginController {
         showHelp("GoNature — Help",
             "Welcome to GoNature — National Park Reservation System\n\n" +
             "VISITOR / GUIDE LOGIN\n" +
-            "  • Enter your government ID number (5–15 digits).\n" +
+            "  • Enter your 9-digit government ID number.\n" +
             "  • Leave the password field blank.\n" +
             "  • Guides are recognised automatically by their registered ID.\n\n" +
             "STAFF LOGIN\n" +
@@ -257,6 +264,7 @@ public class LoginController {
         Scene scene = new Scene(root);
         ThemeManager.register(scene);   // keep the chosen light/dark theme across logout
         primaryStage.setScene(scene);
+        primaryStage.centerOnScreen();
         primaryStage.show();
         Animations.introduce(root);     // subtle fade-and-rise on load
     }

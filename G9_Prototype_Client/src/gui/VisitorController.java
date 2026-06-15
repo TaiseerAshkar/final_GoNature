@@ -33,6 +33,7 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.Separator;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.Rectangle;
@@ -155,6 +156,7 @@ public class VisitorController {
         startSessionTimer();
 
         checkUpcomingReminders();
+        checkWaitlistPromotion();
         updateUpcomingCount();
         refreshNotifications();
     }
@@ -173,7 +175,7 @@ public class VisitorController {
             Icons.pine(20, Icons.CREAM), "tile-chip-pine", this::handleBookVisit);
         book.getStyleClass().add("action-tile-green");
 
-        Button view = tile("View My Reservations", "See and manage bookings",
+        Button view = tile("My Reservations", "See and manage bookings",
             Icons.clipboard(20, "ikon-teal"), "tile-chip-teal", this::handleViewOrders);
         view.getStyleClass().add("action-tile-green");
 
@@ -219,6 +221,10 @@ public class VisitorController {
     private Button assembleTile(Node icon, String chipClass, Label title, Label desc) {
         StackPane chip = new StackPane(icon);
         chip.getStyleClass().addAll("tile-chip", chipClass);
+
+        // keep titles at their full preferred width so the tile label never ellipsizes
+        // (e.g. "View My Reservati…") when the grid cell is tight.
+        title.setMinWidth(Region.USE_PREF_SIZE);
 
         VBox text = new VBox(1, title, desc);
         text.setAlignment(Pos.CENTER_LEFT);
@@ -331,6 +337,7 @@ public class VisitorController {
     @FXML
     public void handleRefreshNotifications(ActionEvent event) {
         checkUpcomingReminders();
+        checkWaitlistPromotion();
         updateUpcomingCount();
         refreshNotifications();
     }
@@ -355,6 +362,50 @@ public class VisitorController {
 
         if (!empty) {
             lstNotifications.getItems().setAll(all);
+        }
+    }
+
+    /**
+     * fetches pending waitlist-promotion orders for this visitor and, if any exist,
+     * adds a prominent notification and updates the Confirm tile so the visitor knows
+     * they have a spot waiting. safe to call multiple times (deduplicates by order ID).
+     */
+    private void checkWaitlistPromotion() {
+        UserSession s = UserSession.getInstance();
+        if (s == null || s.getUserId() == null) return;
+
+        ChatClient.lastPendingWaitlistOrders = null;
+        ClientUI.chat.accept(new Message("GET_PENDING_WAITLIST_ORDERS", s.getUserId()));
+        List<OrderDetail> pending = ChatClient.lastPendingWaitlistOrders;
+        if (pending == null || pending.isEmpty()) return;
+
+        for (OrderDetail o : pending) {
+            // deduplicate — don't add the same notification twice per session
+            String marker = "Order #" + o.getId();
+            boolean alreadyAdded = NotificationCenter.getAll().stream()
+                .anyMatch(n -> n.contains(marker) && n.contains("waitlist spot"));
+            if (!alreadyAdded) {
+                String deadline = o.getConfirmationDeadline() != null
+                    ? o.getConfirmationDeadline() : "soon";
+                NotificationCenter.add("🎉",
+                    "A spot opened up for you! You have been moved from the waitlist for "
+                    + o.getParkName() + " on " + o.getVisitDate()
+                    + " at " + o.getVisitTime()
+                    + " (" + marker + "). Please confirm your waitlist spot before "
+                    + deadline + ". Click 'Confirm My Visit' to lock it in.");
+            }
+        }
+
+        // update the Confirm tile to show waitlist urgency
+        if (btnConfirmVisit != null) {
+            btnConfirmVisit.setDisable(false);
+            if (lblConfirmTitle != null) lblConfirmTitle.setText("Confirm Waitlist Spot!");
+            if (lblConfirmDesc != null) {
+                String deadline = pending.get(0).getConfirmationDeadline();
+                lblConfirmDesc.setText(deadline != null
+                    ? "Spot waiting — confirm by " + deadline
+                    : "A waitlist spot is waiting for you!");
+            }
         }
     }
 
@@ -444,7 +495,69 @@ public class VisitorController {
         UserSession s = UserSession.getInstance();
         if (s == null || s.getUserId() == null) return;
 
-        // fetch the visitor's orders
+        // ── Waitlist-promotion path (takes priority) ──────────────────────────
+        // check for any pending orders that came from a waitlist promotion and
+        // still have a live 1-hour confirmation window.
+        ChatClient.lastPendingWaitlistOrders = null;
+        ClientUI.chat.accept(new Message("GET_PENDING_WAITLIST_ORDERS", s.getUserId()));
+        List<OrderDetail> waitlistPending = ChatClient.lastPendingWaitlistOrders;
+
+        if (waitlistPending != null && !waitlistPending.isEmpty()) {
+            List<OrderDetail> toConfirm = new ArrayList<>();
+            if (waitlistPending.size() == 1) {
+                toConfirm.add(waitlistPending.get(0));
+            } else {
+                List<String> labels = waitlistPending.stream()
+                    .map(o -> "Order #" + o.getId()
+                        + " — " + o.getParkName()
+                        + " on " + o.getVisitDate()
+                        + " at " + o.getVisitTime()
+                        + " (confirm by " + o.getConfirmationDeadline() + ")")
+                    .collect(Collectors.toList());
+                ChoiceDialog<String> dlg = new ChoiceDialog<>(labels.get(0), labels);
+                dlg.setTitle("Confirm Waitlist Spot");
+                dlg.setHeaderText("You have " + waitlistPending.size()
+                    + " waitlist spots waiting for confirmation.");
+                dlg.setContentText("Select the spot to confirm:");
+                ThemeManager.styleDialog(dlg);
+                dlg.showAndWait().ifPresent(chosen -> {
+                    int idx = labels.indexOf(chosen);
+                    if (idx >= 0) toConfirm.add(waitlistPending.get(idx));
+                });
+            }
+
+            boolean anyConfirmed = false;
+            for (OrderDetail order : toConfirm) {
+                ChatClient.lastConfirmVisitOk    = null;
+                ChatClient.lastConfirmVisitError = null;
+                ClientUI.chat.accept(new Message("CONFIRM_VISIT", order.getId()));
+
+                if (Boolean.TRUE.equals(ChatClient.lastConfirmVisitOk)) {
+                    anyConfirmed = true;
+                    NotificationCenter.add("✅",
+                        "Your visit is confirmed! Your waitlist spot for "
+                        + order.getParkName() + " on " + order.getVisitDate()
+                        + " at " + order.getVisitTime()
+                        + " (Order #" + order.getId() + ") is now locked in. See you there!");
+                } else {
+                    String err = ChatClient.lastConfirmVisitError != null
+                        ? ChatClient.lastConfirmVisitError
+                        : "Could not confirm Order #" + order.getId()
+                          + ". Your window may have expired — please check My Reservations.";
+                    NotificationCenter.add("⚠️", err);
+                }
+            }
+            if (anyConfirmed && btnConfirmVisit != null) {
+                btnConfirmVisit.setDisable(true);
+                if (lblConfirmTitle != null) lblConfirmTitle.setText("Visit Confirmed");
+                if (lblConfirmDesc != null)  lblConfirmDesc.setText("Your booking is locked in");
+            }
+            refreshNotifications();
+            return;
+        }
+
+        // ── Day-before reminder path ──────────────────────────────────────────
+        // no pending waitlist promotions — fall through to the ordinary reminder flow.
         ChatClient.lastMyOrders = null;
         ClientUI.chat.accept(new Message("GET_MY_ORDERS", s.getUserId()));
         List<OrderDetail> orders = ChatClient.lastMyOrders;
@@ -473,7 +586,6 @@ public class VisitorController {
         if (eligible.size() == 1) {
             toConfirm.add(eligible.get(0));
         } else {
-            // build human-readable labels for the choice dialog
             List<String> labels = eligible.stream()
                 .map(o -> "Order #" + o.getId()
                     + " — " + o.getParkName()
@@ -725,6 +837,7 @@ public class VisitorController {
         Scene scene = new Scene(root);
         ThemeManager.register(scene);   // apply the current light/dark theme to this screen
         primaryStage.setScene(scene);
+        primaryStage.centerOnScreen();
         primaryStage.show();
         Animations.introduce(root);     // subtle fade-and-rise on load
     }

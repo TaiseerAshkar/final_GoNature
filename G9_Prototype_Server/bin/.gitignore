@@ -1,3 +1,5 @@
-/gui/
 /Server/
+/common/
+/db.properties
+/gui/
 /logic/

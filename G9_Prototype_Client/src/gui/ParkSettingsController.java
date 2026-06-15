@@ -166,6 +166,7 @@ public class ParkSettingsController {
         Scene scene = new Scene(root);
         ThemeManager.register(scene);
         stage.setScene(scene);
+        stage.centerOnScreen();
         stage.show();
     }
 }

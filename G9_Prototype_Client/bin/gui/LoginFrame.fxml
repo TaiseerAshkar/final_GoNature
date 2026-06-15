@@ -14,8 +14,8 @@
       fx:controller="gui.LoginController"
       styleClass="screen-bg"
       alignment="CENTER" spacing="0"
-      prefWidth="600" prefHeight="820"
-      minWidth="500" minHeight="780">
+      prefWidth="640" prefHeight="820"
+      minWidth="560" minHeight="780">
 
     <stylesheets>
         <URL value="@gonature.css"/>
@@ -97,7 +97,7 @@
     </StackPane>
 
     <!-- ── Login card ─────────────────────────────────────────── -->
-    <VBox spacing="0" styleClass="login-card" maxWidth="420">
+    <VBox spacing="0" styleClass="login-card" maxWidth="480" minWidth="440">
 
         <!-- Card heading -->
         <VBox spacing="3" style="-fx-padding: 0 0 16 0;">
@@ -118,8 +118,8 @@
                     <Label fx:id="lblIdentifierLabel" text="ID Number" styleClass="field-label"/>
                     <TextField fx:id="txtIdentifier" styleClass="text-field"
                                promptText="Enter your government ID number"/>
-                    <Label text="Enter your 5–15 digit ID and leave the password blank."
-                           styleClass="lbl-hint" wrapText="true"/>
+                    <Label text="Enter your 9-digit ID number."
+                           styleClass="lbl-hint" wrapText="true" maxWidth="Infinity"/>
                 </VBox>
             </Tab>
 

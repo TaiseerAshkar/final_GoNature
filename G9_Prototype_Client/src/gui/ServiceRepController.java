@@ -257,8 +257,8 @@ public class ServiceRepController {
             if (!result.isPresent() || result.get() != submitBtn) return; // cancelled
 
             String id    = fldId.getText().trim();
-            String first = fldFirstName.getText().trim();
-            String last  = fldLastName.getText().trim();
+            String first = UserSession.capitalize(fldFirstName.getText().trim());
+            String last  = UserSession.capitalize(fldLastName.getText().trim());
             String email = fldEmail.getText().trim();
             String phone = fldPhone.getText().trim();
 
@@ -414,6 +414,7 @@ public class ServiceRepController {
         Scene scene = new Scene(root);
         ThemeManager.register(scene);   // apply the current light/dark theme to this screen
         primaryStage.setScene(scene);
+        primaryStage.centerOnScreen();
         primaryStage.show();
         Animations.introduce(root);     // subtle fade-and-rise on load
     }

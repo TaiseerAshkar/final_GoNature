@@ -22,6 +22,8 @@ public class OrderDetail implements Serializable {
     private final String status;     // "PENDING" | "CONFIRMED" | "CANCELLED" | "COMPLETED" | "WAITING" (uppercase)
     private final String email;
     private final String createdAt;  // "yyyy-MM-dd HH:mm"
+    /** non-null only for PENDING waitlist-promotion orders; the deadline to confirm by. */
+    private final String confirmationDeadline; // "yyyy-MM-dd HH:mm" or null
 
     /**
      * @param id          the database order ID
@@ -39,16 +41,31 @@ public class OrderDetail implements Serializable {
                        String visitDate, String visitTime,
                        int numVisitors, String orderType, String status,
                        String email, String createdAt) {
-        this.id          = id;
-        this.parkName    = parkName;
-        this.visitorId   = visitorId;
-        this.visitDate   = visitDate;
-        this.visitTime   = visitTime;
-        this.numVisitors = numVisitors;
-        this.orderType   = orderType;
-        this.status      = status;
-        this.email       = email;
-        this.createdAt   = createdAt;
+        this(id, parkName, visitorId, visitDate, visitTime,
+             numVisitors, orderType, status, email, createdAt, null);
+    }
+
+    /**
+     * extended constructor for waitlist-promotion orders that carry a confirmation deadline.
+     *
+     * @param confirmationDeadline the deadline by which the visitor must confirm, in
+     *                             {@code yyyy-MM-dd HH:mm} format, or {@code null}
+     */
+    public OrderDetail(int id, String parkName, String visitorId,
+                       String visitDate, String visitTime,
+                       int numVisitors, String orderType, String status,
+                       String email, String createdAt, String confirmationDeadline) {
+        this.id                   = id;
+        this.parkName             = parkName;
+        this.visitorId            = visitorId;
+        this.visitDate            = visitDate;
+        this.visitTime            = visitTime;
+        this.numVisitors          = numVisitors;
+        this.orderType            = orderType;
+        this.status               = status;
+        this.email                = email;
+        this.createdAt            = createdAt;
+        this.confirmationDeadline = confirmationDeadline;
     }
 
     /** @return the database order ID */
@@ -80,4 +97,7 @@ public class OrderDetail implements Serializable {
 
     /** @return the booking creation timestamp in {@code yyyy-MM-dd HH:mm} format */
     public String getCreatedAt()   { return createdAt; }
+
+    /** @return the confirmation deadline for a waitlist-promotion order, or {@code null} */
+    public String getConfirmationDeadline() { return confirmationDeadline; }
 }

@@ -39,7 +39,7 @@
 
                     <Label text="ID Number *" styleClass="field-label"
                            GridPane.columnIndex="0" GridPane.rowIndex="0"/>
-                    <TextField fx:id="txtIdNumber" promptText="5–15 digit government ID"
+                    <TextField fx:id="txtIdNumber" promptText="9-digit government ID"
                                style="-fx-background-radius:8; -fx-border-radius:8;
                                       -fx-border-color:-park-border; -fx-border-width:1.5;
                                       -fx-padding:8 10; -fx-font-size:13px;"
@@ -71,7 +71,7 @@
 
                     <Label text="Phone Number *" styleClass="field-label"
                            GridPane.columnIndex="0" GridPane.rowIndex="4"/>
-                    <TextField fx:id="txtPhone" promptText="9–15 digits"
+                    <TextField fx:id="txtPhone" promptText="10 digits"
                                style="-fx-background-radius:8; -fx-border-radius:8;
                                       -fx-border-color:-park-border; -fx-border-width:1.5;
                                       -fx-padding:8 10; -fx-font-size:13px;"

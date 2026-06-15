@@ -54,9 +54,11 @@ public class ChatClient extends AbstractClient {
     public static String        lastBookingError  = null;
 
     // ── My orders and cancellations ───────────────────────────────────────────
-    public static List<OrderDetail> lastMyOrders     = null;
-    public static CancelResult      lastCancelResult = null;
-    public static String            lastCancelError  = null;
+    public static List<OrderDetail> lastMyOrders              = null;
+    /** pending orders from waitlist promotions awaiting visitor confirmation. */
+    public static List<OrderDetail> lastPendingWaitlistOrders = null;
+    public static CancelResult      lastCancelResult          = null;
+    public static String            lastCancelError           = null;
 
     // ── Entry / exit ──────────────────────────────────────────────────────────
     public static EntryResult lastEntryResult   = null;
@@ -182,6 +184,9 @@ public class ChatClient extends AbstractClient {
                 break;
             case "MY_ORDERS_LIST":
                 lastMyOrders = (List<OrderDetail>) m.getData();
+                break;
+            case "PENDING_WAITLIST_ORDERS":
+                lastPendingWaitlistOrders = (List<OrderDetail>) m.getData();
                 break;
             case "CANCEL_SUCCESS":
                 lastCancelResult = (CancelResult) m.getData();

@@ -43,12 +43,24 @@ public class UserSession {
     public static void set(LoginResult r) {
         UserSession s = getInstance();
         s.role      = r.getRole();
-        s.firstName = r.getFirstName();
-        s.lastName  = r.getLastName();
+        s.firstName = capitalize(r.getFirstName());
+        s.lastName  = capitalize(r.getLastName());
         s.email     = r.getEmail();
         s.userId    = r.getUserId();
         s.parkId    = r.getParkId();
         s.loginTime = System.currentTimeMillis();   // start the session clock now
+    }
+
+    /** Capitalizes the first letter of each word; handles null, empty, and mixed-case input. */
+    public static String capitalize(String s) {
+        if (s == null || s.isEmpty()) return s;
+        String[] words = s.trim().toLowerCase().split("\\s+");
+        StringBuilder sb = new StringBuilder();
+        for (String w : words) {
+            if (sb.length() > 0) sb.append(' ');
+            sb.append(Character.toUpperCase(w.charAt(0))).append(w.substring(1));
+        }
+        return sb.toString();
     }
 
     /** nulls out the instance so the next login gets a clean slate. */
