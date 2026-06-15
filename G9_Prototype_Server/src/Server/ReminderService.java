@@ -3,6 +3,7 @@ package Server;
 import gui.ServerPortFrameController;
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
+import javafx.scene.control.DialogPane;
 import logic.CancelResult;
 
 import java.util.List;
@@ -104,11 +105,20 @@ public class ReminderService {
             final int    count        = orders.size();
             Platform.runLater(() -> {
                 Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                alert.setTitle("📬 Live Notifications");
-                alert.setHeaderText(
-                    count + " reminder(s) sent for tomorrow's visits");
-                alert.setContentText(alertContent +
-                    "\nAuto-cancel will run in " + CONFIRM_WINDOW_HOURS + " hour(s).");
+                alert.setTitle("Simulation — Reminder Sent");
+                alert.setHeaderText(count + " day-before reminder(s) sent");
+                alert.setContentText(
+                    alertContent.trim() + "\n\n"
+                    + "Visitors have " + CONFIRM_WINDOW_HOURS
+                    + " hour(s) to confirm. Unconfirmed bookings will be auto-cancelled.");
+
+                DialogPane pane = alert.getDialogPane();
+                pane.setMinWidth(500);
+                pane.setGraphic(null);   // remove the default blue info icon
+                java.net.URL css = ReminderService.class.getResource("/gui/ServerPort.css");
+                if (css != null) pane.getStylesheets().add(css.toExternalForm());
+                pane.getStyleClass().add("help-dialog");
+
                 alert.show();
             });
 
@@ -127,7 +137,7 @@ public class ReminderService {
      */
     private void runAutoCancelCheck(DBController db, List<ReminderOrderInfo> reminded) {
         log("=== Auto-Cancel Check (" + CONFIRM_WINDOW_HOURS
-            + "-hour confirmation window expired) ===");
+            + "-hour(s) confirmation window expired) ===");
         for (ReminderOrderInfo o : reminded) {
             if (confirmedOrderIds.contains(o.id)) {
                 log("✅ Order #" + o.id + " visitor-confirmed — auto-cancel skipped.");
@@ -149,7 +159,7 @@ public class ReminderService {
                     "— GoNature Parks");
                 if (result.getNotifiedEmail() != null) {
                     log("📨 Waiting-list notification → " + result.getNotifiedEmail() +
-                        " — you have 1 hour to confirm your spot");
+                        " — you have " + CONFIRM_WINDOW_HOURS + " hour(s) to confirm your spot");
                 }
             } else {
                 log("Order #" + o.id +

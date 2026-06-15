@@ -1011,6 +1011,7 @@ public class EchoServer extends AbstractServer {
         db.connect();
         ReminderService.getInstance().runStartupCheck(db);
         WaitlistTimerService.getInstance().start(db);
+        NoShowService.getInstance().start(db);
     }
 
     /** logs the shutdown event to stdout. */

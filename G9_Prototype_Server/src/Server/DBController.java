@@ -832,11 +832,17 @@ public class DBController {
             (email.isEmpty() ? " (no email on file)" : " — notified " + email)));
 
         // simulation popup on the server console
+        String promoRecipient = email.isEmpty() ? visitorId : email;
         WaitlistTimerService.showSimulationPopup(
-            email.isEmpty() ? visitorId : email,
-            "Simulation - A spot opened up for " + parkName + " on " + dateStr + " at " + timeStr +
-            ". Please confirm within 1 hour. Notification sent to " +
-            (email.isEmpty() ? "(no email on file)" : email));
+            "Simulation — Reminder Sent",
+            "Notification sent to:  " + promoRecipient,
+            "Waitlist spot available!\n\n"
+            + "Park:      " + parkName + "\n"
+            + "Date:      " + dateStr  + "\n"
+            + "Time:      " + timeStr  + "\n"
+            + "Visitors:  " + numVisitors + "\n\n"
+            + "The visitor has 1 hour to confirm. If unconfirmed, the spot will be released\n"
+            + "to the next person in line.");
 
         // start the exact 1-hour confirmation countdown for this entry
         WaitlistTimerService.getInstance().schedulePromotionTimeout(wlId);
@@ -860,6 +866,103 @@ public class DBController {
         }
 
         return email.isEmpty() ? null : email;
+    }
+
+    // ── No-show detection ─────────────────────────────────────────────────────
+
+    /** snapshot of a single auto-detected no-show, returned by {@link #markNoShowsAndPromote}. */
+    public static class NoShowInfo {
+        public final int    orderId;
+        public final String visitorId;
+        public final String parkName;
+        public final String visitDate;  // "yyyy-MM-dd"
+        public final String visitTime;  // "HH:mm"
+
+        NoShowInfo(int orderId, String visitorId, String parkName,
+                   String visitDate, String visitTime) {
+            this.orderId   = orderId;
+            this.visitorId = visitorId;
+            this.parkName  = parkName;
+            this.visitDate = visitDate;
+            this.visitTime = visitTime;
+        }
+    }
+
+    /**
+     * finds every CONFIRMED order for today whose grace period has elapsed without a
+     * check-in, atomically marks each as {@code no_show}, and offers the freed slot to
+     * the waiting list via {@link #promoteFromWaitingList}.
+     *
+     * <p>the UPDATE uses a conditional guard ({@code status='confirmed' AND entry_time IS NULL})
+     * so a visitor who checks in between the SELECT and the UPDATE is never wrongly marked.
+     *
+     * @param graceMinutes minutes after the scheduled visit_time before an absent visitor
+     *                     is considered a no-show (typically {@code 15})
+     * @return the list of orders that were just marked; empty if none detected or on DB error
+     */
+    public List<NoShowInfo> markNoShowsAndPromote(int graceMinutes) {
+        List<NoShowInfo> marked = new ArrayList<>();
+        if (connection == null) return marked;
+        try {
+            // fetch candidates: confirmed today, no entry, past the grace window
+            PreparedStatement sel = connection.prepareStatement(
+                "SELECT o.id, o.visitor_id, o.park_id, o.visit_date, o.visit_time, " +
+                "       p.name AS park_name " +
+                "FROM orders o " +
+                "JOIN parks p ON p.id = o.park_id " +
+                "WHERE o.status    = 'confirmed' " +
+                "  AND o.visit_date = CURDATE() " +
+                "  AND o.entry_time IS NULL " +
+                "  AND ADDTIME(o.visit_time, SEC_TO_TIME(? * 60)) < NOW()");
+            sel.setInt(1, graceMinutes);
+            ResultSet rs = sel.executeQuery();
+
+            // materialise before iterating so we don't hold the cursor open during updates
+            List<Object[]> candidates = new ArrayList<>();
+            java.text.SimpleDateFormat dateFmt = new java.text.SimpleDateFormat("yyyy-MM-dd");
+            java.text.SimpleDateFormat timeFmt = new java.text.SimpleDateFormat("HH:mm");
+            while (rs.next()) {
+                candidates.add(new Object[]{
+                    rs.getInt("id"),
+                    rs.getString("visitor_id"),
+                    rs.getInt("park_id"),
+                    rs.getDate("visit_date"),
+                    rs.getTime("visit_time"),
+                    rs.getString("park_name"),
+                    dateFmt.format(rs.getDate("visit_date")),
+                    timeFmt.format(rs.getTime("visit_time"))
+                });
+            }
+            rs.close();
+            sel.close();
+
+            for (Object[] c : candidates) {
+                int    orderId   = (int)    c[0];
+                String visitorId = (String) c[1];
+                int    parkId    = (int)    c[2];
+                Date   sqlDate   = (Date)   c[3];
+                Time   sqlTime   = (Time)   c[4];
+                String parkName  = (String) c[5];
+                String dateStr   = (String) c[6];
+                String timeStr   = (String) c[7];
+
+                // guard: skip if visitor checked in between the SELECT and this UPDATE
+                PreparedStatement upd = connection.prepareStatement(
+                    "UPDATE orders SET status = 'no_show' " +
+                    "WHERE id = ? AND status = 'confirmed' AND entry_time IS NULL");
+                upd.setInt(1, orderId);
+                int rows = upd.executeUpdate();
+                upd.close();
+                if (rows == 0) continue;
+
+                marked.add(new NoShowInfo(orderId, visitorId, parkName, dateStr, timeStr));
+                // release the slot and offer it to the next person in the waiting list
+                promoteFromWaitingList(parkId, sqlDate, sqlTime);
+            }
+        } catch (SQLException e) {
+            System.out.println("markNoShowsAndPromote error: " + e.getMessage());
+        }
+        return marked;
     }
 
     // ── Waiting-list 1-hour confirmation window ──────────────────────────────

@@ -20,6 +20,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
@@ -46,6 +47,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -366,9 +368,9 @@ public class VisitorController {
     }
 
     /**
-     * fetches pending waitlist-promotion orders for this visitor and, if any exist,
-     * adds a prominent notification and updates the Confirm tile so the visitor knows
-     * they have a spot waiting. safe to call multiple times (deduplicates by order ID).
+     * fetches pending waitlist-promotion orders for this visitor. for each one shows a
+     * styled "Good News!" popup offering immediate confirmation. also adds an inbox entry
+     * and updates the Confirm tile. safe to call multiple times (deduplicates by order ID).
      */
     private void checkWaitlistPromotion() {
         UserSession s = UserSession.getInstance();
@@ -379,8 +381,9 @@ public class VisitorController {
         List<OrderDetail> pending = ChatClient.lastPendingWaitlistOrders;
         if (pending == null || pending.isEmpty()) return;
 
+        boolean anyConfirmedNow = false;
         for (OrderDetail o : pending) {
-            // deduplicate — don't add the same notification twice per session
+            // always add an inbox entry (deduplicated per order per session)
             String marker = "Order #" + o.getId();
             boolean alreadyAdded = NotificationCenter.getAll().stream()
                 .anyMatch(n -> n.contains(marker) && n.contains("waitlist spot"));
@@ -388,24 +391,84 @@ public class VisitorController {
                 String deadline = o.getConfirmationDeadline() != null
                     ? o.getConfirmationDeadline() : "soon";
                 NotificationCenter.add("🎉",
-                    "A spot opened up for you! You have been moved from the waitlist for "
+                    "A spot opened up for you! Your waitlist spot for "
                     + o.getParkName() + " on " + o.getVisitDate()
                     + " at " + o.getVisitTime()
-                    + " (" + marker + "). Please confirm your waitlist spot before "
-                    + deadline + ". Click 'Confirm My Visit' to lock it in.");
+                    + " (" + marker + ") is waiting. Please confirm before " + deadline + ".");
             }
+            // show the "Good News!" styled dialog and confirm inline if the visitor chooses
+            if (showWaitlistPromotionDialog(o)) anyConfirmedNow = true;
         }
 
-        // update the Confirm tile to show waitlist urgency
-        if (btnConfirmVisit != null) {
+        // update the Confirm tile
+        if (anyConfirmedNow && btnConfirmVisit != null) {
+            btnConfirmVisit.setDisable(true);
+            if (lblConfirmTitle != null) lblConfirmTitle.setText("Visit Confirmed");
+            if (lblConfirmDesc  != null) lblConfirmDesc.setText("Your booking is locked in");
+        } else if (btnConfirmVisit != null) {
             btnConfirmVisit.setDisable(false);
             if (lblConfirmTitle != null) lblConfirmTitle.setText("Confirm Waitlist Spot!");
-            if (lblConfirmDesc != null) {
+            if (lblConfirmDesc  != null) {
                 String deadline = pending.get(0).getConfirmationDeadline();
                 lblConfirmDesc.setText(deadline != null
                     ? "Spot waiting — confirm by " + deadline
                     : "A waitlist spot is waiting for you!");
             }
+        }
+    }
+
+    /**
+     * shows a GoNature-themed "Good News!" dialog for a single waitlist-promotion order.
+     * "Confirm Now" immediately sends {@code CONFIRM_VISIT} and returns {@code true}.
+     * "Later" dismisses without confirming and returns {@code false}.
+     */
+    private boolean showWaitlistPromotionDialog(OrderDetail o) {
+        String deadline = o.getConfirmationDeadline() != null
+            ? o.getConfirmationDeadline() : "soon";
+
+        ButtonType confirmBtn = new ButtonType("Confirm Now",  ButtonBar.ButtonData.OK_DONE);
+        ButtonType laterBtn   = new ButtonType("Later",        ButtonBar.ButtonData.CANCEL_CLOSE);
+
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("GoNature — Waitlist Spot Available");
+        alert.setHeaderText("🎉  Good News!");
+        alert.getButtonTypes().setAll(confirmBtn, laterBtn);
+        alert.setContentText(
+            "A spot opened up for you!\n\n"
+            + "Park:      " + o.getParkName()    + "\n"
+            + "Date:      " + o.getVisitDate()   + "\n"
+            + "Time:      " + o.getVisitTime()   + "\n"
+            + "Visitors:  " + o.getNumVisitors() + "\n\n"
+            + "Confirm your visit before " + deadline + ".\n"
+            + "If you don't confirm in time, the spot will pass to the next visitor.");
+
+        if (lblWelcome.getScene() != null)
+            alert.initOwner(lblWelcome.getScene().getWindow());
+        alert.initModality(Modality.WINDOW_MODAL);
+        ThemeManager.styleDialog(alert);
+
+        Optional<ButtonType> result = alert.showAndWait();
+        if (!result.isPresent() || result.get() != confirmBtn) return false;
+
+        // visitor chose "Confirm Now" — send confirmation to server
+        ChatClient.lastConfirmVisitOk    = null;
+        ChatClient.lastConfirmVisitError = null;
+        ClientUI.chat.accept(new Message("CONFIRM_VISIT", o.getId()));
+
+        if (Boolean.TRUE.equals(ChatClient.lastConfirmVisitOk)) {
+            NotificationCenter.add("✅",
+                "Your visit is confirmed! Your waitlist spot for "
+                + o.getParkName() + " on " + o.getVisitDate()
+                + " at " + o.getVisitTime()
+                + " (Order #" + o.getId() + ") is now locked in. See you there!");
+            return true;
+        } else {
+            String err = ChatClient.lastConfirmVisitError != null
+                ? ChatClient.lastConfirmVisitError
+                : "Could not confirm Order #" + o.getId()
+                  + ". Your window may have expired — please check My Reservations.";
+            NotificationCenter.add("⚠️", err);
+            return false;
         }
     }
 

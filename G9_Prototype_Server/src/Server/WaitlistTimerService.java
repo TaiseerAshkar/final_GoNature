@@ -3,6 +3,7 @@ package Server;
 import gui.ServerPortFrameController;
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
+import javafx.scene.control.DialogPane;
 
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -139,24 +140,52 @@ public class WaitlistTimerService {
                 + "again any time on GoNature.\n\n" +
                 "— GoNature Parks");
         }
-        showSimulationPopup(recipient, message);
+        showSimulationPopup(
+            "Simulation — Waitlist Spot Expired",
+            "Notification sent to:  " + recipient,
+            "Waitlist spot expired\n\n"
+            + "Park:   " + e.parkName    + "\n"
+            + "Date:   " + e.visitDateStr + "\n"
+            + "Time:   " + e.visitTimeStr  + "\n\n"
+            + "The 1-hour confirmation window passed without a response.\n"
+            + "The held booking has been cancelled and the next visitor in line has been notified.");
     }
 
     /**
-     * shows a server-side "Simulation" notification popup. used for every notification in the
-     * waiting-list confirmation flow (promotion offer and expiry). safe to call from any thread.
+     * shows a server-side "Simulation" notification popup styled with the GoNature server
+     * theme (pine/gold header strip, parchment background, green OK button). safe to call
+     * from any thread — marshals onto the JavaFX Application Thread via {@link Platform#runLater}.
      *
-     * @param header  the visitor's email or phone (or ID when no contact is on file)
-     * @param content the full notification message
+     * @param title   the window title shown in the OS title bar
+     * @param header  the bold text shown in the pine header strip (e.g. visitor email/ID)
+     * @param content the body text with park name, date, time, and action taken
      */
-    static void showSimulationPopup(String header, String content) {
+    static void showSimulationPopup(String title, String header, String content) {
         Platform.runLater(() -> {
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Simulation");
+            alert.setTitle(title);
             alert.setHeaderText(header);
             alert.setContentText(content);
+
+            DialogPane pane = alert.getDialogPane();
+            pane.setMinWidth(500);
+            pane.setGraphic(null);    // remove the default blue info icon
+            java.net.URL css = WaitlistTimerService.class.getResource("/gui/ServerPort.css");
+            if (css != null) pane.getStylesheets().add(css.toExternalForm());
+            pane.getStyleClass().add("help-dialog");
+
             alert.show();
         });
+    }
+
+    /**
+     * two-arg convenience overload for callers that already have a combined "header / content"
+     * message and just want the default title.
+     *
+     * @deprecated use the three-arg form for clearer popup titles.
+     */
+    static void showSimulationPopup(String header, String content) {
+        showSimulationPopup("Simulation", header, content);
     }
 
     /**
