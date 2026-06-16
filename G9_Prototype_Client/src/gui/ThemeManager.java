@@ -46,9 +46,6 @@ public final class ThemeManager {
     /** utility class — no instances. */
     private ThemeManager() {}
 
-    /** @return {@code true} when dark mode is currently active */
-    public static boolean isDarkMode() { return darkMode; }
-
     /**
      * starts watching every window (once) so all current and future windows follow the theme.
      */

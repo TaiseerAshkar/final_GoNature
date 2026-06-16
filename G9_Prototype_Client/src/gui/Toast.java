@@ -48,11 +48,6 @@ public final class Toast {
         show(message, "toast-error", Icons.alertTriangle(17, Icons.CREAM));
     }
 
-    /** shows a lake info toast. @param message the one-line outcome text */
-    public static void info(String message) {
-        show(message, "toast-info", Icons.infoCircle(17, Icons.CREAM));
-    }
-
     /** builds the pill, positions it under any visible toasts, and runs the in/wait/out cycle. */
     private static void show(String message, String styleClass, javafx.scene.Node icon) {
         Window owner = findOwner();

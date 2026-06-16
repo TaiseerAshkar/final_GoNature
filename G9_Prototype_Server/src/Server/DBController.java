@@ -35,7 +35,7 @@ import java.util.Properties;
  * <p>method categories:
  * <ul>
  *   <li>parks: {@link #getParks()}</li>
- *   <li>booking: {@link #getAvailableSpots}, {@link #createOrder}, {@link #addToWaitingList}</li>
+ *   <li>booking: {@link #getAvailableSpots}, {@link #checkAndBook}, {@link #addToWaitingList}</li>
  *   <li>orders: {@link #getOrdersByVisitor}, {@link #cancelOrder}, {@link #updateOrder}</li>
  *   <li>auth: {@link #loginVisitor}, {@link #loginUser}</li>
  *   <li>entry control: {@link #checkInVisitor}, {@link #registerExit}</li>
@@ -291,43 +291,6 @@ public class DBController {
     }
 
     /**
-     * counts how many active orders overlap the requested park/date/time window.
-     * uses the same visit-duration overlap logic as {@link #getAvailableSpots}; orders with
-     * status {@code 'no_show'} or {@code 'cancelled'} are excluded since they no longer hold a slot.
-     * used to enforce the park's {@code max_orders} cap before confirming a new booking.
-     *
-     * @param parkId    the park's primary-key ID
-     * @param visitDate the requested visit date in {@code yyyy-MM-dd} format
-     * @param visitTime the requested visit time in {@code HH:mm} format
-     * @return the number of active overlapping orders, or {@code -1} on DB error
-     */
-    public int countActiveOrders(int parkId, String visitDate, String visitTime) {
-        if (connection == null) return -1;
-        try {
-            PreparedStatement st = connection.prepareStatement(
-                "SELECT COUNT(*) AS cnt " +
-                "FROM parks p " +
-                "JOIN orders o " +
-                "      ON  o.park_id = p.id " +
-                "      AND o.visit_date = ? " +
-                "      AND o.status NOT IN ('no_show', 'cancelled') " +
-                "      AND TIME(o.visit_time) < ADDTIME(TIME(?), SEC_TO_TIME(p.visit_duration_hours * 3600)) " +
-                "      AND ADDTIME(TIME(o.visit_time), SEC_TO_TIME(p.visit_duration_hours * 3600)) > TIME(?) " +
-                "WHERE p.id = ?");
-            st.setString(1, visitDate);
-            st.setString(2, visitTime);
-            st.setString(3, visitTime);
-            st.setInt(4, parkId);
-            ResultSet rs = st.executeQuery();
-            if (rs.next()) return rs.getInt("cnt");
-            return 0;
-        } catch (SQLException e) {
-            System.out.println("countActiveOrders error: " + e.getMessage());
-            return -1;
-        }
-    }
-
-    /**
      * Atomically checks slot availability and inserts a confirmed order in one transaction.
      *
      * <p>Uses {@code SELECT ... FOR UPDATE} on the parks row so that any concurrent call
@@ -449,45 +412,6 @@ public class DBController {
         } finally {
             try { connection.setAutoCommit(oldAutoCommit); } catch (SQLException ignored) {}
         }
-    }
-
-    /**
-     * inserts a new order row with status {@code 'confirmed'}.
-     * capacity was already verified by the caller, so the booking is confirmed immediately.
-     *
-     * @param req the validated booking request
-     * @return the auto-generated order ID, or {@code -1} if no key was returned
-     * @throws RuntimeException wrapping the {@link SQLException} so the caller can surface the DB message
-     */
-    public int createOrder(BookingRequest req) {
-        if (connection == null) return -1;
-        String orderTypeValue = toDbOrderType(req.getOrderType());
-        System.out.printf(
-            "[SQL INSERT] orders → visitor_id='%s' park_id=%d date='%s' time='%s'" +
-            " num_visitors=%d order_type='%s' status='confirmed' email='%s'%n",
-            req.getVisitorId(), req.getParkId(), req.getVisitDate(), req.getVisitTime(),
-            req.getNumVisitors(), orderTypeValue, req.getEmail());
-        try {
-            PreparedStatement st = connection.prepareStatement(
-                "INSERT INTO orders " +
-                "(visitor_id, park_id, visit_date, visit_time, num_visitors, order_type, status, email) " +
-                "VALUES (?, ?, ?, ?, ?, ?, 'confirmed', ?)",
-                Statement.RETURN_GENERATED_KEYS);
-            st.setString(1, req.getVisitorId());
-            st.setInt(2,    req.getParkId());
-            st.setString(3, req.getVisitDate());
-            st.setString(4, req.getVisitTime());
-            st.setInt(5,    req.getNumVisitors());
-            st.setString(6, orderTypeValue);
-            st.setString(7, req.getEmail());
-            st.executeUpdate();
-            ResultSet keys = st.getGeneratedKeys();
-            if (keys.next()) return keys.getInt(1);
-        } catch (SQLException e) {
-            System.out.println("createOrder error: " + e.getMessage());
-            throw new RuntimeException("Database error: " + e.getMessage(), e);
-        }
-        return -1;
     }
 
     /**
