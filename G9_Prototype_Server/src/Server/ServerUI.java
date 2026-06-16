@@ -94,7 +94,13 @@ public class ServerUI extends Application {
         hint.getStyleClass().add("lbl-hint");
         hint.setWrapText(true);
 
-        VBox form = new VBox(9, fieldLabel, passwordField, plainField, showPw, hint);
+        Label dbError = new Label();
+        dbError.setStyle("-fx-text-fill: #C0392B; -fx-font-size: 12px; -fx-font-weight: bold;");
+        dbError.setWrapText(true);
+        dbError.setVisible(false);
+        dbError.setManaged(false);
+
+        VBox form = new VBox(9, fieldLabel, passwordField, plainField, showPw, hint, dbError);
         form.setPadding(new Insets(18, 22, 18, 22));
 
         // ── card wrapper: pine hero on top, parchment form below ──
@@ -117,13 +123,27 @@ public class ServerUI extends Application {
 
         Platform.runLater(passwordField::requestFocus);
 
+        // Intercept the Connect button: test a real DB connection before letting the dialog close.
+        // If the connection fails, show an inline error and keep the dialog open.
+        Button connectButton = (Button) dialog.getDialogPane().lookupButton(connectBtn);
+        connectButton.addEventFilter(javafx.event.ActionEvent.ACTION, ev -> {
+            DBController.setPassword(passwordField.getText());
+            if (!DBController.getInstance().connect()) {
+                dbError.setText("Could not connect to database — check your password and ensure MySQL is running.");
+                dbError.setVisible(true);
+                dbError.setManaged(true);
+                dialog.getDialogPane().getScene().getWindow().sizeToScene();
+                ev.consume(); // keep dialog open
+            }
+        });
+
         Optional<String> result = dialog.showAndWait();
         if (!result.isPresent() || result.get() == null) {
             Platform.exit();
             return;
         }
 
-        DBController.setPassword(result.get());
+        // Password and connection were already set inside the event filter above.
 
         ServerPortFrameController frame = new ServerPortFrameController();
         frame.start(primaryStage);

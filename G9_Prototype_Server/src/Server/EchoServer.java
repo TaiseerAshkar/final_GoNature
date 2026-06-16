@@ -1008,7 +1008,15 @@ public class EchoServer extends AbstractServer {
     protected void serverStarted() {
         System.out.println("Server listening on port " + getPort());
         DBController db = DBController.getInstance();
-        db.connect();
+        // Connection was already established during login-dialog validation.
+        // Only reconnect if somehow lost (edge case: DB restarted between dialog and Start click).
+        if (!db.isConnected() && !db.connect()) {
+            System.out.println("[EchoServer] DB unavailable — aborting server start.");
+            gui.ServerPortFrameController.setServerFailed("DB connection failed");
+            try { stopListening(); close(); } catch (Exception ignored) {}
+            return;
+        }
+        gui.ServerPortFrameController.setServerRunning(String.valueOf(getPort()));
         ReminderService.getInstance().runStartupCheck(db);
         WaitlistTimerService.getInstance().start(db);
         NoShowService.getInstance().start(db);

@@ -125,6 +125,14 @@ public class DBController {
         }
     }
 
+    /**
+     * @return {@code true} if the JDBC connection is open and not closed
+     */
+    public boolean isConnected() {
+        try { return connection != null && !connection.isClosed(); }
+        catch (Exception e) { return false; }
+    }
+
     // ── Park settings ────────────────────────────────────────────────────────
 
     /**
@@ -1813,9 +1821,19 @@ public class DBController {
     }
 
     /**
-     * usage report: average visitors per hour slot per day for the given calendar month,
-     * across all parks.  the client divides by capacity × 100 to get percentage-of-capacity
-     * for the line chart.
+     * usage report: average visitors per hour slot per operating day for the given calendar
+     * month, across all parks.  the client divides by capacity × 100 to get
+     * percentage-of-capacity for the line chart.
+     *
+     * <p><b>Denominator note:</b> each hour's monthly visitor total is divided by a
+     * <i>constant</i> per-park operating-day count (the number of distinct dates that park
+     * had a completed visit that month) — NOT by the number of days that particular hour
+     * happened to be used.  Dividing per-hour-active-days would inflate rarely-used early/late
+     * hours (small total ÷ few days) and flatten the curve; the constant denominator makes
+     * quiet hours correctly read low so the real morning/midday peak shows.
+     *
+     * <p>only {@code completed} orders with both {@code entry_time} and {@code exit_time}
+     * recorded are counted, so future (confirmed) bookings never appear here.
      *
      * @param year  the four-digit calendar year
      * @param month the month number 1–12
@@ -1830,15 +1848,24 @@ public class DBController {
                 "SELECT p.name AS park_name, " +
                 "       TIME_FORMAT(o.visit_time,'%H:00') AS hour_slot, " +
                 "       p.capacity, " +
-                "       ROUND(SUM(o.num_visitors) " +
-                "             / GREATEST(COUNT(DISTINCT o.visit_date), 1), 1) AS avg_per_day " +
-                "FROM orders o JOIN parks p ON p.id = o.park_id " +
-                "WHERE o.status IN ('confirmed','completed') " +
+                "       ROUND(SUM(o.num_visitors) / d.day_count, 1) AS avg_per_day " +
+                "FROM orders o " +
+                "JOIN parks p ON p.id = o.park_id " +
+                "JOIN (SELECT park_id, GREATEST(COUNT(DISTINCT visit_date), 1) AS day_count " +
+                "      FROM orders " +
+                "      WHERE status = 'completed' " +
+                "        AND entry_time IS NOT NULL AND exit_time IS NOT NULL " +
+                "        AND YEAR(visit_date) = ? AND MONTH(visit_date) = ? " +
+                "      GROUP BY park_id) d ON d.park_id = p.id " +
+                "WHERE o.status = 'completed' " +
+                "  AND o.entry_time IS NOT NULL AND o.exit_time IS NOT NULL " +
                 "  AND YEAR(o.visit_date) = ? AND MONTH(o.visit_date) = ? " +
-                "GROUP BY p.id, p.name, p.capacity, TIME_FORMAT(o.visit_time,'%H:00') " +
+                "GROUP BY p.id, p.name, p.capacity, TIME_FORMAT(o.visit_time,'%H:00'), d.day_count " +
                 "ORDER BY p.name ASC, hour_slot ASC");
             st.setInt(1, year);
             st.setInt(2, month);
+            st.setInt(3, year);
+            st.setInt(4, month);
             ResultSet rs = st.executeQuery();
             while (rs.next()) {
                 list.add(new ReportUsageRow(

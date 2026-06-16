@@ -314,8 +314,31 @@ public class ServerPortFrameController {
     public void Done(ActionEvent event) throws Exception {
         String p = portxt.getText().trim();
         if (p.isEmpty()) { System.out.println("Enter a port!"); return; }
+        // Show a neutral "Starting…" state while the background thread connects.
+        // setRunning() / setServerFailed() are called from EchoServer.serverStarted()
+        // via Platform.runLater once the DB connection result is known.
+        if (btnStart != null) btnStart.setDisable(true);
+        lblServerStatus.setText("● Starting…");
+        lblServerStatus.getStyleClass().setAll("card-status-stopped");
         ServerUI.runServer(p);
-        setRunning(p);
+    }
+
+    /** called from {@code EchoServer.serverStarted()} when the server and DB are both up. */
+    public static void setServerRunning(String port) {
+        if (instance == null) return;
+        Platform.runLater(() -> instance.setRunning(port));
+    }
+
+    /** called from {@code EchoServer.serverStarted()} when the DB connection failed. */
+    public static void setServerFailed(String reason) {
+        if (instance == null) return;
+        Platform.runLater(() -> {
+            instance.lblServerStatus.setText("● Failed — " + reason);
+            instance.lblServerStatus.getStyleClass().setAll("card-status-stopped");
+            instance.portxt.setDisable(false);
+            if (instance.btnStart != null) instance.btnStart.setDisable(false);
+            if (instance.btnStop  != null) instance.btnStop.setDisable(true);
+        });
     }
 
     /**
