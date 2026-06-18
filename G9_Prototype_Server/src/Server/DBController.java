@@ -1421,32 +1421,54 @@ public class DBController {
             "[SQL INSERT] orders (walk-in) → visitor_id='%s' park_id=%d" +
             " num_visitors=%d order_type='%s' status='completed'%n",
             visitorId, parkId, numVis, wType);
+
+        boolean oldAutoCommit;
         try {
-            PreparedStatement st = connection.prepareStatement(
-                "INSERT INTO orders " +
-                "(visitor_id, park_id, visit_date, visit_time, num_visitors, order_type, status, email, entry_time) " +
-                "VALUES (?, ?, CURDATE(), CURTIME(), ?, ?, 'completed', '', NOW())",
-                Statement.RETURN_GENERATED_KEYS);
-            st.setString(1, visitorId);
-            st.setInt(2,    parkId);
-            st.setInt(3,    numVis);
-            st.setString(4, wType);
-            st.executeUpdate();
-            ResultSet keys = st.getGeneratedKeys();
-            int orderId = keys.next() ? keys.getInt(1) : -1;
-
-            boolean isGuide      = isRegisteredGuide(visitorId);
-            boolean isSubscriber = isRegisteredSubscriber(visitorId);
-            double total = calculateEntryPrice(parkId, today, false, wDisplayType, numVis, fullPrice, isGuide, isSubscriber);
-            String note  = buildEntryPricingNote(parkId, today, false, wDisplayType, numVis, isGuide, isSubscriber);
-            return new EntryResult(true, false, orderId, parkName, visitorId,
-                numVis, wDisplayType, total, note);
-
+            oldAutoCommit = connection.getAutoCommit();
         } catch (SQLException e) {
-            System.out.println("checkInVisitor (walk-in insert) error: " + e.getMessage());
+            System.out.println("checkInVisitor (autocommit read) error: " + e.getMessage());
             return new EntryResult(false, false, -1, parkName, visitorId, 0, "", 0,
                 "Could not register walk-in. Please try again.");
         }
+
+        int orderId;
+        try {
+            connection.setAutoCommit(false);
+            // fk_orders_visitor requires the visitor to exist. walk-ins may be anonymous,
+            // so create a minimal placeholder visitors row if this ID is new, then insert
+            // the order. both run in one transaction so a failure rolls back together.
+            ensureVisitorRow(visitorId, "Walk-in", "Guest", "", "");
+            try (PreparedStatement st = connection.prepareStatement(
+                    "INSERT INTO orders " +
+                    "(visitor_id, park_id, visit_date, visit_time, num_visitors, order_type, status, email, entry_time) " +
+                    "VALUES (?, ?, CURDATE(), CURTIME(), ?, ?, 'completed', '', NOW())",
+                    Statement.RETURN_GENERATED_KEYS)) {
+                st.setString(1, visitorId);
+                st.setInt(2,    parkId);
+                st.setInt(3,    numVis);
+                st.setString(4, wType);
+                st.executeUpdate();
+                try (ResultSet keys = st.getGeneratedKeys()) {
+                    orderId = keys.next() ? keys.getInt(1) : -1;
+                }
+            }
+            connection.commit();
+        } catch (SQLException e) {
+            System.out.println("checkInVisitor (walk-in insert) error: " + e.getMessage());
+            try { connection.rollback(); } catch (SQLException ignored) {}
+            return new EntryResult(false, false, -1, parkName, visitorId, 0, "", 0,
+                "Could not register walk-in. Please try again.");
+        } finally {
+            try { connection.setAutoCommit(oldAutoCommit); } catch (SQLException ignored) {}
+        }
+
+        // pricing is computed after the order commits; these are read-only lookups
+        boolean isGuide      = isRegisteredGuide(visitorId);
+        boolean isSubscriber = isRegisteredSubscriber(visitorId);
+        double total = calculateEntryPrice(parkId, today, false, wDisplayType, numVis, fullPrice, isGuide, isSubscriber);
+        String note  = buildEntryPricingNote(parkId, today, false, wDisplayType, numVis, isGuide, isSubscriber);
+        return new EntryResult(true, false, orderId, parkName, visitorId,
+            numVis, wDisplayType, total, note);
     }
 
     /**
@@ -2193,6 +2215,44 @@ public class DBController {
         return "";
     }
 
+    /**
+     * ensures a row exists in {@code visitors} for the given ID, inserting a minimal
+     * placeholder row if one is absent. this keeps the {@code fk_guides_visitor} and
+     * {@code fk_orders_visitor} constraints satisfied for IDs that were never formally
+     * registered as visitors (newly registered guides, anonymous walk-ins).
+     *
+     * <p>must be called while a transaction is open (autocommit off) so the placeholder
+     * insert commits or rolls back together with the caller's own insert. it does not
+     * touch autocommit or commit/rollback itself; that is the caller's responsibility.
+     *
+     * @param idNumber  the government ID to guarantee a visitors row for
+     * @param firstName first name for a newly created row (NOT NULL in the schema)
+     * @param lastName  last name for a newly created row (NOT NULL in the schema)
+     * @param email     contact email, or {@code null}/empty if unknown
+     * @param phone     contact phone, or {@code null}/empty if unknown
+     * @throws SQLException if the lookup or insert fails, so the caller can roll back
+     */
+    private void ensureVisitorRow(String idNumber, String firstName, String lastName,
+                                  String email, String phone) throws SQLException {
+        try (PreparedStatement chk = connection.prepareStatement(
+                "SELECT 1 FROM visitors WHERE id_number = ? LIMIT 1")) {
+            chk.setString(1, idNumber);
+            try (ResultSet rs = chk.executeQuery()) {
+                if (rs.next()) return;   // already a registered visitor; nothing to do
+            }
+        }
+        try (PreparedStatement ins = connection.prepareStatement(
+                "INSERT INTO visitors (id_number, first_name, last_name, email, phone) " +
+                "VALUES (?, ?, ?, ?, ?)")) {
+            ins.setString(1, idNumber);
+            ins.setString(2, firstName);
+            ins.setString(3, lastName);
+            ins.setString(4, email);
+            ins.setString(5, phone);
+            ins.executeUpdate();
+        }
+    }
+
     // ── Guide management ──────────────────────────────────────────────────────
 
     /**
@@ -2203,26 +2263,51 @@ public class DBController {
      */
     public String registerGuide(RegisterGuideRequest req) {
         if (connection == null) return "We can't reach the database right now. Please try again in a moment.";
-        try {
-            PreparedStatement chk = connection.prepareStatement(
-                "SELECT 1 FROM guides WHERE id_number = ? LIMIT 1");
-            chk.setString(1, req.getIdNumber());
-            if (chk.executeQuery().next())
-                return "A guide with this ID number is already registered.";
 
-            PreparedStatement st = connection.prepareStatement(
-                "INSERT INTO guides (id_number, first_name, last_name, email, phone, is_approved) " +
-                "VALUES (?, ?, ?, ?, ?, 0)");
-            st.setString(1, req.getIdNumber());
-            st.setString(2, req.getFirstName());
-            st.setString(3, req.getLastName());
-            st.setString(4, req.getEmail());
-            st.setString(5, req.getPhone());
-            st.executeUpdate();
+        // Reject a duplicate guide up front (autocommit still on) for a clean message.
+        try (PreparedStatement chk = connection.prepareStatement(
+                "SELECT 1 FROM guides WHERE id_number = ? LIMIT 1")) {
+            chk.setString(1, req.getIdNumber());
+            try (ResultSet rs = chk.executeQuery()) {
+                if (rs.next()) return "A guide with this ID number is already registered.";
+            }
+        } catch (SQLException e) {
+            System.out.println("registerGuide (duplicate check) error: " + e.getMessage());
+            return "Something went wrong on our end. Please try again.";
+        }
+
+        boolean oldAutoCommit;
+        try {
+            oldAutoCommit = connection.getAutoCommit();
+        } catch (SQLException e) {
+            System.out.println("registerGuide (autocommit read) error: " + e.getMessage());
+            return "Something went wrong on our end. Please try again.";
+        }
+        try {
+            connection.setAutoCommit(false);
+            // fk_guides_visitor requires a matching visitors row; create one first if the
+            // guide isn't already a registered visitor, then insert the guide. both the
+            // visitor placeholder and the guide row commit together or roll back together.
+            ensureVisitorRow(req.getIdNumber(), req.getFirstName(), req.getLastName(),
+                             req.getEmail(), req.getPhone());
+            try (PreparedStatement st = connection.prepareStatement(
+                    "INSERT INTO guides (id_number, first_name, last_name, email, phone, is_approved) " +
+                    "VALUES (?, ?, ?, ?, ?, 0)")) {
+                st.setString(1, req.getIdNumber());
+                st.setString(2, req.getFirstName());
+                st.setString(3, req.getLastName());
+                st.setString(4, req.getEmail());
+                st.setString(5, req.getPhone());
+                st.executeUpdate();
+            }
+            connection.commit();
             return null; // success
         } catch (SQLException e) {
             System.out.println("registerGuide error: " + e.getMessage());
+            try { connection.rollback(); } catch (SQLException ignored) {}
             return "Something went wrong on our end. Please try again.";
+        } finally {
+            try { connection.setAutoCommit(oldAutoCommit); } catch (SQLException ignored) {}
         }
     }
 
