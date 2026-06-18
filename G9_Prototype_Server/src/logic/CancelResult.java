@@ -5,8 +5,8 @@ import java.io.Serializable;
 /**
  * result returned by the server after a cancellation attempt.
  *
- * <p>cancellation marks the order as cancelled and frees up its capacity —
- * the slot is excluded from {@code getAvailableSpots()} so a new booking can
+ * <p>cancellation marks the order as cancelled and frees up its capacity, so
+ * the slot is excluded from {@code getAvailableSpots()} and a new booking can
  * replace it. if a waiting-list visitor was promoted into the freed slot,
  * {@link #getNotifiedEmail()} returns the email they were notified at; otherwise {@code null}.
  */

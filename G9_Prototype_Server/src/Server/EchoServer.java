@@ -109,7 +109,7 @@ public class EchoServer extends AbstractServer {
                     String idNumber = (String) incoming.getData();
                     LoginResult result = DBController.getInstance().loginVisitor(idNumber);
                     if (result != null) {
-                        // add() returns false if the key was already present — atomic check-and-add
+                        // add() returns false if the key was already present; atomic check-and-add
                         if (!activeSessions.add(idNumber)) {
                             client.sendToClient(new Message("LOGIN_FAIL",
                                 "This account is already logged in on another device."));
@@ -136,7 +136,7 @@ public class EchoServer extends AbstractServer {
                     DBController db = DBController.getInstance();
                     LoginResult result = db.loginUser(username, creds[1]);
                     if (result != null) {
-                        // add() returns false if the key was already present — atomic check-and-add
+                        // add() returns false if the key was already present; atomic check-and-add
                         if (!activeSessions.add(username)) {
                             client.sendToClient(new Message("LOGIN_FAIL",
                                 "This account is already logged in on another device."));
@@ -197,7 +197,7 @@ public class EchoServer extends AbstractServer {
                             break;
                         }
                     }
-                    // Lock released — booking is committed in the DB.
+                    // Lock released; booking is committed in the DB.
                     // All remaining work (response + email) is outside the critical section.
 
                     // Price preview for the confirmation screen: base price before any promotion,
@@ -216,7 +216,7 @@ public class EchoServer extends AbstractServer {
                             req.getNumVisitors(), req.getOrderType(), req.getEmail(),
                             quote[0], quote[1], bookPromoPct, bookPromoDesc)));
 
-                    // ── Booking confirmation notification — fires for EVERY successful booking ──
+                    // ── Booking confirmation notification, fires for EVERY successful booking ──
                     // Look up the visitor's name for a personalised email.
                     String bookingVisitorName =
                         DBController.getInstance().getVisitorDisplayName(req.getVisitorId());
@@ -248,7 +248,7 @@ public class EchoServer extends AbstractServer {
                         "We look forward to welcoming you!\n\n" +
                         "— The GoNature Team 🌿");
 
-                    // ── Day-before reminder — only fires when the visit is tomorrow ──
+                    // ── Day-before reminder, only fires when the visit is tomorrow ──
                     String tomorrow = LocalDate.now().plusDays(1)
                         .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd"));
                     if (req.getVisitDate().equals(tomorrow)) {
@@ -718,7 +718,7 @@ public class EchoServer extends AbstractServer {
                         client.sendToClient(new Message("CONFIRM_VISIT_OK", orderId));
                         break;
                     }
-                    // Not a promotion — ordinary day-before reminder confirmation.
+                    // Not a promotion; ordinary day-before reminder confirmation.
                     ReminderService.getInstance().confirmVisit(orderId);
                     // also flip the order's status from pending -> confirmed in the DB so it
                     // shows as CONFIRMED in the visitor's My Orders (no-op if already confirmed)
@@ -729,7 +729,7 @@ public class EchoServer extends AbstractServer {
 
                 case "LOGOUT": {
                     // Free the session slot so the same account can log in elsewhere.
-                    // The socket stays open — the client may show the login screen again
+                    // The socket stays open; the client may show the login screen again
                     // on the same connection without a full reconnect.
                     String sessionKey = (String) client.getInfo("sessionKey");
                     if (sessionKey != null) {
@@ -1031,9 +1031,9 @@ public class EchoServer extends AbstractServer {
     /**
      * validates a booking request before persisting. enforces visit-type limits:
      * <ul>
-     *   <li>SOLO   — exactly 1 visitor, any role.</li>
-     *   <li>FAMILY — 2–15 visitors, any role; receives 15% advance-booking discount.</li>
-     *   <li>GROUP  — 2–15 visitors for regular visitors/subscribers, or 2–16 total for
+     *   <li>SOLO: exactly 1 visitor, any role.</li>
+     *   <li>FAMILY: 2-15 visitors, any role; receives 15% advance-booking discount.</li>
+     *   <li>GROUP: 2-15 visitors for regular visitors/subscribers, or 2-16 total for
      *               registered guides (guide is included in the count but enters free).</li>
      * </ul>
      *
@@ -1066,7 +1066,7 @@ public class EchoServer extends AbstractServer {
                     return "SOLO bookings allow exactly 1 visitor.";
                 break;
             case "FAMILY":
-                // Any role may book a family visit; 2–15 visitors, 15% advance discount applies.
+                // Any role may book a family visit; 2-15 visitors, 15% advance discount applies.
                 if (req.getNumVisitors() < 2 || req.getNumVisitors() > 15)
                     return "FAMILY bookings require 2–15 visitors.";
                 break;
@@ -1102,7 +1102,7 @@ public class EchoServer extends AbstractServer {
     protected void clientConnected(ConnectionToClient client) {
         String ip   = client.getInetAddress().getHostAddress();
         String host = client.getInetAddress().getHostName();
-        client.setInfo("ip", ip);   // cache now — the socket may be null by the time disconnect fires
+        client.setInfo("ip", ip);   // cache now; the socket may be null by the time disconnect fires
         System.out.println("Client connected | IP: " + ip + " | Host: " + host);
         ServerPortFrameController.addClient(ip, host);
     }
@@ -1116,7 +1116,7 @@ public class EchoServer extends AbstractServer {
      */
     @Override
     protected synchronized void clientDisconnected(ConnectionToClient client) {
-        // Release the session slot — must happen whether the user explicitly logged
+        // Release the session slot; must happen whether the user explicitly logged
         // out or just closed the window, so the account is not permanently locked out.
         String sessionKey = (String) client.getInfo("sessionKey");
         if (sessionKey != null) activeSessions.remove(sessionKey);
@@ -1128,7 +1128,7 @@ public class EchoServer extends AbstractServer {
     }
 
     /**
-     * called on network drop or client crash — behaves identically to
+     * called on network drop or client crash; behaves identically to
      * {@link #clientDisconnected(ConnectionToClient)}.
      *
      * @param client    the client whose connection was lost
@@ -1136,7 +1136,7 @@ public class EchoServer extends AbstractServer {
      */
     @Override
     protected synchronized void clientException(ConnectionToClient client, Throwable exception) {
-        // Same cleanup as a clean disconnect — free the session slot.
+        // Same cleanup as a clean disconnect; free the session slot.
         String sessionKey = (String) client.getInfo("sessionKey");
         if (sessionKey != null) activeSessions.remove(sessionKey);
 

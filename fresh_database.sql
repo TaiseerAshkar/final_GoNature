@@ -80,7 +80,9 @@ CREATE TABLE subscribers (
     credit_card    VARCHAR(20)  NOT NULL,
     family_size    INT          NOT NULL DEFAULT 1,
     created_at     TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT chk_subscribers_family CHECK (family_size >= 1)
+    CONSTRAINT chk_subscribers_family CHECK (family_size >= 1),
+    CONSTRAINT fk_subscribers_visitor FOREIGN KEY (id_number) REFERENCES visitors(id_number)
+        ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE guides (
@@ -89,7 +91,9 @@ CREATE TABLE guides (
     last_name   VARCHAR(50)  NOT NULL,
     email       VARCHAR(100),
     phone       VARCHAR(20),
-    is_approved TINYINT(1)   NOT NULL DEFAULT 0
+    is_approved TINYINT(1)   NOT NULL DEFAULT 0,
+    CONSTRAINT fk_guides_visitor FOREIGN KEY (id_number) REFERENCES visitors(id_number)
+        ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE orders (
@@ -108,6 +112,8 @@ CREATE TABLE orders (
     created_at   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT chk_orders_visitors CHECK (num_visitors >= 1),
     CONSTRAINT fk_orders_park FOREIGN KEY (park_id) REFERENCES parks(id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_orders_visitor FOREIGN KEY (visitor_id) REFERENCES visitors(id_number)
         ON DELETE CASCADE ON UPDATE CASCADE,
     INDEX idx_orders_park_date (park_id, visit_date),
     INDEX idx_orders_visitor   (visitor_id),
@@ -131,18 +137,9 @@ CREATE TABLE waiting_list (
     CONSTRAINT chk_wl_visitors CHECK (num_visitors >= 1),
     CONSTRAINT fk_wl_park FOREIGN KEY (park_id) REFERENCES parks(id)
         ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_wl_visitor FOREIGN KEY (visitor_id) REFERENCES visitors(id_number)
+        ON DELETE CASCADE ON UPDATE CASCADE,
     INDEX idx_wl_park_date (park_id, visit_date)
-);
-
--- Backward-compatibility table used by the legacy DBController queries.
-CREATE TABLE order_table (
-    order_number          INT          AUTO_INCREMENT PRIMARY KEY,
-    order_date            VARCHAR(20)  NOT NULL,
-    number_of_visitors    INT          NOT NULL,
-    confirmation_code     INT          NOT NULL,
-    subscriber_id         INT          NOT NULL DEFAULT 0,
-    date_of_placing_order VARCHAR(20)  NOT NULL,
-    CONSTRAINT chk_ot_visitors CHECK (number_of_visitors >= 1)
 );
 
 CREATE TABLE promotions (
@@ -5333,18 +5330,6 @@ INSERT INTO park_settings_requests
     (1, 'manager1', 110,  95, 4, 52.00, 'pending',  NULL),
     (3, 'manager3', 130, 115, 4, 42.00, 'pending',  NULL),
     (2, 'manager2', 160, 140, 4, 47.00, 'approved', '2026-06-20 10:30:00');
-
--- ============================================================
---  ORDER_TABLE  (legacy backward-compat rows)
--- ============================================================
-INSERT INTO order_table (order_date, number_of_visitors, confirmation_code, subscriber_id, date_of_placing_order) VALUES
-    ('2026-06-10', 4,  1001, 1, '2026-05-01'),
-    ('2026-06-15', 2,  1002, 0, '2026-05-05'),
-    ('2026-06-20', 6,  1003, 2, '2026-05-10'),
-    ('2026-07-01', 3,  1004, 0, '2026-05-15'),
-    ('2026-07-10', 5,  1005, 1, '2026-05-20'),
-    ('2026-07-20', 8,  1006, 0, '2026-05-24'),
-    ('2026-08-01', 10, 1007, 1, '2026-05-24');
 
 -- ============================================================
 --  VERIFICATION

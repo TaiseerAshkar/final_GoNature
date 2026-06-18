@@ -3,7 +3,7 @@ package logic;
 import java.io.Serializable;
 
 /**
- * one row in the cancellation report — a single cancelled or no-show order.
+ * one row in the cancellation report. it represents a single cancelled or no-show order.
  *
  * <p>displayed in a table on the client with colour-coded status cells.
  */

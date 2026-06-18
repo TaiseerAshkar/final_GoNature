@@ -27,8 +27,8 @@ public class BookingResult implements Serializable {
     private final String promoDescription; // active promotion text, empty when none
 
     /**
-     * Basic constructor — no pricing preview (used for waiting-list results and any
-     * caller that doesn't compute a price). Pricing fields default to 0 / empty.
+     * basic constructor with no pricing preview, used for waiting-list results and any
+     * caller that doesn't compute a price. pricing fields default to 0 / empty.
      *
      * @param id          the generated order ID (or waiting-list ID when status is {@code "WAITING"})
      * @param status      {@code "CONFIRMED"} for a confirmed booking; {@code "WAITING"} for waiting list
@@ -47,7 +47,7 @@ public class BookingResult implements Serializable {
     }
 
     /**
-     * Full constructor — includes the pricing/promotion preview shown on the
+     * full constructor that includes the pricing/promotion preview shown on the
      * booking-confirmation screen.
      *
      * @param basePrice        indicative price before any active promotion

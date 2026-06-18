@@ -30,7 +30,7 @@ import java.time.format.DateTimeFormatter;
  *
  * <p>shows the port field, client table, connection log, and simulation log.
  * the static helper methods ({@link #addClient}, {@link #markClientDisconnected},
- * {@link #logSimulation}, etc.) are safe to call from any thread — they all marshal
+ * {@link #logSimulation}, etc.) are safe to call from any thread; they all marshal
  * updates to the JavaFX thread via {@link Platform#runLater}.
  */
 public class ServerPortFrameController {
@@ -105,8 +105,8 @@ public class ServerPortFrameController {
     }
 
     /**
-     * builds the designed empty state for the clients table — a pine vector monitor icon,
-     * a short headline, and a hint — replacing the bare "No clients connected." text.
+     * builds the designed empty state for the clients table: a pine vector monitor icon,
+     * a short headline, and a hint, replacing the bare "No clients connected." text.
      * styled via the {@code empty-title} / {@code empty-hint} classes in {@code ServerPort.css}.
      */
     private static javafx.scene.Node emptyState() {
@@ -198,7 +198,7 @@ public class ServerPortFrameController {
             if (instance.txtSimLog == null) return;
             String text = instance.txtSimLog.getText();
             if (!text.contains("Order #" + orderId)) return; // nothing to remove
-            // filter out the matching line — it ends with "  |  Order #<id>"
+            // filter out the matching line; it ends with "  |  Order #<id>"
             StringBuilder sb = new StringBuilder();
             boolean removed = false;
             for (String line : text.split("\n", -1)) {
@@ -219,7 +219,7 @@ public class ServerPortFrameController {
 
     /**
      * called by the 5-second countdown in {@code EchoServer}. replaces the "queued" line
-     * with "✅ Reminder sent" — unless the order was cancelled in the meantime, in which
+     * with "✅ Reminder sent", unless the order was cancelled in the meantime, in which
      * case {@link #removeReminderForOrder} already removed it from the pending set and this
      * method returns silently. safe to call from any thread.
      *

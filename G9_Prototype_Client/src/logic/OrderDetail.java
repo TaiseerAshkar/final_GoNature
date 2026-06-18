@@ -18,8 +18,8 @@ public class OrderDetail implements Serializable {
     private final String visitDate;  // "yyyy-MM-dd"
     private final String visitTime;  // "HH:mm"
     private final int    numVisitors;
-    private final String orderType;  // "SOLO" | "GROUP" — always uppercase
-    private final String status;     // "PENDING" | "CONFIRMED" | "CANCELLED" | "COMPLETED" | "WAITING" — always uppercase
+    private final String orderType;  // "SOLO" | "GROUP", always uppercase
+    private final String status;     // "PENDING" | "CONFIRMED" | "CANCELLED" | "COMPLETED" | "WAITING", always uppercase
     private final String email;
     private final String createdAt;  // "yyyy-MM-dd HH:mm"
     /** non-null only for PENDING waitlist-promotion orders; the deadline to confirm by. */

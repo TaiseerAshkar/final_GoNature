@@ -46,7 +46,12 @@ public class GuideDetail implements Serializable {
     /** @return the guide's last name */
     public String getLastName()    { return lastName; }
 
-    /** @return the guide's full name, formatted as "First Last" */
+    /**
+     * @return the guide's full name as stored in the database ("First Last").
+     *         note: the client copy capitalizes each word via {@code UserSession.capitalize()};
+     *         this server copy returns the raw stored values because {@code getFullName()} is
+     *         never called in any server code path (no display or logging uses it).
+     */
     public String getFullName()    { return firstName + " " + lastName; }
 
     /** @return the guide's contact email, or an empty string if none was provided */

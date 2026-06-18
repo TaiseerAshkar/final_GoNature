@@ -13,7 +13,7 @@ public class ParkSettingsRequest implements Serializable {
 
     private final int    id;               // 0 when used as a submission payload
     private final int    parkId;
-    private final String parkName;         // display only — not stored in the table
+    private final String parkName;         // display only, not stored in the table
     private final String requestedBy;      // park manager username
     private final int    capacity;
     private final int    maxOrders;
@@ -23,7 +23,7 @@ public class ParkSettingsRequest implements Serializable {
     private final String requestedAt;      // formatted timestamp, empty for submissions
 
     /**
-     * Full constructor — used when reading rows back from the database.
+     * full constructor, used when reading rows back from the database.
      */
     public ParkSettingsRequest(int id, int parkId, String parkName, String requestedBy,
                                int capacity, int maxOrders, int visitDurationHours,
@@ -41,7 +41,7 @@ public class ParkSettingsRequest implements Serializable {
     }
 
     /**
-     * Submission constructor — used by {@link gui.ParkSettingsController} to package
+     * submission constructor, used by {@link gui.ParkSettingsController} to package
      * the manager's proposed values before sending to the server. {@code id} is 0
      * and {@code status} / {@code requestedAt} are empty; the server fills those in.
      */
@@ -82,7 +82,7 @@ public class ParkSettingsRequest implements Serializable {
     /** @return the formatted submission timestamp, or an empty string for a fresh submission */
     public String getRequestedAt()        { return requestedAt; }
 
-    /** Formatted summary of the proposed values — shown in the approvals table. */
+    /** formatted summary of the proposed values, shown in the approvals table. */
     public String getSummary() {
         return String.format("Cap: %d  |  Max orders: %d  |  Duration: %d h  |  Price: $%.2f",
             capacity, maxOrders, visitDurationHours, fullPrice);

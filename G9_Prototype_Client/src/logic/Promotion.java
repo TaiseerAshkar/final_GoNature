@@ -9,23 +9,23 @@ import java.io.Serializable;
  * as a read-only row in the department manager's Pending Promotions panel, and as an
  * entry in the {@code GET_ACTIVE_PROMOTIONS} response used by the pricing engine.
  *
- * <p>mirrors {@code logic.Promotion} in the server project — keep the two in sync so
+ * <p>mirrors {@code logic.Promotion} in the server project. keep the two in sync so
  * serialization stays compatible.
  */
 public class Promotion implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    /** status set by the park manager on submission — awaiting department approval. */
+    /** status set by the park manager on submission, awaiting department approval. */
     public static final String PENDING  = "PENDING";
-    /** status after the department manager approves — the promotion is live in its date window. */
+    /** status after the department manager approves; the promotion is live in its date window. */
     public static final String ACTIVE   = "ACTIVE";
-    /** status after the department manager rejects — never applied. */
+    /** status after the department manager rejects; never applied. */
     public static final String REJECTED = "REJECTED";
 
     private final int    id;               // 0 when used as a submission payload
     private final int    parkId;
-    private final String parkName;         // display only — not stored on the row itself
+    private final String parkName;         // display only, not stored on the row itself
     private final String description;
     private final double discountPercent;  // e.g. 10.0 means 10% off
     private final String startDate;        // "yyyy-MM-dd"
@@ -34,7 +34,7 @@ public class Promotion implements Serializable {
     private final String submittedBy;      // park manager username/employee id
 
     /**
-     * Full constructor — used when reading rows back from the database.
+     * full constructor, used when reading rows back from the database.
      */
     public Promotion(int id, int parkId, String parkName, String description,
                      double discountPercent, String startDate, String endDate,
@@ -51,7 +51,7 @@ public class Promotion implements Serializable {
     }
 
     /**
-     * Submission constructor — used by the park manager to package a proposed promotion
+     * submission constructor, used by the park manager to package a proposed promotion
      * before sending to the server. {@code id} is 0 and {@code status} is PENDING;
      * the server assigns the real id and stores the PENDING status on insert.
      */

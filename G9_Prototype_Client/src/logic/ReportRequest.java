@@ -15,12 +15,12 @@ public class ReportRequest implements Serializable {
 
     private final int parkId;  // 0 = all parks
     private final int year;
-    private final int month;   // 1–12
+    private final int month;   // 1-12
 
     /**
      * @param parkId  the park to restrict results to, or {@code 0} for all parks
      * @param year    the calendar year (e.g. 2026)
-     * @param month   the month number 1–12
+     * @param month   the month number 1-12
      */
     public ReportRequest(int parkId, int year, int month) {
         this.parkId = parkId;

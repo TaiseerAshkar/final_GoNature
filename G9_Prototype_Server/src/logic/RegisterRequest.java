@@ -24,14 +24,14 @@ public class RegisterRequest implements Serializable {
     private final int     familySize;
 
     /**
-     * @param idNumber   the visitor's national ID number (5–15 digits)
+     * @param idNumber   the visitor's national ID number (5-15 digits)
      * @param firstName  the visitor's first name
      * @param lastName   the visitor's last name
      * @param email      the visitor's email address
-     * @param phone      the visitor's phone number (9–15 digits)
+     * @param phone      the visitor's phone number (9-15 digits)
      * @param subscriber {@code true} if the visitor also wants to join the Family Member Club
      * @param creditCard the credit card number (16 digits), or {@code null} if not provided
-     * @param familySize the number of family members (1–10); {@code 0} if not a subscriber
+     * @param familySize the number of family members (1-10); {@code 0} if not a subscriber
      */
     public RegisterRequest(String idNumber, String firstName, String lastName,
                            String email, String phone,

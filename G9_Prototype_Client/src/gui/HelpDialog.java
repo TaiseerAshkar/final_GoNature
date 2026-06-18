@@ -29,21 +29,21 @@ import java.net.URL;
  */
 public final class HelpDialog {
 
-    /** utility class — no instances. */
+    /** utility class, no instances. */
     private HelpDialog() {}
 
     /**
      * shows a scrollable, themed Help popup with the branded hero banner.
      *
-     * @param title   the caller's title (e.g. {@code "GoNature — Help (VISITOR)"}); the
-     *                {@code "GoNature — "} prefix is stripped to form the hero's context line
+     * @param title   the caller's title, such as a "Help (VISITOR)" screen title; the
+     *                leading "GoNature" prefix is stripped to form the hero's context line
      * @param content the help body text shown in the scrollable reading panel
      */
     public static void show(String title, String content) {
         Dialog<ButtonType> dialog = new Dialog<>();
         dialog.setTitle("GoNature — Help");
 
-        // derive a short context line ("GoNature — Help (VISITOR)" → "Help (VISITOR)")
+        // derive a short context line by stripping the leading "GoNature" prefix from the title
         String context = (title == null) ? "" : title.trim();
         if (context.startsWith("GoNature — ")) context = context.substring("GoNature — ".length());
         if (context.isEmpty()) context = "National Park Reservation System";
@@ -100,7 +100,7 @@ public final class HelpDialog {
         URL css = HelpDialog.class.getResource("/gui/gonature.css");
         if (css != null) pane.getStylesheets().add(css.toExternalForm());
 
-        // single pine "Got it" button — CANCEL_CLOSE so Esc / window-X also dismiss the popup
+        // single pine "Got it" button; CANCEL_CLOSE so Esc / window-X also dismiss the popup
         ButtonType gotIt = new ButtonType("Got it", ButtonBar.ButtonData.CANCEL_CLOSE);
         pane.getButtonTypes().add(gotIt);
         Button gotItBtn = (Button) pane.lookupButton(gotIt);

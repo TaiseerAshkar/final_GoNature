@@ -20,7 +20,7 @@ import java.util.WeakHashMap;
  * holds the application-wide light/dark theme preference for the lifetime of a client session.
  *
  * <p>the preference is a single static flag. rather than tracking individual scenes, the manager
- * watches {@link Window#getWindows()} — the live list of every open window — so <em>every</em>
+ * watches {@link Window#getWindows()}, the live list of every open window, so <em>every</em>
  * screen and dialog (current or opened later) automatically follows the current theme. applying
  * the theme means adding/removing the {@code dark-mode} style class on each scene root; the
  * {@code .dark-mode} rules in {@code gonature.css} do the actual recolouring.
@@ -43,7 +43,7 @@ public final class ThemeManager {
     private static final Set<Button> toggles =
         Collections.newSetFromMap(new WeakHashMap<>());
 
-    /** utility class — no instances. */
+    /** utility class, no instances. */
     private ThemeManager() {}
 
     /**
@@ -131,14 +131,14 @@ public final class ThemeManager {
     }
 
     /**
-     * @return always the empty string — toggle buttons now carry a vector sun/moon
+     * @return always the empty string. toggle buttons now carry a vector sun/moon
      *         <em>graphic</em> (set by {@link #refreshIcon}), so legacy callers that still do
      *         {@code btn.setText(iconText())} after toggling stay harmless no-ops
      */
     public static String iconText() { return ""; }
 
     /**
-     * applies the shared topographic theme to a popup dialog — works for {@link javafx.scene.control.Alert},
+     * applies the shared topographic theme to a popup dialog. works for {@link javafx.scene.control.Alert},
      * {@link javafx.scene.control.TextInputDialog}, {@link javafx.scene.control.ChoiceDialog}, and any
      * custom {@link Dialog}. attaches {@code gonature.css} to the dialog pane (so the looked-up colour
      * tokens and {@code .dark-mode} rules resolve), tags it with the {@code help-dialog} style class for the
@@ -164,7 +164,7 @@ public final class ThemeManager {
         pane.setMinWidth(460);
         pane.setGraphic(null);
 
-        // the dialog's scene only exists once it's shown — register now if present, and on attach
+        // the dialog's scene only exists once it's shown; register now if present, and on attach
         if (pane.getScene() != null) register(pane.getScene());
         pane.sceneProperty().addListener((o, ov, sc) -> {
             if (sc != null) { register(sc); polishDialogButtons(pane); }

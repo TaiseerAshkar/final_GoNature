@@ -195,9 +195,9 @@ public class RegisterController {
     private void closeOrReturn() {
         Stage stage = (Stage) lblError.getScene().getWindow();
         if (stage != null && stage.getModality() != Modality.NONE) {
-            stage.close();        // standalone modal — just close it
+            stage.close();        // standalone modal, just close it
         } else {
-            navigateToLogin();    // opened in the login window — go back to login
+            navigateToLogin();    // opened in the login window, go back to login
         }
     }
 

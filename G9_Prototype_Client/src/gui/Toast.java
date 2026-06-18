@@ -16,13 +16,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * lightweight toast notifications for transient outcomes — "Booking confirmed",
- * "Could not cancel order" — shown as a floating pill in the top-right corner of the
+ * lightweight toast notifications for transient outcomes like "Booking confirmed" or
+ * "Could not cancel order", shown as a floating pill in the top-right corner of the
  * active window. slides in, lingers ~3.2s, fades out; click to dismiss early.
  *
  * <p>replaces the scattered per-screen inline status labels for one-shot results, and uses
  * fixed colour pills (pine / rust / lake with white text) so it is equally readable in
- * light and dark mode — unlike the old hardcoded-red label styles. multiple toasts stack
+ * light and dark mode, unlike the old hardcoded-red label styles. multiple toasts stack
  * downward and reflow when earlier ones close.
  */
 public final class Toast {
@@ -35,7 +35,7 @@ public final class Toast {
     private static final double STACK_STEP = 54;
     private static final double RIGHT_MARGIN = 22;
 
-    /** utility class — no instances. */
+    /** utility class, no instances. */
     private Toast() {}
 
     /** shows a pine success toast. @param message the one-line outcome text */

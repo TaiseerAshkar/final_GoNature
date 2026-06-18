@@ -15,7 +15,7 @@ import javafx.util.Duration;
  */
 public final class Animations {
 
-    /** utility class — no instances. */
+    /** utility class, no instances. */
     private Animations() {}
 
     /**
@@ -38,7 +38,7 @@ public final class Animations {
     }
 
     /**
-     * plays a brief dim-then-restore fade on a node — used to signal a theme switch so the
+     * plays a brief dim-then-restore fade on a node, used to signal a theme switch so the
      * recolour reads as intentional rather than a flicker.
      *
      * @param node the scene root to flash; ignored if {@code null}

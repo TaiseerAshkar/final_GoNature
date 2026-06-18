@@ -5,7 +5,7 @@ import java.io.Serializable;
 /**
  * a single order row from the server.
  *
- * <p>maps to the main {@code orders} table — used for My Orders, Today's Reservations,
+ * <p>maps to the main {@code orders} table. used for My Orders, Today's Reservations,
  * the Management Dashboard, and the Waiting List view.
  */
 public class OrderDetail implements Serializable {

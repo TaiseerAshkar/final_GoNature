@@ -31,7 +31,7 @@ public class BookingConfirmationController {
     @FXML private Label lblStatusTitle;
     @FXML private Label lblBookingId;
 
-    // entry pass — only shown for CONFIRMED bookings
+    // entry pass, only shown for CONFIRMED bookings
     @FXML private VBox  paneEntryPass;
     @FXML private VBox  paneQR;
     @FXML private Label lblEntryCode;
@@ -44,7 +44,7 @@ public class BookingConfirmationController {
     @FXML private Label lblEmail;
     @FXML private Label lblEmailNote;
 
-    // promotion price card — only shown when an active promotion was applied
+    // promotion price card, only shown when an active promotion was applied
     @FXML private VBox  panePromo;
     @FXML private Label lblPromoTag;
     @FXML private Label lblPromoDesc;
@@ -53,7 +53,7 @@ public class BookingConfirmationController {
 
     /**
      * called by the FXMLLoader after all {@code @FXML} fields have been injected.
-     * nothing to do here — all data-binding is done in {@link #populate(BookingResult)}
+     * nothing to do here; all data-binding is done in {@link #populate(BookingResult)}
      * which is called explicitly by {@link BookingController} after loading.
      */
     @FXML
@@ -87,7 +87,7 @@ public class BookingConfirmationController {
                 "A confirmation email will be sent to the address below. " +
                 "Please arrive 15 minutes before your scheduled time.");
 
-            // generate the entry pass right now — not on button click
+            // generate the entry pass right now, not on button click
             generateEntryPass(r);
         }
 
@@ -98,7 +98,7 @@ public class BookingConfirmationController {
         lblType.setText(r.getOrderType());
         lblEmail.setText(r.getEmail());
 
-        // Promotion price card — only for confirmed bookings that carry an active promotion.
+        // Promotion price card, only for confirmed bookings that carry an active promotion.
         if (!isWaiting && r.hasPromotion()) {
             lblPromoTag.setText(String.format("Promotion Applied: %.0f%% off", r.getPromoPercent()));
             lblPromoDesc.setText(r.getPromoDescription());
@@ -127,7 +127,7 @@ public class BookingConfirmationController {
         // draw the QR grid (8 px per module → 168 × 168 px total)
         Canvas qr = QRCodeUtil.generate(payload, 8);
 
-        // thin black border — matches the style in the help dialog
+        // thin black border, matches the style in the help dialog
         StackPane qrFrame = new StackPane(qr);
         qrFrame.setStyle("-fx-border-color: #1A1A1A; -fx-border-width: 2;"
                        + "-fx-background-color: white; -fx-padding: 6;");

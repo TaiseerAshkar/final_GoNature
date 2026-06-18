@@ -34,7 +34,7 @@ import java.util.Optional;
  * controller for the service representative dashboard ({@code ServiceRepFrame.fxml}).
  *
  * <p>distinct from the department-manager view: the service rep screen centres on
- * customer-facing tasks — loading and updating orders on a visitor's behalf, and
+ * customer-facing tasks: loading and updating orders on a visitor's behalf, and
  * registering new visitors directly from the desk.
  */
 public class ServiceRepController {
@@ -276,7 +276,7 @@ public class ServiceRepController {
                 Toast.success(ChatClient.lastGuideRegisterSuccess);
                 return;
             }
-            // Server returned an error — show it inline and let the rep correct
+            // Server returned an error; show it inline and let the rep correct
             lblErr.setText(ChatClient.lastGuideRegisterFail != null
                 ? ChatClient.lastGuideRegisterFail : "Registration failed. Try again.");
         }
@@ -297,7 +297,7 @@ public class ServiceRepController {
 
     /**
      * validates and sends an {@code UPDATE_ORDER} request on behalf of a visitor.
-     * date must be a future {@code YYYY-MM-DD}; visitors must be 1–15.
+     * date must be a future {@code YYYY-MM-DD}; visitors must be 1-15.
      *
      * @param event the button-click event
      */

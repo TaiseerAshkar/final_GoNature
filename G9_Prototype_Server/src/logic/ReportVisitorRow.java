@@ -15,8 +15,8 @@ public class ReportVisitorRow implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private final String dayLabel;       // "MM/dd" — bar-chart X-axis label
-    private final String visitDate;      // "yyyy-MM-dd" — used for sorting/grouping
+    private final String dayLabel;       // "MM/dd", bar-chart X-axis label
+    private final String visitDate;      // "yyyy-MM-dd", used for sorting/grouping
     private final String orderType;      // "SOLO" or "GROUP" (uppercase)
     private final int    totalVisitors;
 

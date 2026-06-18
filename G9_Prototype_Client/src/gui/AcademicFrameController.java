@@ -108,7 +108,7 @@ public class AcademicFrameController {
         colBookedOn.setCellValueFactory(d ->
             new SimpleStringProperty(d.getValue().getCreatedAt()));
 
-        // Visit-type dropdown — SOLO locks visitors to 1; FAMILY/GROUP unlock it.
+        // Visit-type dropdown: SOLO locks visitors to 1; FAMILY/GROUP unlock it.
         cboNewOrderType.getItems().addAll("SOLO", "FAMILY", "GROUP");
         cboNewOrderType.setValue("SOLO");
         applyTypeSideEffects("SOLO");
@@ -217,9 +217,9 @@ public class AcademicFrameController {
     /**
      * validates and sends an {@code UPDATE_ORDER} request.
      * <ul>
-     *   <li>SOLO  — visitor count forced to 1.</li>
-     *   <li>FAMILY — visitor count must be 2–15.</li>
-     *   <li>GROUP  — visitor count must be 2–15; server additionally checks that
+     *   <li>SOLO: visitor count forced to 1.</li>
+     *   <li>FAMILY: visitor count must be 2-15.</li>
+     *   <li>GROUP: visitor count must be 2-15; server additionally checks that
      *               the order's visitor_id is an approved guide.</li>
      * </ul>
      *

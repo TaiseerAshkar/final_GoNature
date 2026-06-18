@@ -17,14 +17,14 @@ import java.util.Random;
  *
  * <p>produces a deterministic, visually realistic grid: proper 7×7 finder patterns in three
  * corners, QR timing strips on row/col 6, and a seeded pseudo-random data area so the same
- * payload always renders the same visual. this is not a real QR code — it is a simulation.
+ * payload always renders the same visual. this is not a real QR code; it is a simulation.
  *
  * <p>the encoded payload format is {@code GONATURE:ORDER=<id>:VISITOR=<visitorId>}, which the
  * entry-control "scan" dialog can parse to pre-fill the visitor ID field automatically.
  */
 class QRCodeUtil {
 
-    /** modules (cells) per side — matches QR Version 1. */
+    /** modules (cells) per side, matches QR Version 1. */
     private static final int MODULES = 21;
 
     /**
@@ -146,7 +146,7 @@ class QRCodeUtil {
             g[i][6] = (i % 2 == 0);
         }
 
-        // data area — deterministic fill so same payload → same visual
+        // data area: deterministic fill so the same payload renders the same visual
         Random rng = new Random((long) payload.hashCode() * 0xDEADBEEFL);
         for (int r = 0; r < MODULES; r++) {
             for (int c = 0; c < MODULES; c++) {
@@ -171,7 +171,7 @@ class QRCodeUtil {
 
     /**
      * returns true for cells that belong to finder patterns, their quiet-zone
-     * separators (1-module border), or the timing strips — these are never overwritten
+     * separators (1-module border), or the timing strips. these are never overwritten
      * by the data-area fill.
      */
     private static boolean isReserved(int r, int c) {

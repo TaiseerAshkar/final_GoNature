@@ -18,10 +18,10 @@ import javafx.scene.shape.StrokeLineJoin;
  */
 public final class Icons {
 
-    /** fixed warm-cream variant marker — for icons on the always-pine header surfaces. */
+    /** fixed warm-cream variant marker, for icons on the always-pine header surfaces. */
     public static final String CREAM = "ikon-cream";
 
-    /** utility class — no instances. */
+    /** utility class, no instances. */
     private Icons() {}
 
     /* ── path data (24×24 grid) ─────────────────────────────────── */
@@ -156,7 +156,7 @@ public final class Icons {
 
     /**
      * scales the 24-grid path to the requested size. the path is wrapped in a {@link Group}
-     * because a Group's layout bounds include its children's transforms — a bare scaled
+     * because a Group's layout bounds include its children's transforms; a bare scaled
      * SVGPath would keep its unscaled layout bounds and misalign next to text.
      */
     private static Node sized(SVGPath p, double size) {

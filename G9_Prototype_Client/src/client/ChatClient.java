@@ -278,7 +278,7 @@ public class ChatClient extends AbstractClient {
                 lastConfirmVisitError = (String) m.getData();
                 break;
             case "LOGOUT_OK":
-                break; // fire-and-forget — no state change needed
+                break; // fire-and-forget; no state change needed
 
             // ── Guide management ─────────────────────────────────────────────
             case "GUIDE_REGISTER_SUCCESS":
@@ -355,7 +355,7 @@ public class ChatClient extends AbstractClient {
                 lastPromotionActionFail    = (String) m.getData();
                 break;
         }
-        // All field assignments above are complete — NOW unblock the waiting thread.
+        // All field assignments above are complete, NOW unblock the waiting thread.
         awaitResponse = false;
     }
 
@@ -373,7 +373,7 @@ public class ChatClient extends AbstractClient {
             long deadline = System.currentTimeMillis() + 15_000;
             while (awaitResponse) {
                 if (System.currentTimeMillis() > deadline) {
-                    awaitResponse = false; // stop blocking — recover instead of hanging forever
+                    awaitResponse = false; // stop blocking; recover instead of hanging forever
                     lastResult = "No response from server — please try again";
                     clientUI.display("No response from server — please try again");
                     break;
@@ -386,16 +386,16 @@ public class ChatClient extends AbstractClient {
     }
 
     /**
-     * fire-and-forget logout — no {@code awaitResponse} so the GUI thread isn't blocked.
+     * fire-and-forget logout with no {@code awaitResponse}, so the GUI thread isn't blocked.
      * the server marks this client as "Disconnected" in its UI.
      */
     public void sendLogout() {
         try {
             openConnection();
             sendToServer(new Message("LOGOUT", null));
-            // No awaitResponse — we don't wait for a reply
+            // No awaitResponse; we don't wait for a reply
         } catch (IOException e) {
-            // ignore — we're logging out anyway
+            // ignore; we're logging out anyway
         }
     }
 

@@ -86,7 +86,7 @@ public class BookingController {
         }
     }
 
-    /** hourly slots 08:00–16:00 to match the park's operating hours. */
+    /** hourly slots 08:00-16:00 to match the park's operating hours. */
     private void setupTimeSlots() {
         cboTime.getItems().addAll(
             "08:00", "09:00", "10:00", "11:00", "12:00",
@@ -154,7 +154,7 @@ public class BookingController {
             lblAvailability.setText("");
             return;
         }
-        // Skip if a check is already running — the result from the previous pick
+        // Skip if a check is already running; the result from the previous pick
         // will arrive and update the label momentarily.
         if (!availCheckInFlight.compareAndSet(false, true)) return;
 
@@ -183,7 +183,7 @@ public class BookingController {
                         lblAvailability.setText("Couldn't check availability right now.");
                     } else if (available <= 0) {
                         // 0  = park is exactly full
-                        // <0 = slight overbooking edge case — still treat as full
+                        // <0 = slight overbooking edge case, still treat as full
                         lblAvailability.getStyleClass().setAll("lbl-warning");
                         lblAvailability.setStyle("");
                         lblAvailability.setText(
@@ -205,7 +205,7 @@ public class BookingController {
 
     /**
      * locks or unlocks the visitor-count field and updates the hint based on visit type.
-     * SOLO is fixed at 1; FAMILY allows 2–15 for anyone; GROUP is for registered guides (2–16).
+     * SOLO is fixed at 1; FAMILY allows 2-15 for anyone; GROUP is for registered guides (2-16).
      *
      * @param orderType the currently selected visit type string
      */
@@ -292,8 +292,8 @@ public class BookingController {
     /**
      * validates all form inputs and builds a {@link BookingRequest} on success.
      * SOLO   = exactly 1 visitor, any role.
-     * FAMILY = 2–15 visitors, any role.
-     * GROUP  = 2–16 total, registered guides only (guide enters free at check-in).
+     * FAMILY = 2-15 visitors, any role.
+     * GROUP  = 2-16 total, registered guides only (guide enters free at check-in).
      *
      * @return a populated {@link BookingRequest}, or {@code null} if validation failed
      */

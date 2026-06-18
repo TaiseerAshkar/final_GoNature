@@ -450,7 +450,7 @@ public class VisitorController {
         Optional<ButtonType> result = alert.showAndWait();
         if (!result.isPresent() || result.get() != confirmBtn) return false;
 
-        // visitor chose "Confirm Now" — send confirmation to server
+        // visitor chose "Confirm Now"; send confirmation to server
         ChatClient.lastConfirmVisitOk    = null;
         ChatClient.lastConfirmVisitError = null;
         ClientUI.chat.accept(new Message("CONFIRM_VISIT", o.getId()));
@@ -620,7 +620,7 @@ public class VisitorController {
         }
 
         // ── Day-before reminder path ──────────────────────────────────────────
-        // no pending waitlist promotions — fall through to the ordinary reminder flow.
+        // no pending waitlist promotions; fall through to the ordinary reminder flow.
         ChatClient.lastMyOrders = null;
         ClientUI.chat.accept(new Message("GET_MY_ORDERS", s.getUserId()));
         List<OrderDetail> orders = ChatClient.lastMyOrders;

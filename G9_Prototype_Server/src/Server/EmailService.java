@@ -20,7 +20,7 @@ import javax.mail.internet.MimeMessage;
  *
  * <p>{@link #sendEmail(String, String, String)} dispatches each message on a short-lived
  * daemon thread so the SMTP round-trip never blocks the OCSF request handlers. failures are
- * logged to stdout and swallowed — a notification email never breaks the booking flow.
+ * logged to stdout and swallowed; a notification email never breaks the booking flow.
  */
 public class EmailService {
 
@@ -38,7 +38,7 @@ public class EmailService {
             return t;
         });
 
-    /** utility class — no instances. */
+    /** utility class, no instances. */
     private EmailService() {}
 
     /**

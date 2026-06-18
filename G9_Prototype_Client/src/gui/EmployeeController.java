@@ -74,7 +74,7 @@ public class EmployeeController {
             lblInfo.setText(
                 "As a park employee you can manage visitor check-ins,\n" +
                 "handle the waiting list, and process daily reservations.");
-            // btnReports is disabled by default in FXML — employees can't access reports
+            // btnReports is disabled by default in FXML; employees can't access reports
         }
 
         ThemeManager.installToggle(btnTheme);

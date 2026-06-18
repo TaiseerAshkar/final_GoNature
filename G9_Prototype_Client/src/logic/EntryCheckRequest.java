@@ -17,9 +17,9 @@ public class EntryCheckRequest implements Serializable {
 
     private final String visitorId;
     private final int    parkId;
-    /** walk-in only — ignored when a pre-booking is matched. */
+    /** walk-in only; ignored when a pre-booking is matched. */
     private final int    numVisitors;
-    /** walk-in only — ignored when a pre-booking is matched. */
+    /** walk-in only; ignored when a pre-booking is matched. */
     private final String orderType;
 
     /**

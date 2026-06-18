@@ -6,8 +6,8 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
 
 /**
- * builder for designed table/list empty states — a theme-coloured icon, a short title,
- * and an optional one-line hint — replacing the bare "No data" text placeholders.
+ * builder for designed table/list empty states. shows a theme-coloured icon, a short title,
+ * and an optional one-line hint, replacing the bare "No data" text placeholders.
  *
  * <p>usage: {@code table.setPlaceholder(EmptyState.of(Icons.calendar(34), "No reservations yet",
  * "Bookings you make will appear here."));} colours come from the {@code empty-title} /
@@ -15,7 +15,7 @@ import javafx.scene.layout.VBox;
  */
 public final class EmptyState {
 
-    /** utility class — no instances. */
+    /** utility class, no instances. */
     private EmptyState() {}
 
     /**

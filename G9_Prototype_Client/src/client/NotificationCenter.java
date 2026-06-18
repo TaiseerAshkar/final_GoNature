@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * in-memory notification log for the current client session.
  *
- * <p>simulates SMS/email delivery — no real messages are sent.
+ * <p>simulates SMS/email delivery; no real messages are sent.
  * controllers push events here at the right moments (booking confirmed,
  * cancellation, waiting-list alert, visit reminder); the visitor home
  * screen reads the list and renders it as a notification inbox.
@@ -44,6 +44,6 @@ public class NotificationCenter {
     /** @return how many notifications are currently stored */
     public static int count() { return entries.size(); }
 
-    /** wipes all entries — call on logout so the next user starts clean. */
+    /** wipes all entries; call on logout so the next user starts clean. */
     public static void clear() { entries.clear(); }
 }

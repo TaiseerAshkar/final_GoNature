@@ -14,7 +14,7 @@ import javafx.scene.control.TableColumn;
  */
 public final class UiCells {
 
-    /** utility class — no instances. */
+    /** utility class, no instances. */
     private UiCells() {}
 
     /**

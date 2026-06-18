@@ -3,7 +3,7 @@ package logic;
 import java.io.Serializable;
 
 /**
- * protocol envelope for all client–server communication.
+ * protocol envelope for all client-server communication.
  *
  * <p>every object exchanged over the OCSF socket is a {@code Message}.
  * {@code type} acts as a command discriminator; {@code data} carries the typed payload.
@@ -59,8 +59,9 @@ public class Message implements Serializable {
     public Object getData() { return data; }
 
     /**
-     * @return a short debug string showing the command type and its payload,
-     *         handy when tracing traffic in the server or client logs
+     * @return a short debug string showing the command type and its payload.
+     *         present in the client copy for UI-side debug logging; the server copy
+     *         omits this because EchoServer never logs Message objects directly.
      */
     @Override
     public String toString() {

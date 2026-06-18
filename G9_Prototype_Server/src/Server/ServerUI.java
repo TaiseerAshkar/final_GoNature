@@ -70,7 +70,7 @@ public class ServerUI extends Application {
         passwordField.setMaxWidth(Double.MAX_VALUE);
         passwordField.setStyle("-fx-font-size: 14px; -fx-padding: 9 12;");
 
-        // plain text field shares the same binding — shown when "Show password" is ticked
+        // plain text field shares the same binding; shown when "Show password" is ticked
         TextField plainField = new TextField();
         plainField.setPromptText("Password");
         plainField.getStyleClass().add("text-field");
@@ -150,7 +150,7 @@ public class ServerUI extends Application {
     }
 
     /**
-     * builds the warm-cream vector pine logomark used in the hero banner — the same 24-grid
+     * builds the warm-cream vector pine logomark used in the hero banner, the same 24-grid
      * path as the client's {@code Icons.pine}, inlined here so the server stays dependency-free.
      *
      * @param size rendered size in px

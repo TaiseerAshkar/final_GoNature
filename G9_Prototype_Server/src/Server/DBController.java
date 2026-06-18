@@ -45,7 +45,7 @@ import java.util.Properties;
  */
 public class DBController {
 
-    /** the sole instance — created lazily on first call to {@link #getInstance()}. */
+    /** the sole instance, created lazily on first call to {@link #getInstance()}. */
     private static DBController instance = null;
 
     /** active JDBC connection. {@code null} until {@link #connect()} succeeds. */
@@ -63,7 +63,7 @@ public class DBController {
     /** database username loaded from {@code db.properties}; falls back to {@code "root"} if absent. */
     private static String dbUser = "root";
 
-    /** database password — supplied at runtime via {@link #setPassword(String)}; never stored on disk. */
+    /** database password, supplied at runtime via {@link #setPassword(String)}; never stored on disk. */
     private static String dbPass = "";
 
     /**
@@ -270,7 +270,7 @@ public class DBController {
                     System.out.printf("[getAvailableSpots] result=%d%n", result);
                     // overlapping bookings (walk-ins, waiting-list promotions, multi-hour visit
                     // windows) can push the occupied sum past capacity, making this negative.
-                    // negative means "overbooked", NOT "error" — clamp to 0 free spots so the
+                    // negative means "overbooked", NOT "error"; clamp to 0 free spots so the
                     // callers' -1 error sentinel stays unambiguous and full slots route to the
                     // waiting-list offer instead of a bogus "could not check capacity" error.
                     if (result < 0) {
@@ -301,9 +301,9 @@ public class DBController {
      *
      * <p>Return value semantics:
      * <ul>
-     *   <li>{@code >= 1} — booking confirmed; value is the new order ID</li>
-     *   <li>{@code 0}    — slot is full (capacity or max-orders cap reached)</li>
-     *   <li>{@code -1}   — DB error or park not found</li>
+     *   <li>{@code >= 1}: booking confirmed; value is the new order ID</li>
+     *   <li>{@code 0}: slot is full (capacity or max-orders cap reached)</li>
+     *   <li>{@code -1}: DB error or park not found</li>
      * </ul>
      *
      * @param req the validated booking request
@@ -375,7 +375,7 @@ public class DBController {
                 return 0;
             }
 
-            // Both checks passed — insert the confirmed order.
+            // Both checks passed; insert the confirmed order.
             String orderTypeValue = toDbOrderType(req.getOrderType());
             int orderId;
             try (PreparedStatement st = connection.prepareStatement(
@@ -540,7 +540,7 @@ public class DBController {
      * returns all PENDING orders for a visitor that are awaiting waitlist-promotion confirmation
      * and whose 1-hour deadline has not yet passed.
      *
-     * <p>these are orders that were created by {@link #promoteFromWaitingList} — the visitor
+     * <p>these are orders that were created by {@link #promoteFromWaitingList}; the visitor
      * was notified that a spot opened and must confirm within 1 hour. the
      * {@link OrderDetail#getConfirmationDeadline()} field carries the exact deadline.
      *
@@ -591,7 +591,7 @@ public class DBController {
 
     /**
      * cancels an order and notifies the first waiting-list entry for the freed slot.
-     * only pending/confirmed orders may be cancelled — completed/already-cancelled rows are rejected.
+     * only pending/confirmed orders may be cancelled; completed/already-cancelled rows are rejected.
      *
      * <p>cancellation frees up capacity: the slot is excluded from
      * {@link #getAvailableSpots} so a new booking can take the vacated position.
@@ -624,7 +624,7 @@ public class DBController {
             System.out.println("cancelOrder (slot lookup) error: " + e.getMessage());
         }
 
-        // WHERE restricts to cancellable statuses — any other status returns 0 updated rows
+        // WHERE restricts to cancellable statuses; any other status returns 0 updated rows
         try {
             PreparedStatement st = connection.prepareStatement(
                 "UPDATE orders SET status = 'cancelled' " +
@@ -637,7 +637,7 @@ public class DBController {
             return new CancelResult(false, null);
         }
 
-        // the slot is now free — promote the earliest matching waiting-list entry (if any)
+        // the slot is now free; promote the earliest matching waiting-list entry (if any)
         String notifiedEmail = null;
         if (parkId > 0 && visitDate != null && visitTime != null) {
             notifiedEmail = promoteFromWaitingList(parkId, visitDate, visitTime);
@@ -666,7 +666,7 @@ public class DBController {
         String dateStr = new java.text.SimpleDateFormat("yyyy-MM-dd").format(visitDate);
         String timeStr = new java.text.SimpleDateFormat("HH:mm").format(visitTime);
 
-        // Check available capacity once — it is the same for every candidate in this queue.
+        // Check available capacity once; it is the same for every candidate in this queue.
         // getAvailableSpots already excludes the just-cancelled order because cancelOrder()
         // changed its status to 'cancelled' before calling us.
         int available = getAvailableSpots(parkId, dateStr, timeStr);
@@ -706,7 +706,7 @@ public class DBController {
 
         String email = getVisitorEmail(visitorId);
 
-        // create the HELD order for the promoted visitor — status 'pending' means the slot is
+        // create the HELD order for the promoted visitor; status 'pending' means the slot is
         // reserved (it counts against capacity) but the visitor must confirm within 1 hour.
         int newOrderId;
         try {
@@ -987,7 +987,7 @@ public class DBController {
     /**
      * releases an expired promotion: cancels the held PENDING order, removes the waiting-list
      * row, then offers the freed slot to the next visitor in line (which starts their own
-     * 1-hour window). idempotent — if the visitor confirmed first (order no longer pending),
+     * 1-hour window). idempotent; if the visitor confirmed first (order no longer pending),
      * nothing is cancelled and {@code false} is returned.
      *
      * @param e the expired promoted entry
@@ -995,11 +995,11 @@ public class DBController {
      */
     public synchronized boolean expireWaitlistEntry(PromotedEntry e) {
         if (connection == null) return false;
-        // only cancel while still pending — guards against a race with a last-second confirmation
+        // only cancel while still pending; guards against a race with a last-second confirmation
         try (PreparedStatement st = connection.prepareStatement(
                 "UPDATE orders SET status = 'cancelled' WHERE id = ? AND status = 'pending'")) {
             st.setInt(1, e.orderId);
-            if (st.executeUpdate() == 0) return false;   // visitor confirmed first — leave it alone
+            if (st.executeUpdate() == 0) return false;   // visitor confirmed first; leave it alone
         } catch (SQLException ex) {
             System.out.println("expireWaitlistEntry (cancel) error: " + ex.getMessage());
             return false;
@@ -1061,7 +1061,7 @@ public class DBController {
     }
 
     /**
-     * marks a PENDING order as CONFIRMED — used when a visitor confirms an upcoming visit.
+     * marks a PENDING order as CONFIRMED; used when a visitor confirms an upcoming visit.
      * only rows currently {@code 'pending'} are changed; already-confirmed, cancelled, or
      * completed orders are left untouched.
      *
@@ -1096,7 +1096,7 @@ public class DBController {
     public LoginResult loginVisitor(String idNumber) {
         if (connection == null) return null;
 
-        // guides take priority — they have their own entry-pricing rules
+        // guides take priority; they have their own entry-pricing rules
         try {
             PreparedStatement st = connection.prepareStatement(
                 "SELECT first_name, last_name, email FROM guides WHERE id_number = ?");
@@ -1223,7 +1223,7 @@ public class DBController {
     }
 
     /**
-     * group bookings are only allowed for registered guides — this check enforces that rule.
+     * group bookings are only allowed for registered guides; this check enforces that rule.
      *
      * @param visitorId the visitor's national ID number
      * @return {@code true} if the ID exists in the guides table; {@code false} otherwise
@@ -1242,7 +1242,7 @@ public class DBController {
 
     /**
      * walk-in GROUP visits require a guide who has already been approved by the department.
-     * pre-booked GROUP orders are NOT gated by this method — they were approved at booking time.
+     * pre-booked GROUP orders are NOT gated by this method; they were approved at booking time.
      *
      * @param visitorId the visitor's national ID number
      * @return {@code true} if the ID exists in guides with {@code is_approved = 1}
@@ -1374,7 +1374,7 @@ public class DBController {
                 "Something went wrong while looking up the booking. Please try again.");
         }
 
-        // no booking found — treat as walk-in
+        // no booking found; treat as walk-in
         int    numVis        = req.getNumVisitors();
         String wDisplayType  = req.getOrderType().toUpperCase(); // SOLO / FAMILY / GROUP (for display + pricing)
         String wType         = toDbOrderType(req.getOrderType()); // individual / family / group (for DB insert)
@@ -1416,7 +1416,7 @@ public class DBController {
                 wDisplayType, 0,
                 "Not enough space. Park has " + available + " spot(s) remaining.");
 
-        // walk-in order is completed immediately — no pre-existing pending status
+        // walk-in order is completed immediately; no pre-existing pending status
         System.out.printf(
             "[SQL INSERT] orders (walk-in) → visitor_id='%s' park_id=%d" +
             " num_visitors=%d order_type='%s' status='completed'%n",
@@ -1454,12 +1454,12 @@ public class DBController {
      *
      * <p>Pricing rules (applied in order):
      * <ol>
-     *   <li><b>GROUP by guide</b> — guide enters free; paying visitors receive 25% advance
+     *   <li><b>GROUP by guide</b>: guide enters free; paying visitors receive 25% advance
      *       discount (pre-booked) or 10% walk-in discount. Guide pricing is not affected by
-     *       subscriber status — guide path returns immediately.</li>
-     *   <li><b>Base discount</b> — pre-booked visitors receive 15%; walk-in visitors pay full
+     *       subscriber status; guide path returns immediately.</li>
+     *   <li><b>Base discount</b>: pre-booked visitors receive 15%; walk-in visitors pay full
      *       price (multiplier = 1.0).</li>
-     *   <li><b>Subscriber stacking</b> — if the visitor is a Family Member Club subscriber,
+     *   <li><b>Subscriber stacking</b>: if the visitor is a Family Member Club subscriber,
      *       an additional 10% discount is applied on top of whatever base rate was calculated
      *       in step 2 (i.e. multiplied by 0.90). Examples:
      *       <ul>
@@ -1489,14 +1489,14 @@ public class DBController {
                 ? paying * fullPrice * 0.75   // guide free + 25% advance discount
                 : paying * fullPrice * 0.90;  // guide free + 10% walk-in discount
         } else {
-            // Step 1 — base multiplier: 15% off for pre-booked, full price for walk-in.
+            // Step 1, base multiplier: 15% off for pre-booked, full price for walk-in.
             double baseMultiplier = prebooked ? 0.85 : 1.00;
-            // Step 2 — subscriber stacks an additional 10% on top of whatever base applies.
+            // Step 2, subscriber stacks an additional 10% on top of whatever base applies.
             double subscriberMultiplier = isSubscriber ? 0.90 : 1.00;
             subtotal = numVisitors * fullPrice * baseMultiplier * subscriberMultiplier;
         }
 
-        // Step 3 — promotional discount: applied AFTER all standard discounts. The largest
+        // Step 3, promotional discount: applied AFTER all standard discounts. The largest
         // active promotion for this park on this date wins (getBestActivePromotion orders by
         // discount desc); multiple promotions never stack.
         double promoMultiplier = 1.0 - promoFraction(parkId, date);
@@ -1530,7 +1530,7 @@ public class DBController {
      * @param orderType   the display order type ({@code SOLO} / {@code FAMILY} / {@code GROUP})
      * @param numVisitors the number of visitors
      * @param visitorId   the booker's ID (used to detect guide / subscriber status)
-     * @return {@code [basePrice, finalPrice]} — {@code basePrice} before promotion,
+     * @return {@code [basePrice, finalPrice]}: {@code basePrice} before promotion,
      *         {@code finalPrice} after the best active promotion
      */
     public double[] quotePrebookedPrice(int parkId, String visitDate, String orderType,
@@ -1558,7 +1558,7 @@ public class DBController {
                                          boolean isGuide, boolean isSubscriber) {
         StringBuilder note = new StringBuilder();
 
-        // Guide-group note — subscriber discount does not apply here.
+        // Guide-group note: subscriber discount does not apply here.
         if ("GROUP".equals(orderType.toUpperCase()) && isGuide) {
             int paying = Math.max(0, numVisitors - 1);
             note.append(prebooked
@@ -1645,7 +1645,7 @@ public class DBController {
         } catch (SQLException e) {
             System.out.println("getVisitorDisplayName (visitors) error: " + e.getMessage());
         }
-        return visitorId; // safe fallback — email is still sent, just without the name
+        return visitorId; // safe fallback; email is still sent, just without the name
     }
 
     // ── Reports ───────────────────────────────────────────────────────────────
@@ -1656,7 +1656,7 @@ public class DBController {
      *
      * @param parkId the park to filter by, or {@code null} for all parks
      * @param year   the four-digit calendar year
-     * @param month  the month number 1–12
+     * @param month  the month number 1-12
      * @return a list of {@link ReportVisitorRow} objects ordered by date and order type;
      *         empty on error or no data
      */
@@ -1700,7 +1700,7 @@ public class DBController {
      *
      * @param parkId the park to filter by, or {@code null} for all parks
      * @param year   the four-digit calendar year
-     * @param month  the month number 1–12
+     * @param month  the month number 1-12
      * @return a list of {@link ReportCancelRow} objects; empty on error or no data
      */
     public List<ReportCancelRow> getCancelReport(Integer parkId, int year, int month) {
@@ -1751,7 +1751,7 @@ public class DBController {
      *
      * <p><b>Denominator note:</b> each hour's monthly visitor total is divided by a
      * <i>constant</i> per-park operating-day count (the number of distinct dates that park
-     * had a completed visit that month) — NOT by the number of days that particular hour
+     * had a completed visit that month), NOT by the number of days that particular hour
      * happened to be used.  Dividing per-hour-active-days would inflate rarely-used early/late
      * hours (small total ÷ few days) and flatten the curve; the constant denominator makes
      * quiet hours correctly read low so the real morning/midday peak shows.
@@ -1760,7 +1760,7 @@ public class DBController {
      * recorded are counted, so future (confirmed) bookings never appear here.
      *
      * @param year  the four-digit calendar year
-     * @param month the month number 1–12
+     * @param month the month number 1-12
      * @return a list of {@link ReportUsageRow} objects ordered by park name then hour slot;
      *         empty on error or no data
      */
@@ -1808,7 +1808,7 @@ public class DBController {
     // ── Reminder service ──────────────────────────────────────────────────────
 
     /**
-     * returns all pending/confirmed orders for tomorrow — used by {@link ReminderService}
+     * returns all pending/confirmed orders for tomorrow; used by {@link ReminderService}
      * at startup to decide who needs a reminder notification.
      *
      * @return a list of {@link ReminderOrderInfo} sorted by visit time; empty if none or on error
@@ -1884,7 +1884,7 @@ public class DBController {
                     "This ID is already registered as a guide. " +
                     "Please use your guide credentials to log in.", null);
         } catch (SQLException e) {
-            // If the guides check fails for any reason, log and continue — it's a
+            // If the guides check fails for any reason, log and continue; it's a
             // best-effort guard; the unique constraint on visitors.id_number is the
             // definitive safeguard.
             System.out.println("registerVisitor (guide-check) error: " + e.getMessage());
@@ -1938,7 +1938,7 @@ public class DBController {
                     subId > 0 ? subId : null);
             } catch (SQLException e) {
                 System.out.println("registerVisitor (subscriber) error: " + e.getMessage());
-                // visitor was saved; subscriber step failed — still return partial success
+                // visitor was saved; subscriber step failed, still return partial success
                 return new RegisterResult(true,
                     "Account created, but subscriber registration failed: " + e.getMessage(),
                     null);
@@ -1991,7 +1991,7 @@ public class DBController {
 
             PreparedStatement st;
             if (orderType == null || orderType.trim().isEmpty()) {
-                // Caller did not supply a type (e.g. ServiceRep screen) — leave order_type unchanged.
+                // Caller did not supply a type (e.g. ServiceRep screen); leave order_type unchanged.
                 st = connection.prepareStatement(
                     "UPDATE orders SET visit_date=?, num_visitors=? " +
                     "WHERE id=? AND status IN ('pending','confirmed')");
@@ -2095,7 +2095,7 @@ public class DBController {
     }
 
     /**
-     * returns how many visitors are currently inside the park right now — i.e. visitors
+     * returns how many visitors are currently inside the park right now, i.e. visitors
      * who have been checked in ({@code entry_time} set) but have not yet registered an exit
      * ({@code exit_time} still null), for today's date.
      *
@@ -2227,7 +2227,7 @@ public class DBController {
     }
 
     /**
-     * returns all rows in the {@code guides} table — pending first, then alphabetically.
+     * returns all rows in the {@code guides} table, pending first, then alphabetically.
      *
      * @return list of {@link GuideDetail}; empty on error or no data
      */
@@ -2543,7 +2543,7 @@ public class DBController {
     }
 
     /**
-     * returns the promotions that are live for a given park on a given date —
+     * returns the promotions that are live for a given park on a given date,
      * status {@code ACTIVE} and {@code date} within {@code [start_date, end_date]}.
      * ordered by discount descending so element 0 is the best offer.
      *

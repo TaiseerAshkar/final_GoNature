@@ -25,7 +25,7 @@ import java.util.List;
 /**
  * controller for the park employee entry-control screen ({@code EntryControlFrame.fxml}).
  *
- * <p>two tabs: Check-In Visitor (two modes — pre-booked and walk-in) and Register Exit.
+ * <p>two tabs: Check-In Visitor (two modes: pre-booked and walk-in) and Register Exit.
  * the check-in tab defaults to Pre-booked mode: employee enters a visitor ID, clicks
  * "Find Booking" to preview today's confirmed order, then "Confirm Entry" to complete it.
  * Walk-in mode collects visit type + visitor count and creates a new order immediately.
@@ -83,7 +83,7 @@ public class EntryControlController {
     @FXML private TextField      txtExitVisitorId;
     @FXML private Label          lblExitMessage;
 
-    /** the employee's assigned park — resolved once at startup, used for all server calls. */
+    /** the employee's assigned park, resolved once at startup, used for all server calls. */
     private Park selectedPark;
 
     /** booking found in pre-booked mode; set by handleFindBooking(), consumed by handleConfirmEntry(). */

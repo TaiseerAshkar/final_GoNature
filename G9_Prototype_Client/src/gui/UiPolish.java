@@ -11,16 +11,16 @@ import javafx.scene.input.MouseEvent;
 import javafx.util.Duration;
 
 /**
- * global, idempotent scene decorator — the polish layer that upgrades every screen without
+ * global, idempotent scene decorator. the polish layer that upgrades every screen without
  * touching any FXML. {@link ThemeManager} calls {@link #decorate(Scene)} for every window
  * it themes (it already watches all of them), so the pass applies to every current and
  * future screen and dialog automatically.
  *
  * <p>two upgrades per pass:
  * <ul>
- *   <li><b>brand icon</b> — every {@code header-logo} label swaps its leading emoji
+ *   <li><b>brand icon</b>: every {@code header-logo} label swaps its leading emoji
  *       (inconsistent, monochrome on Windows) for the crisp vector pine logomark;</li>
- *   <li><b>motion</b> — every button gets a smooth hover-lift and a quick press-scale,
+ *   <li><b>motion</b>: every button gets a smooth hover-lift and a quick press-scale,
  *       so the whole app feels responsive rather than static.</li>
  * </ul>
  *
@@ -34,7 +34,7 @@ public final class UiPolish {
     private static final String KEY_LOGO   = "gonature.polish.logo";
     private static final String KEY_MOTION = "gonature.polish.motion";
 
-    /** utility class — no instances. */
+    /** utility class, no instances. */
     private UiPolish() {}
 
     /**

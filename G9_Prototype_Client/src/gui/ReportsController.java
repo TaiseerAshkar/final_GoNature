@@ -228,7 +228,7 @@ public class ReportsController {
         };
 
         if (myParkId != null) {
-            // park manager — lock both combos to the single assigned park
+            // park manager: lock both combos to the single assigned park
             Park myPark = null;
             if (parks != null) {
                 for (Park p : parks) {
@@ -246,7 +246,7 @@ public class ReportsController {
                 cbo.setDisable(true);   // park managers can't change their filter
             }
         } else {
-            // dept. manager / service rep — show all parks with an "All Parks" sentinel
+            // dept. manager / service rep: show all parks with an "All Parks" sentinel
             Park allParks = new Park(0, "All Parks", 0, 0, 0, 0);
             for (ComboBox<Park> cbo : new ComboBox[]{cboVisitorPark, cboCancelPark}) {
                 cbo.setConverter(conv);
@@ -389,14 +389,14 @@ public class ReportsController {
         for (ReportUsageRow r : rows) {
             byPark.computeIfAbsent(r.getParkName(), k -> new ArrayList<>()).add(r);
         }
-        // drop all other parks when locked — park managers should only see their park
+        // drop all other parks when locked; park managers should only see their park
         if (myParkName != null) {
             byPark.entrySet().removeIf(e -> !e.getKey().equals(myParkName));
         }
 
         // Collect all hour slots across every park, sort them (zero-padded strings sort
         // chronologically), then pre-seed the CategoryAxis so JavaFX registers the order
-        // before any series data is added — otherwise categories appear in first-encounter order.
+        // before any series data is added; otherwise categories appear in first-encounter order.
         TreeSet<String> allHours = new TreeSet<>();
         for (List<ReportUsageRow> parkRows : byPark.values()) {
             for (ReportUsageRow r : parkRows) allHours.add(r.getHourSlot());

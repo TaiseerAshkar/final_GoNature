@@ -21,7 +21,7 @@ import javafx.stage.Stage;
  *
  * <p>single form: visitors and guides enter their ID and leave the password blank;
  * staff enter a username and password. the system identifies the user type automatically
- * after the server returns the role — no manual selection needed.
+ * after the server returns the role; no manual selection needed.
  */
 public class LoginController {
 

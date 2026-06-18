@@ -3,7 +3,7 @@ package logic;
 import java.io.Serializable;
 
 /**
- * one row in the Usage Report — average visitor load per hour slot over the last 30 days.
+ * one row in the Usage Report. it holds the average visitor load per hour slot over the last 30 days.
  *
  * <p>the client computes {@code avgPerDay / capacity × 100} to get a percentage-of-capacity
  * value and plots it on the line chart in {@link gui.ReportsController}.
@@ -15,7 +15,7 @@ public class ReportUsageRow implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private final String parkName;
-    private final String hourSlot;    // "HH:00" — e.g., "09:00", "14:00"
+    private final String hourSlot;    // "HH:00", e.g. "09:00", "14:00"
     private final int    capacity;
     private final double avgPerDay;   // average visitors booked at this slot per day
 

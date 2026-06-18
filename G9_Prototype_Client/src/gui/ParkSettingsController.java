@@ -23,7 +23,7 @@ import javafx.stage.Stage;
  * edit the four mutable parameters, validates input client-side before sending, and
  * displays server feedback inline.
  *
- * <p>accessible only to PARK_MANAGER — the button that opens this screen is disabled
+ * <p>accessible only to PARK_MANAGER; the button that opens this screen is disabled
  * for PARK_EMPLOYEE in {@link EmployeeController#initialize()}.
  */
 public class ParkSettingsController {
@@ -118,7 +118,7 @@ public class ParkSettingsController {
             ? lblParkName.getText().substring(0, lblParkName.getText().indexOf("(")).trim()
             : lblParkName.getText();
 
-        // Send as a pending request — the department manager must approve before it goes live.
+        // Send as a pending request; the department manager must approve before it goes live.
         ParkSettingsRequest req = new ParkSettingsRequest(
             s.getParkId(), currentName, s.getUserId(),
             capacity, maxOrders, duration, price);

@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
  * <ul>
  *   <li>a precise one-shot timer scheduled exactly 1 hour after the promotion, and</li>
  *   <li>a recurring sweep every {@value #SWEEP_INTERVAL_MINUTES} minutes that catches any
- *       expired entry — including promotions whose one-shot timer was lost to a server restart.</li>
+ *       expired entry, including promotions whose one-shot timer was lost to a server restart.</li>
  * </ul>
  *
  * <p>both paths funnel through {@link DBController#expireWaitlistEntry}, which is idempotent:
@@ -107,13 +107,13 @@ public class WaitlistTimerService {
     private void expireOne(int waitlistId) {
         if (db == null) return;
         DBController.PromotedEntry e = db.getNotifiedEntryById(waitlistId);
-        if (e == null) return;   // already confirmed or released — nothing to do
+        if (e == null) return;   // already confirmed or released; nothing to do
         release(e);
     }
 
     /**
-     * releases one expired promotion through the idempotent DB method, then — if the slot was
-     * actually released — notifies the visitor with an email and a server "Simulation" popup.
+     * releases one expired promotion through the idempotent DB method, then, if the slot was
+     * actually released, notifies the visitor with an email and a server "Simulation" popup.
      *
      * @param e the expired promoted entry
      */
@@ -154,7 +154,7 @@ public class WaitlistTimerService {
     /**
      * shows a server-side "Simulation" notification popup styled with the GoNature server
      * theme (pine/gold header strip, parchment background, green OK button). safe to call
-     * from any thread — marshals onto the JavaFX Application Thread via {@link Platform#runLater}.
+     * from any thread; marshals onto the JavaFX Application Thread via {@link Platform#runLater}.
      *
      * @param title   the window title shown in the OS title bar
      * @param header  the bold text shown in the pine header strip (e.g. visitor email/ID)
