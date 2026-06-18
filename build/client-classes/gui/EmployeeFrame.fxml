@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import java.net.URL?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="gui.EmployeeController"
+      styleClass="screen-bg"
+      spacing="0"
+      prefWidth="820" prefHeight="600">
+
+    <stylesheets>
+        <URL value="@gonature.css"/>
+    </stylesheets>
+
+    <!-- Header bar -->
+    <HBox styleClass="header-bar" alignment="CENTER_LEFT" spacing="10">
+        <Label text="🌿 GoNature" styleClass="header-logo"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Label fx:id="lblSessionTimer" styleClass="header-timer" text="Session: 00:00:00"/>
+        <Label fx:id="lblParkBadge" styleClass="header-badge"/>
+        <Label fx:id="lblRoleBadge" styleClass="header-badge"/>
+        <Button fx:id="btnTheme" text="🌙" onAction="#handleToggleTheme" styleClass="btn-outline"/>
+        <Button text="Help ?"  onAction="#handleHelp"   styleClass="btn-outline"/>
+        <Button text="Logout"  onAction="#handleLogout" styleClass="btn-danger"
+                style="-fx-font-size:12px; -fx-padding:5 14; -fx-background-radius:6;"/>
+    </HBox>
+
+    <!-- Content -->
+    <VBox spacing="20" style="-fx-padding: 36;" alignment="TOP_CENTER">
+
+        <Label fx:id="lblWelcome" styleClass="screen-title"/>
+
+        <!-- Action card -->
+        <VBox spacing="12" styleClass="card" maxWidth="560">
+
+            <Label fx:id="lblInfo" styleClass="screen-subtitle" wrapText="true"/>
+
+            <Label fx:id="lblStats" wrapText="true"
+                   styleClass="stat-strip" maxWidth="Infinity"/>
+
+            <Separator/>
+
+            <Button text="📅  View Today's Reservations" maxWidth="Infinity"
+                    onAction="#handleTodayReservations" styleClass="btn-primary"/>
+
+            <Button text="🚪  Entry Control (Check-In / Exit)" maxWidth="Infinity"
+                    onAction="#handleEntryControl" styleClass="btn-primary"/>
+
+            <Button text="⏳  Manage Waiting List" maxWidth="Infinity"
+                    onAction="#handleWaitingList" styleClass="btn-secondary"/>
+
+            <Button fx:id="btnReports" text="📊  View Park Reports"
+                    maxWidth="Infinity" onAction="#handleViewReports"
+                    disable="true" styleClass="btn-teal"/>
+
+            <Button fx:id="btnParkSettings" text="⚙️  Park Settings"
+                    maxWidth="Infinity" onAction="#handleParkSettings"
+                    disable="true" styleClass="btn-secondary"/>
+
+            <Button fx:id="btnPromotions" text="🎉  Promotions"
+                    maxWidth="Infinity" onAction="#handlePromotions"
+                    disable="true" styleClass="btn-secondary"/>
+        </VBox>
+    </VBox>
+</VBox>

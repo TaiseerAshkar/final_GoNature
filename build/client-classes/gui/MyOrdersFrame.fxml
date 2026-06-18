@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import java.net.URL?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="gui.MyOrdersController"
+      styleClass="screen-bg"
+      spacing="0"
+      prefWidth="860" prefHeight="640">
+
+    <stylesheets>
+        <URL value="@gonature.css"/>
+    </stylesheets>
+
+    <!-- Header bar -->
+    <HBox styleClass="header-bar" alignment="CENTER_LEFT" spacing="10">
+        <Label text="🌿 GoNature — My Reservations" styleClass="header-logo"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button fx:id="btnTheme" text="🌙" styleClass="btn-outline"/>
+        <Button text="Close" onAction="#handleClose" styleClass="btn-outline"/>
+    </HBox>
+
+    <!-- Visitor ID control bar -->
+    <HBox spacing="10" alignment="CENTER_LEFT"
+          style="-fx-padding: 12 20; -fx-background-color: -park-surface;
+                 -fx-border-color: -park-border; -fx-border-width: 0 0 1 0;">
+        <Label text="Visitor ID:" styleClass="field-label"/>
+        <TextField fx:id="txtVisitorId" prefWidth="170"/>
+        <Button text="🔄  Refresh" onAction="#handleRefresh" styleClass="btn-blue"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Label fx:id="lblOrderCount" styleClass="lbl-hint" style="-fx-font-style: normal;"/>
+    </HBox>
+
+    <!-- Orders table -->
+    <TableView fx:id="tableOrders" styleClass="table-view"
+               prefHeight="340" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="colId"       text="Order #"   prefWidth="76"/>
+            <TableColumn fx:id="colPark"     text="Park"      prefWidth="170"/>
+            <TableColumn fx:id="colDate"     text="Date"      prefWidth="105"/>
+            <TableColumn fx:id="colTime"     text="Time"      prefWidth="68"/>
+            <TableColumn fx:id="colVisitors" text="Visitors"  prefWidth="72"/>
+            <TableColumn fx:id="colType"     text="Type"      prefWidth="100"/>
+            <TableColumn fx:id="colStatus"   text="Status"    prefWidth="105"/>
+            <TableColumn fx:id="colCreated"  text="Booked On" prefWidth="138"/>
+        </columns>
+        <placeholder>
+            <Label text="No reservations found. Press Refresh to load your orders."
+                   styleClass="lbl-hint" style="-fx-font-style: italic;"/>
+        </placeholder>
+    </TableView>
+
+    <!-- ── Cancellation confirmation card (hidden until a cancel succeeds) ─── -->
+    <VBox fx:id="paneCancelConfirm" visible="false" managed="false"
+          spacing="8"
+          style="-fx-padding: 14 20; -fx-background-color: -park-sage;
+                 -fx-border-color: -park-pine; -fx-border-width: 1 0 0 0;">
+        <HBox spacing="10" alignment="CENTER_LEFT">
+            <Label text="✅" style="-fx-font-size: 22px;"/>
+            <Label fx:id="lblCancelTitle"
+                   style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: -park-pine;"/>
+        </HBox>
+        <Label fx:id="lblCancelDetail"
+               style="-fx-font-size: 12px; -fx-text-fill: -park-text-mid;" wrapText="true"/>
+        <Label text="Your reserved slot remains counted in the system. A confirmation has been added to your notification inbox."
+               style="-fx-font-size: 11px; -fx-text-fill: -park-text-muted; -fx-font-style: italic;"
+               wrapText="true"/>
+    </VBox>
+
+    <!-- Footer -->
+    <HBox spacing="14" alignment="CENTER_LEFT"
+          style="-fx-padding: 12 20; -fx-background-color: -park-surface;
+                 -fx-border-color: -park-border; -fx-border-width: 1 0 0 0;">
+        <Button fx:id="btnCancel" text="❌  Cancel Selected Order"
+                onAction="#handleCancelOrder" disable="true"
+                styleClass="btn-danger"/>
+        <Button fx:id="btnShowQR" text="📱  Show QR Code"
+                onAction="#handleShowQR" disable="true"
+                styleClass="btn-teal"/>
+        <Button fx:id="btnConfirmVisit" text="✅  Confirm My Visit"
+                onAction="#handleConfirmVisit" disable="true"
+                styleClass="btn-blue" style="-fx-padding:5 14;"/>
+        <Label fx:id="lblMessage" text="" styleClass="lbl-success"
+               wrapText="true" maxWidth="400"/>
+    </HBox>
+</VBox>

@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import java.net.URL?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="gui.ServerPortFrameController"
+      styleClass="server-bg"
+      spacing="14"
+      style="-fx-padding: 20;">
+
+    <stylesheets>
+        <URL value="@ServerPort.css"/>
+    </stylesheets>
+
+    <!-- Title bar -->
+    <HBox alignment="CENTER_LEFT" spacing="12">
+        <VBox spacing="1">
+            <Label text="🌿 GoNature — Server Control" styleClass="app-title"/>
+            <Label text="National Park Reservation System · Operations Console"
+                   styleClass="app-subtitle"/>
+        </VBox>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button fx:id="btnTheme" text="🌙" onAction="#toggleTheme" styleClass="btn-theme"/>
+        <Label text="● LIVE" styleClass="live-pill"/>
+    </HBox>
+
+    <!-- Port + controls card -->
+    <VBox styleClass="card" spacing="0">
+        <HBox alignment="CENTER_LEFT" styleClass="card-head">
+            <Label text="⚙  Server Configuration" styleClass="card-head-label"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label fx:id="lblServerStatus" text="● Stopped"
+                   styleClass="card-status-stopped"/>
+        </HBox>
+
+        <HBox spacing="10" alignment="CENTER_LEFT" style="-fx-padding: 14 16;">
+            <Label text="Port:" styleClass="field-label"/>
+            <TextField fx:id="portxt" prefWidth="110" styleClass="text-field"/>
+            <Button fx:id="btnStart" text="▶  Start Server" onAction="#Done"
+                    styleClass="btn-start"/>
+            <Button fx:id="btnStop" text="⏹  Stop Server" onAction="#stopServer"
+                    disable="true" styleClass="btn-stop"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="✖  Exit" onAction="#getExitBtn" styleClass="btn-exit"/>
+        </HBox>
+    </VBox>
+
+    <!-- Connected Clients card -->
+    <VBox styleClass="card" spacing="0">
+        <HBox styleClass="card-head">
+            <Label text="🖥  Connected Clients" styleClass="card-head-label"/>
+        </HBox>
+
+        <TableView fx:id="clientTable" prefHeight="160" styleClass="table-view">
+            <placeholder>
+                <Label text="No clients connected."/>
+            </placeholder>
+            <columns>
+                <TableColumn fx:id="colIP"     text="IP Address"  prefWidth="160"/>
+                <TableColumn fx:id="colHost"   text="Host Name"   prefWidth="180"/>
+                <TableColumn fx:id="colStatus" text="Status"      prefWidth="130"/>
+            </columns>
+        </TableView>
+    </VBox>
+
+    <!-- Connection Log card -->
+    <VBox styleClass="card" spacing="0">
+        <HBox styleClass="card-head" alignment="CENTER_LEFT">
+            <Label text="📋  Connection Log" styleClass="card-head-label"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="💾  Export Logs" onAction="#handleExportLogs"
+                    style="-fx-font-size:11px; -fx-padding:3 10; -fx-background-radius:6;
+                           -fx-background-color:#4A6741; -fx-text-fill:white; -fx-cursor:hand;"/>
+        </HBox>
+
+        <TextArea fx:id="txtLog" prefHeight="100" editable="false"
+                  styleClass="log-connection"/>
+    </VBox>
+
+    <!-- Live Notifications card -->
+    <VBox styleClass="card" spacing="0" VBox.vgrow="ALWAYS">
+        <HBox styleClass="card-head-lake">
+            <Label text="📬  Live Notifications" styleClass="card-head-label"/>
+        </HBox>
+
+        <TextArea fx:id="txtSimLog" prefHeight="160" editable="false" VBox.vgrow="ALWAYS"
+                  styleClass="log-notif"/>
+    </VBox>
+
+</VBox>

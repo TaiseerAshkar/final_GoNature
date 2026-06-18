@@ -93,9 +93,6 @@ public class UserSession {
     /** @return the user's full name in "First Last" format */
     public String  getFullName()  { return firstName + " " + lastName; }
 
-    /** @return the epoch-millis timestamp captured when the user logged in */
-    public long    getLoginTime() { return loginTime; }
-
     /**
      * formats how long the user has been logged in as {@code HH:MM:SS}.
      *

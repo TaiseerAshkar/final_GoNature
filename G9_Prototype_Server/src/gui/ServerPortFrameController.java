@@ -148,19 +148,6 @@ public class ServerPortFrameController {
     }
 
     /**
-     * removes the row for the given IP and logs the disconnection. safe to call from any thread.
-     *
-     * @param ip the client's IP address as recorded when it connected
-     */
-    public static void removeClient(String ip) {
-        if (instance == null) return;
-        Platform.runLater(() -> {
-            clientList.removeIf(row -> row[0].equals(ip));
-            instance.txtLog.appendText("Client disconnected: " + ip + "\n");
-        });
-    }
-
-    /**
      * removes the row for the given IP from the client table and logs the disconnection.
      * safe to call from any thread.
      *

@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import java.net.URL?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="gui.WaitingListController"
+      styleClass="screen-bg"
+      spacing="0"
+      prefWidth="780" prefHeight="500">
+
+    <stylesheets>
+        <URL value="@gonature.css"/>
+    </stylesheets>
+
+    <!-- Header -->
+    <HBox styleClass="header-bar" alignment="CENTER_LEFT" spacing="10">
+        <Label text="🌿 GoNature — Waiting List" styleClass="header-logo"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Label fx:id="lblParkName" styleClass="header-badge"/>
+        <Button fx:id="btnTheme" text="🌙" styleClass="btn-outline"/>
+        <Button text="Close" onAction="#handleClose" styleClass="btn-outline"/>
+    </HBox>
+
+    <!-- Control bar -->
+    <HBox spacing="12" alignment="CENTER_LEFT"
+          style="-fx-padding: 12 20;
+                 -fx-background-color: -park-surface;
+                 -fx-border-color: -park-border; -fx-border-width: 0 0 1 0;">
+        <Label text="⏳" style="-fx-font-size: 16px;"/>
+        <Label text="Visitors waiting to be notified if a spot opens up"
+               styleClass="field-label"
+               style="-fx-font-size: 13px;"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Label fx:id="lblCount" styleClass="lbl-hint"
+               style="-fx-font-style: normal; -fx-font-size: 12px;"/>
+        <Button text="🔄  Refresh" onAction="#handleRefresh"
+                styleClass="btn-blue" style="-fx-padding:8 16;"/>
+    </HBox>
+
+    <!-- Error label -->
+    <Label fx:id="lblError" text="" styleClass="lbl-error"
+           style="-fx-padding: 6 20;" wrapText="true"/>
+
+    <!-- Waiting list table -->
+    <TableView fx:id="tableWaiting" styleClass="table-view" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="colVisitorId" text="Visitor ID" prefWidth="130"/>
+            <TableColumn fx:id="colDate"      text="Visit Date"  prefWidth="115"/>
+            <TableColumn fx:id="colTime"      text="Time"        prefWidth="85"/>
+            <TableColumn fx:id="colVisitors"  text="Visitors"    prefWidth="85"/>
+            <TableColumn fx:id="colType"      text="Type"        prefWidth="115"/>
+            <TableColumn fx:id="colAddedOn"   text="Added On"    prefWidth="170"/>
+        </columns>
+        <placeholder>
+            <Label text="No visitors currently on the waiting list for this park."
+                   styleClass="lbl-hint" style="-fx-font-style: italic;"/>
+        </placeholder>
+    </TableView>
+</VBox>

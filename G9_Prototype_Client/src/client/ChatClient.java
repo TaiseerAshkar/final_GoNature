@@ -399,9 +399,4 @@ public class ChatClient extends AbstractClient {
         }
     }
 
-    /** closes the server connection and terminates the JVM. */
-    public void quit() {
-        try { closeConnection(); } catch (IOException e) { /* ignored on quit */ }
-        System.exit(0);
-    }
 }

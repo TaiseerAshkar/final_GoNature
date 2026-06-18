@@ -291,7 +291,7 @@ public class AcademicFrameController {
                     return;
             }
 
-            Order o = new Order(num, date, vis, 0, 0, "", orderType);
+            Order o = new Order(num, date, vis, orderType);
             ClientUI.chat.accept(new Message("UPDATE_ORDER", o));
             lblResult.setText(ChatClient.lastResult != null ? ChatClient.lastResult : "No response from server.");
 

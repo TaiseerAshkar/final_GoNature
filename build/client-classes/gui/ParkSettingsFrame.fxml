@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import java.net.URL?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="gui.ParkSettingsController"
+      styleClass="screen-bg"
+      spacing="0"
+      prefWidth="460" prefHeight="440">
+
+    <stylesheets>
+        <URL value="@gonature.css"/>
+    </stylesheets>
+
+    <!-- Header bar -->
+    <HBox styleClass="header-bar" alignment="CENTER_LEFT" spacing="10">
+        <Label text="🌿 GoNature — Park Settings" styleClass="header-logo"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button fx:id="btnTheme" text="🌙" styleClass="btn-outline"/>
+        <Button text="Close" onAction="#handleClose" styleClass="btn-outline"/>
+    </HBox>
+
+    <!-- Settings card -->
+    <VBox spacing="0" style="-fx-padding: 30;" alignment="TOP_CENTER" VBox.vgrow="ALWAYS">
+        <VBox spacing="16" styleClass="card" maxWidth="400">
+
+            <Label fx:id="lblParkName" styleClass="card-title"
+                   style="-fx-font-size:16px;"/>
+
+            <Separator/>
+
+            <!-- Capacity -->
+            <VBox spacing="4">
+                <Label text="Maximum Capacity (simultaneous visitors)"
+                       styleClass="field-label"/>
+                <TextField fx:id="txtCapacity" promptText="e.g. 200" maxWidth="Infinity"/>
+                <Label text="The total number of visitors allowed inside the park at any time."
+                       styleClass="lbl-hint" wrapText="true"/>
+            </VBox>
+
+            <!-- Max orders -->
+            <VBox spacing="4">
+                <Label text="Maximum Bookable Orders (capacity gap)"
+                       styleClass="field-label"/>
+                <TextField fx:id="txtMaxOrders" promptText="e.g. 180" maxWidth="Infinity"/>
+                <Label text="Bookings are capped here to keep a buffer below full capacity. Must be ≤ capacity."
+                       styleClass="lbl-hint" wrapText="true"/>
+            </VBox>
+
+            <!-- Visit duration -->
+            <VBox spacing="4">
+                <Label text="Default Visit Duration (hours)"
+                       styleClass="field-label"/>
+                <TextField fx:id="txtDuration" promptText="e.g. 4" maxWidth="Infinity"/>
+                <Label text="Used to detect booking overlaps. Typical value is 4 hours. Range: 1–24."
+                       styleClass="lbl-hint" wrapText="true"/>
+            </VBox>
+
+            <!-- Full price -->
+            <VBox spacing="4">
+                <Label text="Full Entry Price per Person ($)"
+                       styleClass="field-label"/>
+                <TextField fx:id="txtPrice" promptText="e.g. 25.00" maxWidth="Infinity"/>
+                <Label text="Base price before any advance-booking or subscriber discounts."
+                       styleClass="lbl-hint" wrapText="true"/>
+            </VBox>
+
+            <Separator/>
+
+            <!-- Status label -->
+            <Label fx:id="lblStatus" text="" wrapText="true" maxWidth="Infinity"
+                   style="-fx-font-size:13px;"/>
+
+            <!-- Save button -->
+            <Button text="💾  Save Settings" maxWidth="Infinity"
+                    onAction="#handleSave"
+                    styleClass="btn-blue" style="-fx-padding:8 14; -fx-font-size:13px;"/>
+
+        </VBox>
+    </VBox>
+</VBox>

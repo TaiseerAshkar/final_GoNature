@@ -332,7 +332,7 @@ public class ServiceRepController {
                 return;
             }
 
-            Order o = new Order(num, date, vis, 0, 0, "");
+            Order o = new Order(num, date, vis);
             ClientUI.chat.accept(new Message("UPDATE_ORDER", o));
             lblResult.setText(ChatClient.lastResult);
 

@@ -110,11 +110,6 @@ public final class Icons {
         return stroke(ALERT_TRIANGLE, size, extraClasses);
     }
 
-    /** @return stroked info-circle icon (info toasts) */
-    public static Node infoCircle(double size, String... extraClasses) {
-        return stroke(INFO_CIRCLE, size, extraClasses);
-    }
-
     /** @return stroked clipboard icon (view / manage reservations) */
     public static Node clipboard(double size, String... extraClasses) {
         return stroke(CLIPBOARD, size, extraClasses);

@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import java.lang.Double?>
+<?import java.net.URL?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.*?>
+
+<VBox xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="gui.VisitorController"
+      styleClass="screen-bg"
+      spacing="0"
+      prefWidth="640" prefHeight="780">
+
+    <stylesheets>
+        <URL value="@gonature.css"/>
+    </stylesheets>
+
+    <!-- Header bar -->
+    <HBox styleClass="header-bar" alignment="CENTER_LEFT" spacing="10">
+        <Label text="🌿 GoNature" styleClass="header-logo"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Label fx:id="lblSessionTimer" styleClass="header-timer" text="Session: 00:00:00"/>
+        <Label fx:id="lblRoleBadge" styleClass="header-badge"/>
+        <Button fx:id="btnTheme" text="🌙" onAction="#handleToggleTheme" styleClass="btn-outline"/>
+        <Button text="Help ?"  onAction="#handleHelp"   styleClass="btn-outline"/>
+        <Button text="Logout"  onAction="#handleLogout" styleClass="btn-danger"
+                style="-fx-font-size:12px; -fx-padding:5 14; -fx-background-radius:6;"/>
+    </HBox>
+
+    <!-- Scrollable content -->
+    <ScrollPane fitToWidth="true" styleClass="scroll-pane" VBox.vgrow="ALWAYS">
+        <VBox spacing="22" style="-fx-padding: 32 36 36 36;" alignment="TOP_CENTER">
+
+            <!-- Welcome hero banner — topographic ridgeline behind the dashboard title -->
+            <StackPane fx:id="heroBanner" styleClass="hero-banner"
+                       maxWidth="480" prefHeight="122">
+
+                <!-- ridgeline silhouette pinned to the bottom (clipped to the banner) -->
+                <Pane prefHeight="50" maxHeight="50" maxWidth="Infinity"
+                      StackPane.alignment="BOTTOM_CENTER">
+                    <Circle centerX="410" centerY="20" radius="16" fill="#E0AE4D" opacity="0.40"/>
+                    <Polygon fill="#2E9C89" opacity="0.50">
+                        <points>
+                            <Double fx:value="0"/>   <Double fx:value="50"/>
+                            <Double fx:value="0"/>   <Double fx:value="30"/>
+                            <Double fx:value="70"/>  <Double fx:value="16"/>
+                            <Double fx:value="150"/> <Double fx:value="34"/>
+                            <Double fx:value="230"/> <Double fx:value="12"/>
+                            <Double fx:value="320"/> <Double fx:value="36"/>
+                            <Double fx:value="410"/> <Double fx:value="14"/>
+                            <Double fx:value="480"/> <Double fx:value="32"/>
+                            <Double fx:value="520"/> <Double fx:value="22"/>
+                            <Double fx:value="520"/> <Double fx:value="50"/>
+                        </points>
+                    </Polygon>
+                    <Polygon fill="#0A4A40" opacity="0.60">
+                        <points>
+                            <Double fx:value="0"/>   <Double fx:value="50"/>
+                            <Double fx:value="0"/>   <Double fx:value="40"/>
+                            <Double fx:value="80"/>  <Double fx:value="26"/>
+                            <Double fx:value="170"/> <Double fx:value="42"/>
+                            <Double fx:value="250"/> <Double fx:value="22"/>
+                            <Double fx:value="340"/> <Double fx:value="42"/>
+                            <Double fx:value="420"/> <Double fx:value="26"/>
+                            <Double fx:value="490"/> <Double fx:value="42"/>
+                            <Double fx:value="520"/> <Double fx:value="34"/>
+                            <Double fx:value="520"/> <Double fx:value="50"/>
+                        </points>
+                    </Polygon>
+                </Pane>
+
+                <!-- title sits above the ridgeline -->
+                <VBox alignment="TOP_CENTER" spacing="3" StackPane.alignment="TOP_CENTER"
+                      style="-fx-padding: 22 0 0 0;">
+                    <Label fx:id="lblEyebrow" styleClass="hero-eyebrow" text="DASHBOARD"/>
+                    <Label fx:id="lblWelcome" styleClass="hero-welcome"/>
+                </VBox>
+            </StackPane>
+
+            <!-- Action card -->
+            <VBox spacing="14" styleClass="card" maxWidth="480">
+                <Label fx:id="lblInfo" styleClass="screen-subtitle" wrapText="true"/>
+                <Label fx:id="lblUpcoming" wrapText="true"
+                       styleClass="info-strip" maxWidth="Infinity"/>
+                <Separator/>
+
+                <!-- action tiles are built in the controller (rich icon-chip + title +
+                     description content), so the grid starts empty here -->
+                <GridPane fx:id="actionGrid" hgap="12" vgap="12">
+                    <columnConstraints>
+                        <ColumnConstraints percentWidth="50"/>
+                        <ColumnConstraints percentWidth="50"/>
+                    </columnConstraints>
+                </GridPane>
+            </VBox>
+
+            <!-- ── Notification inbox ──────────────────────────────────────── -->
+            <VBox spacing="8" styleClass="card" maxWidth="480">
+
+                <HBox alignment="CENTER_LEFT" spacing="8">
+                    <Label fx:id="lblNotifTitle" text="Notifications" styleClass="card-title"/>
+                    <Label fx:id="lblNotifBadge" styleClass="header-badge" text="0"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Button fx:id="btnRefreshNotif" text="Refresh"
+                            onAction="#handleRefreshNotifications" styleClass="btn-ghost"/>
+                </HBox>
+
+                <Separator/>
+
+                <!-- shown when inbox is empty (designed empty state injected by controller) -->
+                <VBox fx:id="boxNoNotif" alignment="CENTER" maxWidth="Infinity"
+                      style="-fx-padding: 10 6;"/>
+
+                <!-- shown when there are notifications -->
+                <ListView fx:id="lstNotifications"
+                          styleClass="notif-list"
+                          prefHeight="160"
+                          visible="false" managed="false"/>
+
+            </VBox>
+
+        </VBox>
+    </ScrollPane>
+</VBox>
