@@ -77,7 +77,7 @@ CREATE TABLE subscribers (
     last_name      VARCHAR(50)  NOT NULL,
     email          VARCHAR(100) NOT NULL,
     phone          VARCHAR(20),
-    credit_card    VARCHAR(20)  NOT NULL,
+    credit_card    VARCHAR(20)  NULL,   -- optional: NULL means the customer chose to pay cash
     family_size    INT          NOT NULL DEFAULT 1,
     created_at     TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT chk_subscribers_family CHECK (family_size >= 1),

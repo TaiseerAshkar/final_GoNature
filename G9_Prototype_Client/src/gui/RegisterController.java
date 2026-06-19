@@ -12,16 +12,18 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 /**
  * FXML controller for the visitor registration screen ({@code RegisterFrame.fxml}).
  *
- * <p>collects personal details and optionally subscriber info (family size, credit card).
- * client-side validation mirrors server rules so errors are shown before any network round-trip.
- * on success, shows a confirmation popup and navigates back to the login screen.
+ * <p>collects a new visitor's personal details (ID, name, email, phone) and registers a
+ * plain visitor account. subscriber (Family Member Club) sign-up is intentionally NOT here:
+ * per the GoNature spec it is performed by a service representative, via
+ * {@code ServiceRepController.handleRegisterSubscriber}. client-side validation mirrors the
+ * server rules so errors are shown before any network round-trip. on success, shows a
+ * confirmation popup and navigates back to the login screen.
  */
 public class RegisterController {
 
@@ -30,10 +32,6 @@ public class RegisterController {
     @FXML private TextField txtLastName;
     @FXML private TextField txtEmail;
     @FXML private TextField txtPhone;
-    @FXML private CheckBox  chkSubscriber;
-    @FXML private VBox      subscriberFields;
-    @FXML private TextField txtFamilySize;
-    @FXML private TextField txtCreditCard;
     @FXML private Label     lblError;
     @FXML private Button    btnTheme;
 
@@ -54,19 +52,6 @@ public class RegisterController {
                 lblError.setText("");
             }
         });
-    }
-
-    /**
-     * shows/hides the subscriber fields when the Family Member Club checkbox is toggled.
-     *
-     * @param event the checkbox action event
-     */
-    @FXML
-    public void onSubscriberToggle(ActionEvent event) {
-        boolean checked = chkSubscriber.isSelected();
-        subscriberFields.setVisible(checked);
-        subscriberFields.setManaged(checked);
-        lblError.setText("");
     }
 
     /**
@@ -105,36 +90,12 @@ public class RegisterController {
         if (!phone.matches("\\d+"))    { setError("Phone number must contain numbers only.");        return; }
         if (phone.length() != 10)      { setError("Phone number must be exactly 10 digits.");        return; }
 
-        // ── Subscriber validation ────────────────────────────────────────────
-        boolean subscriber = chkSubscriber.isSelected();
-        String  creditCard = null;
-        int     familySize = 0;
-
-        if (subscriber) {
-            String fs = txtFamilySize.getText().trim();
-            if (fs.isEmpty()) { setError("Please enter the family size."); return; }
-            try {
-                familySize = Integer.parseInt(fs);
-                if (familySize < 1 || familySize > 10) {
-                    setError("Family size must be between 1 and 10."); return;
-                }
-            } catch (NumberFormatException e) {
-                setError("Family size must be a whole number."); return;
-            }
-
-            String cc = txtCreditCard.getText().trim();
-            if (!cc.isEmpty()) {
-                if (!cc.matches("\\d{16}")) {
-                    setError("Credit card must be exactly 16 digits (or leave it blank)."); return;
-                }
-                creditCard = cc;
-            }
-        }
-
         // ── Send to server ───────────────────────────────────────────────────
+        // Plain visitor account only. Subscriber sign-up is handled by a service rep
+        // (ServiceRepController.handleRegisterSubscriber), so these are always non-subscriber.
         RegisterRequest req = new RegisterRequest(
             idNumber, firstName, lastName, email, phone,
-            subscriber, creditCard, familySize);
+            false, null, 0);
 
         ChatClient.lastRegisterResult = null;
         ChatClient.lastRegisterError  = null;
@@ -160,11 +121,6 @@ public class RegisterController {
         StringBuilder msg = new StringBuilder();
         msg.append("Your account has been created successfully!\n\n");
         msg.append("Your ID number: ").append(idNumber).append("\n");
-        if (result.getSubscriberId() != null) {
-            msg.append("Subscriber ID:  ").append(result.getSubscriberId()).append("\n");
-            msg.append("\nPlease save your subscriber ID — you will need it\n")
-               .append("when booking as a Family Member Club subscriber.");
-        }
         msg.append("\n\nYou can now log in with your ID number.");
 
         Alert alert = new Alert(Alert.AlertType.INFORMATION);

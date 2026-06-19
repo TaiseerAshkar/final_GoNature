@@ -1476,9 +1476,12 @@ public class DBController {
      *
      * <p>Pricing rules (applied in order):
      * <ol>
-     *   <li><b>GROUP by guide</b>: guide enters free; paying visitors receive 25% advance
-     *       discount (pre-booked) or 10% walk-in discount. Guide pricing is not affected by
-     *       subscriber status; guide path returns immediately.</li>
+     *   <li><b>GROUP by guide, pre-booked</b>: guide enters free; the {@code (numVisitors − 1)}
+     *       paying guests receive a 25% group discount stacked with a 12% advance-payment
+     *       discount ({@code 0.75 × 0.88 = 0.66}, i.e. 34% off).</li>
+     *   <li><b>GROUP by guide, walk-in</b>: the guide DOES pay (included in the headcount);
+     *       all {@code numVisitors} pay full price less a 10% walk-in discount. Guide pricing is
+     *       not affected by subscriber status; the guide path returns immediately.</li>
      *   <li><b>Base discount</b>: pre-booked visitors receive 15%; walk-in visitors pay full
      *       price (multiplier = 1.0).</li>
      *   <li><b>Subscriber stacking</b>: if the visitor is a Family Member Club subscriber,
@@ -1506,10 +1509,21 @@ public class DBController {
 
         // Guide-group pricing is fixed and does not stack with the subscriber discount.
         if ("GROUP".equals(orderType.toUpperCase()) && isGuide) {
-            int paying = Math.max(0, numVisitors - 1);
-            subtotal = prebooked
-                ? paying * fullPrice * 0.75   // guide free + 25% advance discount
-                : paying * fullPrice * 0.90;  // guide free + 10% walk-in discount
+            if (prebooked) {
+                // Spec — pre-booked group: a 25% group discount AND an additional 12%
+                // advance-payment discount; the guide does NOT pay. Every booking-flow order is
+                // paid in advance, so the 12% always applies here. The two percentages stack
+                // multiplicatively (the standard treatment for layered percentage discounts):
+                // 0.75 × 0.88 = 0.66, i.e. 34% off. Guide enters free, so only (numVisitors − 1) pay.
+                int paying = Math.max(0, numVisitors - 1);
+                subtotal = paying * fullPrice * 0.75 * 0.88;
+            } else {
+                // Spec — walk-in group: a 10% discount and the guide DOES pay (the opposite of the
+                // pre-booked rule above). The guide is therefore INCLUDED in the paying headcount,
+                // so all numVisitors pay full price less 10%.
+                int paying = numVisitors;
+                subtotal = paying * fullPrice * 0.90;
+            }
         } else {
             // Step 1, base multiplier: 15% off for pre-booked, full price for walk-in.
             double baseMultiplier = prebooked ? 0.85 : 1.00;
@@ -1582,10 +1596,17 @@ public class DBController {
 
         // Guide-group note: subscriber discount does not apply here.
         if ("GROUP".equals(orderType.toUpperCase()) && isGuide) {
-            int paying = Math.max(0, numVisitors - 1);
-            note.append(prebooked
-                ? "Pre-booked group: guide enters free. " + paying + " paying visitor(s) — 25% advance discount."
-                : "Walk-in group: guide enters free. " + paying + " paying visitor(s) — 10% walk-in discount.");
+            if (prebooked) {
+                // pre-booked: guide free; 25% group + 12% advance stacked (0.75 × 0.88 = 34% off)
+                int paying = Math.max(0, numVisitors - 1);
+                note.append("Pre-booked group: guide enters free. " + paying
+                    + " paying visitor(s) — 25% group + 12% advance discount (34% off).");
+            } else {
+                // walk-in: guide pays (included in headcount); 10% walk-in discount
+                int paying = numVisitors;
+                note.append("Walk-in group: guide pays. " + paying
+                    + " paying visitor(s) — 10% walk-in discount.");
+            }
         } else {
             // Build the note piece by piece so every active component is visible.
             if (prebooked) {
@@ -1950,7 +1971,12 @@ public class DBController {
                 st.setString(3, req.getLastName());
                 st.setString(4, req.getEmail());
                 st.setString(5, req.getPhone() != null ? req.getPhone() : "");
-                st.setString(6, req.getCreditCard() != null ? req.getCreditCard() : "");
+                // Credit card is optional (the customer may pay cash). Store SQL NULL when absent
+                // rather than an empty-string placeholder, now that the column is nullable.
+                if (req.getCreditCard() != null && !req.getCreditCard().isEmpty())
+                    st.setString(6, req.getCreditCard());
+                else
+                    st.setNull(6, java.sql.Types.VARCHAR);
                 st.setInt(7,    req.getFamilySize());
                 st.executeUpdate();
                 ResultSet keys = st.getGeneratedKeys();

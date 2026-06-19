@@ -222,7 +222,7 @@ public class BookingController {
                 txtVisitors.setDisable(false);
                 break;
             case "GROUP":
-                lblVisitorHint.setText("2–16 total (guide enters free · up to 15 guests · 25% advance discount)");
+                lblVisitorHint.setText("2–16 total (guide enters free · up to 15 guests · 25%+12% advance discount)");
                 txtVisitors.setDisable(false);
                 break;
         }
@@ -232,7 +232,7 @@ public class BookingController {
      * recomputes the price estimate live. clears the label if inputs are incomplete.
      * SOLO:   1 × fullPrice × 0.85 (15% pre-booked discount).
      * FAMILY: visitors × fullPrice × 0.85 (15% family discount).
-     * GROUP:  (visitors − 1) × fullPrice × 0.75 (guide free + 25% advance discount).
+     * GROUP:  (visitors − 1) × fullPrice × 0.75 × 0.88 (guide free + 25% group + 12% advance).
      */
     private void updatePriceEstimate() {
         Park   park   = cboPark.getValue();
@@ -245,9 +245,10 @@ public class BookingController {
             double total;
             String note;
             if ("GROUP".equals(type)) {
+                // pre-booked group: guide free; 25% group + 12% advance stacked (0.75 × 0.88)
                 int paying = Math.max(0, visitors - 1); // guide enters free
-                total = paying * park.getFullPrice() * 0.75;
-                note  = String.format(" (guide free · %d paying · 25%% advance discount)", paying);
+                total = paying * park.getFullPrice() * 0.75 * 0.88;
+                note  = String.format(" (guide free · %d paying · 25%%+12%% advance discount)", paying);
             } else if ("FAMILY".equals(type)) {
                 total = visitors * park.getFullPrice() * 0.85;
                 note  = " (15% family discount)";

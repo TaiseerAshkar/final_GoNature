@@ -593,6 +593,93 @@ public class EchoServer extends AbstractServer {
                     break;
                 }
 
+                case "REGISTER_SUBSCRIBER": {
+                    // Service-rep-driven subscriber registration (spec: performed by a service
+                    // representative, not the visitor). Reuses the same DB path as REGISTER_VISITOR
+                    // — req.isSubscriber() is true, so registerVisitor() also inserts the
+                    // subscribers row and returns the generated subscriber ID.
+                    if (!(incoming.getData() instanceof RegisterRequest)) {
+                        client.sendToClient(new Message("REGISTER_FAIL",
+                            "We couldn't read the subscriber's details. Please try again."));
+                        break;
+                    }
+                    RegisterRequest req = (RegisterRequest) incoming.getData();
+                    // Server mirrors the same rules as the client (ServiceRepController) so that
+                    // bypassing client-side validation still produces a useful error message.
+                    if (req.getIdNumber() == null || !req.getIdNumber().matches("\\d+")) {
+                        client.sendToClient(new Message("REGISTER_FAIL",
+                            "ID number must contain digits only."));
+                        break;
+                    }
+                    if (req.getIdNumber().length() != 9) {
+                        client.sendToClient(new Message("REGISTER_FAIL",
+                            "ID number must be exactly 9 digits."));
+                        break;
+                    }
+                    if (req.getFirstName() == null || req.getFirstName().trim().isEmpty() ||
+                        req.getLastName()  == null || req.getLastName().trim().isEmpty()) {
+                        client.sendToClient(new Message("REGISTER_FAIL",
+                            "First and last name are required."));
+                        break;
+                    }
+                    if (!req.getFirstName().matches("[\\p{L} '-]+") ||
+                        !req.getLastName().matches("[\\p{L} '-]+")) {
+                        client.sendToClient(new Message("REGISTER_FAIL",
+                            "Names must contain letters only."));
+                        break;
+                    }
+                    if (req.getEmail() == null ||
+                        !req.getEmail().matches("^[\\w._%+\\-]+@[\\w.\\-]+\\.[a-zA-Z]{2,}$")) {
+                        client.sendToClient(new Message("REGISTER_FAIL",
+                            "A valid email address is required."));
+                        break;
+                    }
+                    if (req.getPhone() == null || !req.getPhone().matches("\\d+")) {
+                        client.sendToClient(new Message("REGISTER_FAIL",
+                            "Mobile phone must contain digits only."));
+                        break;
+                    }
+                    if (req.getPhone().length() != 10) {
+                        client.sendToClient(new Message("REGISTER_FAIL",
+                            "Mobile phone must be exactly 10 digits."));
+                        break;
+                    }
+                    if (req.getFamilySize() < 1 || req.getFamilySize() > 10) {
+                        client.sendToClient(new Message("REGISTER_FAIL",
+                            "Family size must be between 1 and 10."));
+                        break;
+                    }
+                    RegisterResult subResult = DBController.getInstance().registerVisitor(req);
+                    if (subResult.isSuccess()) {
+                        client.sendToClient(new Message("REGISTER_SUCCESS", subResult));
+                        // ── Welcome email (best-effort) ──────────────────────────────────
+                        String subFullName = req.getFirstName() + " " + req.getLastName();
+                        StringBuilder subBody = new StringBuilder();
+                        subBody.append("Hello ").append(subFullName).append(",\n\n");
+                        subBody.append("Welcome to the GoNature Family Member Club! Your ")
+                               .append("subscription has been created by our service team.\n\n");
+                        subBody.append("─────────────────────────────\n");
+                        subBody.append("  Your ID:        ").append(req.getIdNumber()).append("\n");
+                        if (subResult.getSubscriberId() != null) {
+                            subBody.append("  Subscriber ID:  ")
+                                   .append(subResult.getSubscriberId()).append("\n");
+                        }
+                        subBody.append("─────────────────────────────\n\n");
+                        subBody.append("As a subscriber you enjoy a 10% discount on all bookings.\n");
+                        if (subResult.getSubscriberId() != null) {
+                            subBody.append("Please keep your Subscriber ID handy when booking.\n");
+                        }
+                        subBody.append("\nSee you in the parks!\n\n— The GoNature Team 🌿");
+                        System.out.println("[EchoServer] Sending subscriber welcome email"
+                            + "  to=" + req.getEmail() + "  subscriber=" + subFullName);
+                        EmailService.sendEmail(req.getEmail(),
+                            "Welcome to the GoNature Family Member Club! ⭐", subBody.toString());
+                    } else {
+                        client.sendToClient(new Message("REGISTER_FAIL", subResult.getMessage()));
+                    }
+                    break;
+                }
+
                 case "GET_LIVE_ORDERS": {
                     List<OrderDetail> liveOrders = DBController.getInstance().getAllLiveOrders();
                     client.sendToClient(new Message("LIVE_ORDERS_LIST", liveOrders));

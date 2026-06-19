@@ -6,6 +6,8 @@ import logic.Message;
 import logic.Order;
 import logic.OrderDetail;
 import logic.RegisterGuideRequest;
+import logic.RegisterRequest;
+import logic.RegisterResult;
 import logic.UserSession;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -280,6 +282,177 @@ public class ServiceRepController {
             lblErr.setText(ChatClient.lastGuideRegisterFail != null
                 ? ChatClient.lastGuideRegisterFail : "Registration failed. Try again.");
         }
+    }
+
+    /**
+     * opens a modal dialog for registering a new Family Member Club subscriber.
+     *
+     * <p>per the GoNature spec, subscriber registration is performed by a service representative
+     * (not by the visitor themselves). this captures first name, last name, ID number, mobile
+     * phone, email, family size, and an OPTIONAL credit card (the customer may choose to pay
+     * cash, in which case the field is left blank). it sends {@code REGISTER_SUBSCRIBER}; the
+     * server inserts the visitor + subscriber rows and returns the generated subscriber ID.
+     *
+     * @param event the button-click event
+     */
+    @FXML
+    public void handleRegisterSubscriber(ActionEvent event) {
+        Dialog<ButtonType> dlg = new Dialog<>();
+        dlg.setTitle("Register New Subscriber");
+        dlg.setHeaderText("Register a Family Member Club subscriber\n(a unique subscriber ID is generated on success)");
+        dlg.initModality(Modality.WINDOW_MODAL);
+        dlg.initOwner(lblUserName.getScene().getWindow());
+
+        ButtonType submitBtn = new ButtonType("Register", ButtonBar.ButtonData.OK_DONE);
+        dlg.getDialogPane().getButtonTypes().addAll(submitBtn, ButtonType.CANCEL);
+
+        GridPane grid = new GridPane();
+        grid.setHgap(12);
+        grid.setVgap(12);
+        grid.setPadding(new Insets(20, 24, 12, 24));
+
+        TextField fldId         = new TextField(); fldId.setPromptText("9-digit government ID");
+        TextField fldFirstName  = new TextField(); fldFirstName.setPromptText("First name");
+        TextField fldLastName   = new TextField(); fldLastName.setPromptText("Last name");
+        TextField fldEmail      = new TextField(); fldEmail.setPromptText("name@example.com");
+        TextField fldPhone      = new TextField(); fldPhone.setPromptText("10 digits");
+        TextField fldFamilySize = new TextField(); fldFamilySize.setPromptText("Family members (1–10)");
+        TextField fldCreditCard = new TextField(); fldCreditCard.setPromptText("16 digits — optional (blank = cash)");
+        for (TextField f : new TextField[]{ fldId, fldFirstName, fldLastName, fldEmail,
+                                            fldPhone, fldFamilySize, fldCreditCard }) {
+            f.getStyleClass().add("text-field");
+            f.setPrefWidth(250);
+        }
+
+        grid.add(fieldLabel("ID Number *"),   0, 0); grid.add(fldId,         1, 0);
+        grid.add(fieldLabel("First Name *"),  0, 1); grid.add(fldFirstName,  1, 1);
+        grid.add(fieldLabel("Last Name *"),   0, 2); grid.add(fldLastName,   1, 2);
+        grid.add(fieldLabel("Email *"),       0, 3); grid.add(fldEmail,      1, 3);
+        grid.add(fieldLabel("Mobile Phone *"),0, 4); grid.add(fldPhone,      1, 4);
+        grid.add(fieldLabel("Family Size *"), 0, 5); grid.add(fldFamilySize, 1, 5);
+        grid.add(fieldLabel("Credit Card"),   0, 6); grid.add(fldCreditCard, 1, 6);
+
+        Label lblErr = new Label("");
+        lblErr.getStyleClass().add("lbl-error");
+        lblErr.setWrapText(true);
+        grid.add(lblErr, 0, 7, 2, 1);
+
+        DialogPane pane = dlg.getDialogPane();
+        pane.setContent(grid);
+        pane.setPrefWidth(460);
+        ThemeManager.styleDialog(dlg);
+
+        // Keep Register disabled until all required fields are non-empty (credit card stays optional).
+        javafx.scene.Node okBtn = pane.lookupButton(submitBtn);
+        okBtn.setDisable(true);
+        Runnable checkRequired = () -> okBtn.setDisable(
+            fldId.getText().trim().isEmpty()         ||
+            fldFirstName.getText().trim().isEmpty()  ||
+            fldLastName.getText().trim().isEmpty()   ||
+            fldEmail.getText().trim().isEmpty()      ||
+            fldPhone.getText().trim().isEmpty()      ||
+            fldFamilySize.getText().trim().isEmpty());
+        for (TextField f : new TextField[]{ fldId, fldFirstName, fldLastName,
+                                            fldEmail, fldPhone, fldFamilySize }) {
+            f.textProperty().addListener((o, ov, nv) -> checkRequired.run());
+        }
+
+        // Signals from inside the filter to the post-showAndWait code.
+        boolean[] succeeded = { false };
+        String[]  successMsg = { "" };
+
+        // Intercept the OK button so validation failures keep the dialog open (no close/reopen flash).
+        okBtn.addEventFilter(javafx.event.ActionEvent.ACTION, ev -> {
+            lblErr.setText("");
+
+            String id    = fldId.getText().trim();
+            String first = UserSession.capitalize(fldFirstName.getText().trim());
+            String last  = UserSession.capitalize(fldLastName.getText().trim());
+            String email = fldEmail.getText().trim();
+            String phone = fldPhone.getText().trim();
+            String fsStr = fldFamilySize.getText().trim();
+            String cc    = fldCreditCard.getText().trim();
+
+            // ID — exactly 9 digits (matches RegisterController)
+            if (!id.matches("\\d+")) {
+                lblErr.setText("ID number must contain digits only."); ev.consume(); return;
+            }
+            if (id.length() != 9) {
+                lblErr.setText("ID number must be exactly 9 digits."); ev.consume(); return;
+            }
+
+            // Names — letters, spaces, hyphens and apostrophes only (matches RegisterController)
+            if (!first.matches("[\\p{L} '-]+")) {
+                lblErr.setText("First name must contain letters only."); ev.consume(); return;
+            }
+            if (first.length() > 50) {
+                lblErr.setText("First name must be 50 characters or fewer."); ev.consume(); return;
+            }
+            if (!last.matches("[\\p{L} '-]+")) {
+                lblErr.setText("Last name must contain letters only."); ev.consume(); return;
+            }
+            if (last.length() > 50) {
+                lblErr.setText("Last name must be 50 characters or fewer."); ev.consume(); return;
+            }
+
+            // Email
+            if (!email.matches("^[\\w._%+\\-]+@[\\w.\\-]+\\.[a-zA-Z]{2,}$")) {
+                lblErr.setText("Please enter a valid email address."); ev.consume(); return;
+            }
+
+            // Phone — exactly 10 digits (matches RegisterController)
+            if (!phone.matches("\\d+")) {
+                lblErr.setText("Mobile phone must contain digits only."); ev.consume(); return;
+            }
+            if (phone.length() != 10) {
+                lblErr.setText("Mobile phone must be exactly 10 digits."); ev.consume(); return;
+            }
+
+            // Family size
+            int familySize;
+            try {
+                familySize = Integer.parseInt(fsStr);
+            } catch (NumberFormatException ex) {
+                lblErr.setText("Family size must be a whole number."); ev.consume(); return;
+            }
+            if (familySize < 1 || familySize > 10) {
+                lblErr.setText("Family size must be between 1 and 10."); ev.consume(); return;
+            }
+
+            // Credit card — optional; if filled must be exactly 16 digits
+            String creditCard = null;
+            if (!cc.isEmpty()) {
+                if (!cc.matches("\\d{16}")) {
+                    lblErr.setText("Credit card must be exactly 16 digits (or leave it blank for cash).");
+                    ev.consume(); return;
+                }
+                creditCard = cc;
+            }
+
+            // All client-side checks passed — send to server
+            ChatClient.lastRegisterResult = null;
+            ChatClient.lastRegisterError  = null;
+            ClientUI.chat.accept(new Message("REGISTER_SUBSCRIBER",
+                new RegisterRequest(id, first, last, email, phone, true, creditCard, familySize)));
+
+            RegisterResult res = ChatClient.lastRegisterResult;
+            if (res != null && res.isSuccess()) {
+                String sub = (res.getSubscriberId() != null)
+                    ? "  Subscriber ID: " + res.getSubscriberId() : "";
+                succeeded[0]  = true;
+                successMsg[0] = "Subscriber registered." + sub;
+                // don't consume — let dialog close normally
+            } else {
+                lblErr.setText(ChatClient.lastRegisterError != null
+                    ? ChatClient.lastRegisterError : "Registration failed. Try again.");
+                ev.consume(); // keep dialog open so the rep can correct
+            }
+        });
+
+        Platform.runLater(fldId::requestFocus);
+        dlg.showAndWait();
+
+        if (succeeded[0]) Toast.success(successMsg[0]);
     }
 
     /**

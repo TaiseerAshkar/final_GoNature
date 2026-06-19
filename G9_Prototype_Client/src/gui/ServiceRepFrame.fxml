@@ -41,6 +41,8 @@
                         styleClass="btn-primary" style="-fx-padding:9 18;"/>
                 <Button text="🧭  Register New Guide"     onAction="#handleRegisterGuide"
                         styleClass="btn-marker" style="-fx-padding:9 18;"/>
+                <Button text="⭐  Register Subscriber"    onAction="#handleRegisterSubscriber"
+                        styleClass="btn-blue" style="-fx-padding:9 18;"/>
                 <Button text="📊  View Reports Dashboard" onAction="#handleViewReports"
                         styleClass="btn-teal" style="-fx-padding:9 18;"/>
             </HBox>
