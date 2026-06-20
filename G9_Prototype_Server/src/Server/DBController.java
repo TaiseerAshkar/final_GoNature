@@ -9,6 +9,7 @@ import logic.LoginResult;
 import logic.OrderDetail;
 import logic.Park;
 import logic.ReportCancelRow;
+import logic.ReportCancelDistribution;
 import logic.ReportUsageRow;
 import logic.ReportVisitorRow;
 import logic.GuideDetail;
@@ -1785,6 +1786,80 @@ public class DBController {
             System.out.println("getCancelReport error: " + e.getMessage());
         }
         return list;
+    }
+
+    /**
+     * cancellation distribution: how cancelled + no-show orders spread across the seven days
+     * of the week for the given calendar month, optionally filtered to one park (otherwise the
+     * whole region). backs the day-of-week bar chart in the cancellation report and supplies the
+     * per-weekday and per-active-day averages.
+     *
+     * <p>uses MySQL {@code DAYOFWEEK()} (1 = Sunday … 7 = Saturday) so buckets are emitted
+     * Sunday-first; weekdays with no cancellations are returned as explicit zero buckets so the
+     * chart always shows all seven bars. {@code distinctWorkdays} is the number of distinct
+     * calendar dates that carried at least one cancellation — the denominator for the
+     * per-active-day average, mirroring the operating-day denominator of {@link #getUsageReport}.
+     *
+     * @param parkId the park to filter by, or {@code null} for all parks (whole region)
+     * @param year   the four-digit calendar year
+     * @param month  the month number 1-12
+     * @return a {@link ReportCancelDistribution} with all seven weekday buckets; an all-zero
+     *         distribution on error or when the period has no cancellations
+     */
+    public ReportCancelDistribution getCancellationDistribution(Integer parkId, int year, int month) {
+        String[] shortNames  = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
+        int[]    buckets     = new int[7];
+        int      distinctDays = 0;
+        if (connection != null) {
+            try {
+                // per-day-of-week counts (1 = Sunday … 7 = Saturday)
+                String sql =
+                    "SELECT DAYOFWEEK(o.visit_date) AS dow, COUNT(*) AS cnt " +
+                    "FROM orders o " +
+                    "WHERE o.status IN ('cancelled','no_show') " +
+                    "  AND YEAR(o.visit_date) = ? AND MONTH(o.visit_date) = ? " +
+                    (parkId != null ? "  AND o.park_id = ? " : "") +
+                    "GROUP BY DAYOFWEEK(o.visit_date)";
+                PreparedStatement st = connection.prepareStatement(sql);
+                st.setInt(1, year);
+                st.setInt(2, month);
+                if (parkId != null) st.setInt(3, parkId);
+                ResultSet rs = st.executeQuery();
+                while (rs.next()) {
+                    int dow = rs.getInt("dow");          // 1=Sun .. 7=Sat
+                    if (dow >= 1 && dow <= 7) buckets[dow - 1] = rs.getInt("cnt");
+                }
+                rs.close();
+                st.close();
+
+                // distinct calendar dates that carried at least one cancellation (active days)
+                String sql2 =
+                    "SELECT COUNT(DISTINCT o.visit_date) AS workdays " +
+                    "FROM orders o " +
+                    "WHERE o.status IN ('cancelled','no_show') " +
+                    "  AND YEAR(o.visit_date) = ? AND MONTH(o.visit_date) = ? " +
+                    (parkId != null ? "  AND o.park_id = ? " : "");
+                PreparedStatement st2 = connection.prepareStatement(sql2);
+                st2.setInt(1, year);
+                st2.setInt(2, month);
+                if (parkId != null) st2.setInt(3, parkId);
+                ResultSet rs2 = st2.executeQuery();
+                if (rs2.next()) distinctDays = rs2.getInt("workdays");
+                rs2.close();
+                st2.close();
+            } catch (SQLException e) {
+                System.out.println("getCancellationDistribution error: " + e.getMessage());
+            }
+        }
+        List<String>  labels = new ArrayList<>();
+        List<Integer> counts = new ArrayList<>();
+        int total = 0;
+        for (int i = 0; i < 7; i++) {
+            labels.add(shortNames[i]);
+            counts.add(buckets[i]);
+            total += buckets[i];
+        }
+        return new ReportCancelDistribution(labels, counts, total, distinctDays);
     }
 
     /**

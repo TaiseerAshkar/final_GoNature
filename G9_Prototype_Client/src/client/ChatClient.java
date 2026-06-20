@@ -13,6 +13,7 @@ import logic.OrderDetail;
 import logic.Park;
 import logic.RegisterResult;
 import logic.ReportCancelRow;
+import logic.ReportCancelDistribution;
 import logic.ReportUsageRow;
 import logic.ReportVisitorRow;
 import ocsf.client.AbstractClient;
@@ -73,9 +74,10 @@ public class ChatClient extends AbstractClient {
     public static String         lastRegisterError  = null;
 
     // ── Reports ───────────────────────────────────────────────────────────────
-    public static List<ReportVisitorRow> lastVisitorReport = null;
-    public static List<ReportCancelRow>  lastCancelReport  = null;
-    public static List<ReportUsageRow>   lastUsageReport   = null;
+    public static List<ReportVisitorRow>     lastVisitorReport      = null;
+    public static List<ReportCancelRow>      lastCancelReport       = null;
+    public static ReportCancelDistribution   lastCancelDistribution = null;
+    public static List<ReportUsageRow>       lastUsageReport        = null;
 
     // ── Employee park screens ─────────────────────────────────────────────────
     public static List<OrderDetail> lastTodayOrders = null;
@@ -225,6 +227,9 @@ public class ChatClient extends AbstractClient {
                 break;
             case "CANCEL_REPORT_DATA":
                 lastCancelReport = (List<ReportCancelRow>) m.getData();
+                break;
+            case "CANCEL_DISTRIBUTION_DATA":
+                lastCancelDistribution = (ReportCancelDistribution) m.getData();
                 break;
             case "USAGE_REPORT_DATA":
                 lastUsageReport = (List<ReportUsageRow>) m.getData();

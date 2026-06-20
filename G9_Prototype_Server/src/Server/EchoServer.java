@@ -18,6 +18,7 @@ import logic.RegisterGuideRequest;
 import logic.RegisterRequest;
 import logic.RegisterResult;
 import logic.ReportCancelRow;
+import logic.ReportCancelDistribution;
 import logic.ReportRequest;
 import logic.ReportUsageRow;
 import logic.ReportVisitorRow;
@@ -47,6 +48,7 @@ import gui.ServerPortFrameController;
  *   <li>{@code REGISTER_EXIT}     → {@code EXIT_SUCCESS} / {@code EXIT_FAIL}</li>
  *   <li>{@code GET_VISITOR_REPORT}→ {@code VISITOR_REPORT_DATA}</li>
  *   <li>{@code GET_CANCEL_REPORT} → {@code CANCEL_REPORT_DATA}</li>
+ *   <li>{@code GET_CANCEL_DISTRIBUTION} → {@code CANCEL_DISTRIBUTION_DATA}</li>
  *   <li>{@code GET_USAGE_REPORT}  → {@code USAGE_REPORT_DATA}</li>
  *   <li>{@code UPDATE_ORDER}      → {@code UPDATE_SUCCESS} / {@code UPDATE_FAIL}</li>
  * </ul>
@@ -496,6 +498,21 @@ public class EchoServer extends AbstractServer {
                     List<ReportCancelRow> cReport =
                         DBController.getInstance().getCancelReport(cParkId, cYear, cMonth);
                     client.sendToClient(new Message("CANCEL_REPORT_DATA", cReport));
+                    break;
+                }
+
+                case "GET_CANCEL_DISTRIBUTION": {
+                    ReportRequest dReq = (incoming.getData() instanceof ReportRequest)
+                        ? (ReportRequest) incoming.getData() : null;
+                    int dYear  = (dReq != null) ? dReq.getYear()
+                                                : LocalDate.now().getYear();
+                    int dMonth = (dReq != null) ? dReq.getMonth()
+                                                : LocalDate.now().getMonthValue();
+                    Integer dParkId = (dReq != null && dReq.getParkId() > 0)
+                        ? dReq.getParkId() : null;
+                    ReportCancelDistribution dist =
+                        DBController.getInstance().getCancellationDistribution(dParkId, dYear, dMonth);
+                    client.sendToClient(new Message("CANCEL_DISTRIBUTION_DATA", dist));
                     break;
                 }
 

@@ -5,6 +5,7 @@ import client.ClientUI;
 import logic.Message;
 import logic.Park;
 import logic.ReportCancelRow;
+import logic.ReportCancelDistribution;
 import logic.ReportRequest;
 import logic.ReportUsageRow;
 import logic.ReportVisitorRow;
@@ -87,6 +88,8 @@ public class ReportsController {
     @FXML private TableColumn<ReportCancelRow, String>  colCancelStatus;
     @FXML private TableColumn<ReportCancelRow, Integer> colCancelVisitors;
     @FXML private TableColumn<ReportCancelRow, String>  colCancelCreated;
+    @FXML private BarChart<String, Number>              chartCancelDist;
+    @FXML private Label                                 lblCancelDistStatus;
 
     // ── Tab 3: Usage Report ──────────────────────────────────────────────────
     @FXML private Label                     lblUsageStatus;
@@ -322,7 +325,8 @@ public class ReportsController {
     @FXML public void handleRefreshCancel(ActionEvent e) { loadCancelReport(); }
 
     /**
-     * loads cancellation report data for the selected month and populates the table.
+     * loads cancellation report data for the selected month and populates the table,
+     * then loads and renders the day-of-week distribution chart for the same filter.
      * shows cancelled vs no-show counts separately in the status label.
      */
     private void loadCancelReport() {
@@ -334,10 +338,10 @@ public class ReportsController {
             Park sel = cboCancelPark.getValue();
             parkId = (sel == null || sel.getId() == 0) ? null : sel.getId();
         }
+        int parkFilter = (parkId != null) ? parkId : 0;   // 0 = whole region
 
         ChatClient.lastCancelReport = null;
-        ClientUI.chat.accept(new Message("GET_CANCEL_REPORT",
-            buildRequest(parkId != null ? parkId : 0)));
+        ClientUI.chat.accept(new Message("GET_CANCEL_REPORT", buildRequest(parkFilter)));
         List<ReportCancelRow> rows = ChatClient.lastCancelReport;
         tableCancels.getItems().clear();
 
@@ -346,6 +350,8 @@ public class ReportsController {
         if (rows == null) {
             lblCancelError.setText("Could not load cancellation data. Is the server running?");
             lblCancelStatus.setText("");
+            chartCancelDist.getData().clear();
+            lblCancelDistStatus.setText("");
             return;
         }
         tableCancels.getItems().addAll(rows);
@@ -354,6 +360,51 @@ public class ReportsController {
         lblCancelStatus.setText(
             rows.size() + " record(s) — " + cancelled + " cancelled, "
             + noShow + " no-show — " + period);
+
+        loadCancelDistribution(parkFilter, period);
+    }
+
+    /**
+     * loads the cancellation day-of-week distribution for the same park filter and period
+     * as the cancellation table, and renders it as a bar chart (one bar per weekday,
+     * Sunday-first). the per-weekday average and per-active-day average are shown in the
+     * status label; the average bar height is highlighted via the label as a reference value.
+     *
+     * @param parkFilter the park ID, or {@code 0} for the whole region
+     * @param period     human-readable period label such as {@code "June 2026"}
+     */
+    private void loadCancelDistribution(int parkFilter, String period) {
+        ChatClient.lastCancelDistribution = null;
+        ClientUI.chat.accept(new Message("GET_CANCEL_DISTRIBUTION", buildRequest(parkFilter)));
+        ReportCancelDistribution dist = ChatClient.lastCancelDistribution;
+
+        chartCancelDist.getData().clear();
+        chartCancelDist.setTitle("Cancellations by Day of Week — " + period);
+
+        if (dist == null) {
+            lblCancelDistStatus.setText("");
+            return;
+        }
+        if (dist.getTotal() == 0) {
+            lblCancelDistStatus.setText("No cancellations to distribute in " + period + ".");
+            return;
+        }
+
+        // one bar per weekday (Sunday-first); zero-count days still appear as empty slots.
+        XYChart.Series<String, Number> series = new XYChart.Series<>();
+        series.setName("Cancellations");
+        List<String>  labels = dist.getDayLabels();
+        List<Integer> counts = dist.getCounts();
+        for (int i = 0; i < labels.size(); i++) {
+            series.getData().add(new XYChart.Data<>(labels.get(i), counts.get(i)));
+        }
+        chartCancelDist.getData().add(series);
+
+        lblCancelDistStatus.setText(String.format(
+            "Avg %.2f/weekday  ·  %.2f per active day  ·  peak %s (%d)  ·  %d total over %d active day(s)",
+            dist.getAvgPerWeekday(), dist.getAvgPerWorkday(),
+            dist.getPeakDay(), dist.getPeakCount(),
+            dist.getTotal(), dist.getDistinctWorkdays()));
     }
 
     /** @param e the button-click event */
