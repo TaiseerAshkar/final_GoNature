@@ -30,6 +30,7 @@
 
     <!-- ===================== source / output layout ===================== -->
     <property name="ocsf.src"       location="OCSF/src"/>
+    <property name="shared.src"     location="G9_Shared/src"/>
     <property name="client.dir"     location="G9_Prototype_Client"/>
     <property name="server.dir"     location="G9_Prototype_Server"/>
     <property name="client.src"     location="${client.dir}/src"/>
@@ -39,6 +40,7 @@
 
     <property name="build"          location="build"/>
     <property name="ocsf.classes"   location="${build}/ocsf-classes"/>
+    <property name="shared.classes" location="${build}/shared-classes"/>
     <property name="client.classes" location="${build}/client-classes"/>
     <property name="server.classes" location="${build}/server-classes"/>
     <property name="client.stage"   location="${build}/client-stage"/>
@@ -78,6 +80,7 @@
     <path id="client.compile.cp">
         <fileset dir="${client.lib}/javafx"><patternset refid="jfx.jars"/></fileset>
         <pathelement location="${ocsf.classes}"/>
+        <pathelement location="${shared.classes}"/>
     </path>
 
     <path id="server.compile.cp">
@@ -88,6 +91,7 @@
             <include name="activation-1.1.1.jar"/>
         </fileset>
         <pathelement location="${ocsf.classes}"/>
+        <pathelement location="${shared.classes}"/>
     </path>
 
     <!-- ===================== clean ===================== -->
@@ -106,8 +110,18 @@
         </javac>
     </target>
 
+    <!-- ===================== compile shared DTOs ===================== -->
+    <target name="compile-shared">
+        <mkdir dir="${shared.classes}"/>
+        <javac srcdir="${shared.src}" destdir="${shared.classes}"
+               includeantruntime="false" encoding="UTF-8" debug="true">
+            <!-- plain serializable POJOs; no JavaFX/JDBC/OCSF deps -->
+            <exclude name="module-info.java"/>
+        </javac>
+    </target>
+
     <!-- ===================== compile client ===================== -->
-    <target name="compile-client" depends="compile-ocsf">
+    <target name="compile-client" depends="compile-ocsf,compile-shared">
         <mkdir dir="${client.classes}"/>
         <javac srcdir="${client.src}" destdir="${client.classes}"
                includeantruntime="false" encoding="UTF-8" debug="true">
@@ -121,7 +135,7 @@
     </target>
 
     <!-- ===================== compile server ===================== -->
-    <target name="compile-server" depends="compile-ocsf">
+    <target name="compile-server" depends="compile-ocsf,compile-shared">
         <mkdir dir="${server.classes}"/>
         <javac srcdir="${server.src}" destdir="${server.classes}"
                includeantruntime="false" encoding="UTF-8" debug="true">
@@ -150,6 +164,7 @@
             </manifest>
             <fileset dir="${client.stage}"/>      <!-- JavaFX classes -->
             <fileset dir="${ocsf.classes}"/>      <!-- OCSF -->
+            <fileset dir="${shared.classes}"/>    <!-- shared DTOs (logic package) -->
             <fileset dir="${client.classes}"/>    <!-- app classes + fxml/css -->
             <!-- JavaFX native libs at jar root -->
             <fileset dir="${client.lib}/javafx"><patternset refid="jfx.dlls"/></fileset>
@@ -177,6 +192,7 @@
             </manifest>
             <fileset dir="${server.stage}"/>      <!-- JavaFX + JDBC + JavaMail classes -->
             <fileset dir="${ocsf.classes}"/>      <!-- OCSF -->
+            <fileset dir="${shared.classes}"/>    <!-- shared DTOs (logic package) -->
             <fileset dir="${server.classes}"/>    <!-- app classes + fxml/css + db.properties (root) -->
             <!-- JavaFX native libs at jar root -->
             <fileset dir="${server.lib}/javafx"><patternset refid="jfx.dlls"/></fileset>

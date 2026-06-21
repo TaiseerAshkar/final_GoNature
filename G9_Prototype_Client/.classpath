@@ -47,5 +47,6 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry combineaccessrules="false" kind="src" path="/OCSF"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/G9_Shared"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

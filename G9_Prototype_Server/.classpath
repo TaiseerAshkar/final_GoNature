@@ -47,6 +47,7 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry combineaccessrules="false" kind="src" path="/OCSF"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/G9_Shared"/>
 	<classpathentry kind="lib" path="C:/Users/taise/OneDrive/Desktop/mysql-connector-j-8.0.33.jar"/>
 	<classpathentry kind="lib" path="lib/mail-1.4.7.jar"/>
 	<classpathentry kind="lib" path="lib/activation-1.1.1.jar"/>
