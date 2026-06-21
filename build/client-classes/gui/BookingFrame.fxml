@@ -92,7 +92,7 @@
                                           -fx-border-radius: 8;
                                           -fx-border-width: 1.5;
                                           -fx-padding: 8 10; -fx-font-size: 13px;"/>
-                        <Label fx:id="lblVisitorHint" styleClass="lbl-hint" wrapText="true"/>
+                        <Label fx:id="lblVisitorHint" styleClass="lbl-hint" wrapText="true" maxWidth="Infinity"/>
                     </VBox>
                 </HBox>
             </VBox>
