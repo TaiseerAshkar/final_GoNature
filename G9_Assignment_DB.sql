@@ -1,4 +1,4 @@
--- ============================================================
+﻿-- ============================================================
 --  GoNature — COMPLETE FRESH DATABASE  (schema + data, one file)
 --
 --  Run with:   mysql -u root -p < fresh_database.sql
@@ -21,8 +21,7 @@
 --      employee | service.  Requested roles map as:
 --        DEPARTMENT_MANAGER→department_manager, PARK_MANAGER→park_manager,
 --        PARK_EMPLOYEE→employee, SERVICE_REP→service.
---    • subscribers.credit_card is NOT NULL, so "no card on file" is stored
---      as an empty string '' (mix of real cards and '').
+--    • subscribers.credit_card is NULL-able; NULL means "no card / paying cash".
 --    • order_type 'individual' always = exactly 1 visitor; 'family'/'group' = 2–15.
 --    • every group order is led by an approved guide that exists in `guides`.
 -- ============================================================
