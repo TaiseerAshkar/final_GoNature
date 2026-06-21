@@ -827,7 +827,7 @@ public class VisitorController {
                 "  • Click 'Book a Visit' and select visit type GROUP.\n" +
                 "  • Enter the total headcount including yourself (2–16 people).\n" +
                 "  • You enter the park free of charge as the group leader.\n" +
-                "  • A 25% advance-booking discount applies to the rest of the group.\n\n" +
+                "  • A 25% group + 12% advance discount (about 34% off, stacked) applies to the rest of the group; you enter free.\n\n" +
                 "SOLO BOOKING (Guide visiting alone)\n" +
                 "  • Select SOLO — treated the same as any other solo visitor.\n" +
                 "  • 15% pre-booked discount applied automatically.\n\n" +
@@ -845,7 +845,7 @@ public class VisitorController {
                 "BOOKING A VISIT\n" +
                 "  • Click 'Book a Visit' to open the reservation form.\n" +
                 "  • SOLO: 1 visitor — 15% pre-booked discount.\n" +
-                "  • GROUP: 2–15 visitors — 15% group discount.\n\n" +
+                "  • FAMILY: 2-15 visitors, 15% pre-booked discount.\n\n" +
                 "VIEWING YOUR RESERVATIONS\n" +
                 "  • Click 'View My Reservations' to see all your bookings.\n\n" +
                 "CANCELLING A RESERVATION\n" +

@@ -238,7 +238,7 @@ public class LoginController {
             "  • The system identifies your role automatically after login.\n\n" +
             "NEW USER?\n" +
             "  • Click 'Create an Account' to register as a visitor.\n" +
-            "  • You can also join the Family Member Club during registration.");
+            "  • Family Member Club (subscriber) membership is set up in person by a service representative.");
     }
 
     /**

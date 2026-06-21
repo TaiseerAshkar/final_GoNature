@@ -120,6 +120,25 @@
 
                 <Label fx:id="lblCancelError" text="" styleClass="lbl-error" wrapText="true"/>
 
+                <!-- Day-of-week distribution: average + per-weekday spread -->
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Label text="📅  Cancellations by day of week" styleClass="field-label"
+                           style="-fx-font-weight:bold;"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Label fx:id="lblCancelDistStatus" styleClass="lbl-hint"/>
+                </HBox>
+
+                <BarChart fx:id="chartCancelDist" prefHeight="240" minHeight="200"
+                          animated="false" barGap="2" categoryGap="18"
+                          legendVisible="false" styleClass="chart">
+                    <xAxis>
+                        <CategoryAxis label="Day of Week"/>
+                    </xAxis>
+                    <yAxis>
+                        <NumberAxis label="Cancellations" lowerBound="0" autoRanging="true"/>
+                    </yAxis>
+                </BarChart>
+
                 <TableView fx:id="tableCancels" VBox.vgrow="ALWAYS" styleClass="table-view">
                     <placeholder>
                         <Label text="No cancelled or no-show orders found for this period."

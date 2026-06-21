@@ -548,6 +548,15 @@ public class ServiceRepController {
             "  • Click 'Register New Visitor' to open the registration form.\n" +
             "  • Fill in the visitor's details on their behalf and submit.\n" +
             "  • The visitor can then log in with their government ID.\n\n" +
+            "REGISTERING A GUIDE\n" +
+            "  • Click 'Register New Guide' to register an approved tour guide.\n" +
+            "  • The guide's ID is then authorised to make GROUP bookings.\n\n" +
+            "REGISTERING A SUBSCRIBER\n" +
+            "  • Click '⭐ Register Subscriber' to open the Family Member Club form.\n" +
+            "  • Enter the visitor's name, government ID, phone, email, family size,\n" +
+            "    and optionally a credit card number (leave blank for cash payment).\n" +
+            "  • A subscriber ID is issued immediately on successful registration.\n" +
+            "  • Subscribers receive a 10% discount on top of any applicable booking discount.\n\n" +
             "REPORTS\n" +
             "  • Click 'View Reports Dashboard' to access visitor, cancellation,\n" +
             "    and usage reports across all parks.\n\n" +

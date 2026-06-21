@@ -807,7 +807,8 @@ public class AcademicFrameController {
             "  • Click 'View Reports Dashboard' to open the analytics panel.\n\n" +
             "  Visitor Report — bar chart of daily visitors for the last 30 days,\n" +
             "    split by Solo vs Group bookings.\n\n" +
-            "  Cancellation Report — table of all CANCELLED orders.\n\n" +
+            "  Cancellation Report — table of all cancelled and no-show orders,\n" +
+            "    plus a day-of-week distribution chart with the average cancellations per weekday.\n\n" +
             "  Usage Report — line chart of hourly park capacity utilisation.\n\n" +
             "  • Use the park filter to narrow any report to a specific park.";
         showHelp("GoNature — Help (DEPARTMENT_MANAGER)", content);

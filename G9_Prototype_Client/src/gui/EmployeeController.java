@@ -326,14 +326,17 @@ public class EmployeeController {
                 "  • Click 'View Park Reports' to open your park's analytics.\n" +
                 "  • The park filter is locked to your park automatically.\n" +
                 "  • Visitor Report: daily visitor counts split by booking type.\n" +
-                "  • Cancellation Report: all cancelled and no-show orders.\n" +
+                "  • Cancellation Report: cancelled and no-show orders, plus a day-of-week\n" +
+                "    distribution chart with average cancellations per weekday.\n" +
                 "  • Usage Report: hourly park capacity utilisation.\n\n" +
                 "PRICING (ENTRY CONTROL)\n" +
-                "  • Pre-booked SOLO or GROUP (any visitor): 15% advance discount.\n" +
-                "  • Walk-in SOLO — subscriber: 15% discount (Family Member Club benefit).\n" +
+                "  • Pre-booked SOLO or FAMILY: 15% advance discount.\n" +
+                "  • Pre-booked GROUP (guide-led): guide enters free + 25%+12% advance discount\n" +
+                "    (about 34% off) for the rest of the group.\n" +
+                "  • Walk-in SOLO — subscriber: 10% discount (Family Member Club benefit).\n" +
                 "  • Walk-in SOLO — regular visitor: full price.\n" +
-                "  • GROUP led by guide (pre-booked): guide free + 25% discount for others.\n" +
-                "  • GROUP led by guide (walk-in): guide free + 10% discount for others.";
+                "  • Walk-in GROUP (guide-led): guide pays; 10% discount applies to everyone\n" +
+                "    including the guide.";
         } else {
             content =
                 "PARK EMPLOYEE — QUICK GUIDE\n\n" +
@@ -343,7 +346,9 @@ public class EmployeeController {
                 "  • Click 'Entry Control (Check-In / Exit)' then go to the Check-In tab.\n" +
                 "  • Enter the visitor's ID number and select the park.\n" +
                 "  • Pre-booked visitors: the system finds today's confirmed booking automatically.\n" +
-                "  • Walk-in visitors: also enter number of visitors and order type, then click Check In.\n\n" +
+                "  • Walk-in visitors: also enter number of visitors and order type, then click Check In.\n" +
+                "  • Unknown visitor ID: if the visitor has no account, the system creates a minimal\n" +
+                "    record automatically — no pre-registration needed.\n\n" +
                 "REGISTERING AN EXIT\n" +
                 "  • Go to the 'Register Exit' tab.\n" +
                 "  • Enter the visitor's ID number and click 'Register Exit'.\n\n" +
