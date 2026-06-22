@@ -158,9 +158,14 @@ public class VisitorController {
         startSessionTimer();
 
         checkUpcomingReminders();
-        checkWaitlistPromotion();
         updateUpcomingCount();
         refreshNotifications();
+        // Defer the waitlist dialog until after the stage is shown and the scene is fully
+        // attached.  initialize() fires during FXMLLoader.load() — before primaryStage.show()
+        // — so showing a dialog here would (a) pop up before the visitor UI is visible and
+        // (b) have a null scene owner, breaking dark-mode styling.  Platform.runLater()
+        // queues the call for the next JavaFX pulse after show() completes.
+        Platform.runLater(this::checkWaitlistPromotion);
     }
 
     // ── Action-tile grid ──────────────────────────────────────────────────────
@@ -440,7 +445,9 @@ public class VisitorController {
             + "Time:      " + o.getVisitTime()   + "\n"
             + "Visitors:  " + o.getNumVisitors() + "\n\n"
             + "Confirm your visit before " + deadline + ".\n"
-            + "If you don't confirm in time, the spot will pass to the next visitor.");
+            + "If you don't confirm in time, the spot will pass to the next visitor.\n\n"
+            + "Pressing \"Later\" will dismiss this dialog — you can still confirm\n"
+            + "by clicking the \"Confirm Waitlist Spot\" tile on your home screen.");
 
         if (lblWelcome.getScene() != null)
             alert.initOwner(lblWelcome.getScene().getWindow());
