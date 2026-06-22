@@ -53,8 +53,6 @@ public final class Icons {
         "M12 9 V13 M12 16.5 V16.51 "
       + "M10.3 4.6 L2.7 17.5 A2 2 0 0 0 4.4 20.5 H19.6 A2 2 0 0 0 21.3 17.5 "
       + "L13.7 4.6 A2 2 0 0 0 10.3 4.6 Z";
-    private static final String INFO_CIRCLE =
-        "M12 11 V16 M12 8 V8.01 M21 12 A9 9 0 1 1 3 12 A9 9 0 1 1 21 12 Z";
     private static final String CLIPBOARD =
         "M9 4.5 H15 V6.5 H9 Z "
       + "M9 5.5 H7 A1.5 1.5 0 0 0 5.5 7 V19 A1.5 1.5 0 0 0 7 20.5 H17 "

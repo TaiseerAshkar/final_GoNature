@@ -44,7 +44,6 @@ public class EntryControlController {
 
     // ── Pre-booked mode ────────────────────────────────────────────────────────
     @FXML private VBox   panePrebooked;
-    @FXML private Button btnFindBooking;
 
     // ── Booking details card ───────────────────────────────────────────────────
     @FXML private VBox  paneBookingDetails;
@@ -56,14 +55,12 @@ public class EntryControlController {
     @FXML private Label lblBookingTime;
     @FXML private Label lblBookingVisitors;
     @FXML private Label lblBookingType;
-    @FXML private Button btnConfirmEntry;
 
     // ── Walk-in mode ───────────────────────────────────────────────────────────
     @FXML private VBox             paneWalkin;
     @FXML private TextField        txtWalkInVisitors;
     @FXML private ComboBox<String> cboOrderType;
     @FXML private Label            lblVisitorHint;
-    @FXML private Button           btnCheckIn;
 
     // ── Feedback + result card ────────────────────────────────────────────────
     @FXML private Label lblCheckInMessage;

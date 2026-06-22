@@ -762,44 +762,6 @@ public class EchoServer extends AbstractServer {
                     break;
                 }
 
-                case "UPDATE_PARK_SETTINGS": {
-                    if (!(incoming.getData() instanceof Park)) {
-                        client.sendToClient(new Message("PARK_SETTINGS_UPDATE_FAIL",
-                            "We couldn't read the park settings. Please try again."));
-                        break;
-                    }
-                    Park p = (Park) incoming.getData();
-                    if (p.getCapacity() < 1 || p.getCapacity() > 10000) {
-                        client.sendToClient(new Message("PARK_SETTINGS_UPDATE_FAIL",
-                            "Capacity must be between 1 and 10 000.")); break;
-                    }
-                    if (p.getMaxOrders() < 1 || p.getMaxOrders() > p.getCapacity()) {
-                        client.sendToClient(new Message("PARK_SETTINGS_UPDATE_FAIL",
-                            "Max bookable orders must be between 1 and the current capacity ("
-                            + p.getCapacity() + ").")); break;
-                    }
-                    if (p.getVisitDurationHours() < 1 || p.getVisitDurationHours() > 24) {
-                        client.sendToClient(new Message("PARK_SETTINGS_UPDATE_FAIL",
-                            "Visit duration must be between 1 and 24 hours.")); break;
-                    }
-                    if (p.getFullPrice() <= 0 || p.getFullPrice() > 9999.99) {
-                        client.sendToClient(new Message("PARK_SETTINGS_UPDATE_FAIL",
-                            "Full price must be greater than 0 and at most 9 999.99.")); break;
-                    }
-                    boolean ok = DBController.getInstance().updateParkSettings(
-                        p.getId(), p.getCapacity(), p.getMaxOrders(),
-                        p.getVisitDurationHours(), p.getFullPrice());
-                    if (ok) {
-                        Park updated = DBController.getInstance().getParkById(p.getId());
-                        client.sendToClient(new Message("PARK_SETTINGS_UPDATED",
-                            updated != null ? updated : p));
-                    } else {
-                        client.sendToClient(new Message("PARK_SETTINGS_UPDATE_FAIL",
-                            "We couldn't save the park settings. Please try again."));
-                    }
-                    break;
-                }
-
                 case "CONFIRM_VISIT": {
                     if (!(incoming.getData() instanceof Integer)) {
                         client.sendToClient(new Message("CONFIRM_VISIT_FAIL", "We couldn't identify that order. Please refresh and try again."));
@@ -966,20 +928,6 @@ public class EchoServer extends AbstractServer {
                     List<Promotion> pendingPromos =
                         DBController.getInstance().getPendingPromotions();
                     client.sendToClient(new Message("PENDING_PROMOTIONS_LIST", pendingPromos));
-                    break;
-                }
-
-                case "GET_ACTIVE_PROMOTIONS": {
-                    if (!(incoming.getData() instanceof Integer)) {
-                        client.sendToClient(new Message("ACTIVE_PROMOTIONS_LIST",
-                            new java.util.ArrayList<Promotion>()));
-                        break;
-                    }
-                    int activeParkId = (Integer) incoming.getData();
-                    String todayStr = LocalDate.now().toString();
-                    List<Promotion> active =
-                        DBController.getInstance().getActivePromotions(activeParkId, todayStr);
-                    client.sendToClient(new Message("ACTIVE_PROMOTIONS_LIST", active));
                     break;
                 }
 

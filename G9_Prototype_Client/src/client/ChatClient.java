@@ -95,10 +95,8 @@ public class ChatClient extends AbstractClient {
     public static String  lastConfirmVisitError = null;
 
     // ── Park settings ─────────────────────────────────────────────────────────
-    public static Park   lastParkSettings           = null;
-    public static String lastParkSettingsError      = null;
-    public static Park   lastParkSettingsUpdated    = null;
-    public static String lastParkSettingsUpdateFail = null;
+    public static Park   lastParkSettings      = null;
+    public static String lastParkSettingsError = null;
 
     // ── Guide management ──────────────────────────────────────────────────────
     public static String            lastGuideRegisterSuccess = null;
@@ -119,7 +117,6 @@ public class ChatClient extends AbstractClient {
     public static String          lastPromotionSubmitFail    = null;
     public static List<Promotion> lastParkPromotions         = null;
     public static List<Promotion> lastPendingPromotions      = null;
-    public static List<Promotion> lastActivePromotions       = null;
     public static String          lastPromotionActionSuccess = null;
     public static String          lastPromotionActionFail    = null;
 
@@ -266,14 +263,6 @@ public class ChatClient extends AbstractClient {
                 lastParkSettings      = null;
                 lastParkSettingsError = (String) m.getData();
                 break;
-            case "PARK_SETTINGS_UPDATED":
-                lastParkSettingsUpdated    = (Park) m.getData();
-                lastParkSettingsUpdateFail = null;
-                break;
-            case "PARK_SETTINGS_UPDATE_FAIL":
-                lastParkSettingsUpdated    = null;
-                lastParkSettingsUpdateFail = (String) m.getData();
-                break;
             case "CONFIRM_VISIT_OK":
                 lastConfirmVisitOk    = true;
                 lastConfirmVisitError = null;
@@ -282,9 +271,6 @@ public class ChatClient extends AbstractClient {
                 lastConfirmVisitOk    = false;
                 lastConfirmVisitError = (String) m.getData();
                 break;
-            case "LOGOUT_OK":
-                break; // fire-and-forget; no state change needed
-
             // ── Guide management ─────────────────────────────────────────────
             case "GUIDE_REGISTER_SUCCESS":
                 lastGuideRegisterSuccess = (String) m.getData();
@@ -345,9 +331,6 @@ public class ChatClient extends AbstractClient {
                 break;
             case "PENDING_PROMOTIONS_LIST":
                 lastPendingPromotions = (List<Promotion>) m.getData();
-                break;
-            case "ACTIVE_PROMOTIONS_LIST":
-                lastActivePromotions = (List<Promotion>) m.getData();
                 break;
             case "PROMOTION_APPROVE_SUCCESS":
             case "PROMOTION_REJECT_SUCCESS":
