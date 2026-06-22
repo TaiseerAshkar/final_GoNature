@@ -706,14 +706,14 @@ public class VisitorController {
             });
         }
 
-        boolean anyConfirmed = false;
+        int confirmedCount = 0;
         for (OrderDetail order : toConfirm) {
             ChatClient.lastConfirmVisitOk    = null;
             ChatClient.lastConfirmVisitError = null;
             ClientUI.chat.accept(new Message("CONFIRM_VISIT", order.getId()));
 
             if (Boolean.TRUE.equals(ChatClient.lastConfirmVisitOk)) {
-                anyConfirmed = true;
+                confirmedCount++;
                 NotificationCenter.markVisitConfirmed(order.getId());
                 NotificationCenter.add("✅",
                     "Visit confirmed — Order #" + order.getId()
@@ -727,10 +727,20 @@ public class VisitorController {
                 NotificationCenter.add("⚠️", err);
             }
         }
-        if (anyConfirmed && btnConfirmVisit != null) {
-            btnConfirmVisit.setDisable(true);
-            if (lblConfirmTitle != null) lblConfirmTitle.setText("Visit Confirmed");
-            if (lblConfirmDesc != null)  lblConfirmDesc.setText("Your booking is locked in");
+        // Only disable the confirm button when every eligible booking for tomorrow has
+        // been confirmed in this pass.  If the visitor confirmed just one of several
+        // bookings (ChoiceDialog picks one at a time), the button must stay active so
+        // they can return and confirm the remaining ones.
+        if (confirmedCount > 0 && btnConfirmVisit != null) {
+            if (confirmedCount >= eligible.size()) {
+                btnConfirmVisit.setDisable(true);
+                if (lblConfirmTitle != null) lblConfirmTitle.setText("Visit Confirmed");
+                if (lblConfirmDesc != null)  lblConfirmDesc.setText("Your booking is locked in");
+            } else {
+                int remaining = eligible.size() - confirmedCount;
+                if (lblConfirmDesc != null)
+                    lblConfirmDesc.setText(remaining + " booking(s) still need confirmation");
+            }
         }
         refreshNotifications();
     }

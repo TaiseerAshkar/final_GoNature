@@ -398,6 +398,8 @@ public class EmployeeController {
         Scene scene = new Scene(root);
         ThemeManager.register(scene);   // apply the current light/dark theme to this screen
         primaryStage.setScene(scene);
+        primaryStage.setMinWidth(900);   // ensure the header (incl. Logout button) isn't clipped
+        primaryStage.setWidth(900);
         primaryStage.centerOnScreen();
         primaryStage.show();
         Animations.introduce(root);     // subtle fade-and-rise on load

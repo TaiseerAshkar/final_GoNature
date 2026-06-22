@@ -14,6 +14,7 @@ import logic.Park;
 import logic.RegisterResult;
 import logic.ReportCancelRow;
 import logic.ReportCancelDistribution;
+import logic.ReportDurationRow;
 import logic.ReportUsageRow;
 import logic.ReportVisitorRow;
 import ocsf.client.AbstractClient;
@@ -49,10 +50,12 @@ public class ChatClient extends AbstractClient {
     public static String      lastLoginError  = null;
 
     // ── Parks and bookings ────────────────────────────────────────────────────
-    public static List<Park>    lastParkList      = null;
-    public static BookingResult lastBookingResult = null;
+    public static List<Park>    lastParkList          = null;
+    public static BookingResult lastBookingResult     = null;
     /** {@code "FULL"} when the slot is fully booked; otherwise an error message. */
-    public static String        lastBookingError  = null;
+    public static String        lastBookingError      = null;
+    /** alternative available slots returned after a BOOKING_FULL response; each entry is "yyyy-MM-dd HH:mm". */
+    public static List<String>  lastAlternativeSlots  = null;
 
     // ── My orders and cancellations ───────────────────────────────────────────
     public static List<OrderDetail> lastMyOrders              = null;
@@ -78,6 +81,7 @@ public class ChatClient extends AbstractClient {
     public static List<ReportCancelRow>      lastCancelReport       = null;
     public static ReportCancelDistribution   lastCancelDistribution = null;
     public static List<ReportUsageRow>       lastUsageReport        = null;
+    public static List<ReportDurationRow>    lastDurationReport     = null;
 
     // ── Employee park screens ─────────────────────────────────────────────────
     public static List<OrderDetail> lastTodayOrders = null;
@@ -177,6 +181,9 @@ public class ChatClient extends AbstractClient {
                 lastBookingResult = null;
                 lastBookingError  = "FULL";
                 break;
+            case "ALTERNATIVE_SLOTS":
+                lastAlternativeSlots = (List<String>) m.getData();
+                break;
             case "BOOKING_ERROR":
                 lastBookingResult = null;
                 lastBookingError  = (String) m.getData();
@@ -230,6 +237,9 @@ public class ChatClient extends AbstractClient {
                 break;
             case "USAGE_REPORT_DATA":
                 lastUsageReport = (List<ReportUsageRow>) m.getData();
+                break;
+            case "DURATION_REPORT_DATA":
+                lastDurationReport = (List<ReportDurationRow>) m.getData();
                 break;
             case "REGISTER_SUCCESS":
                 lastRegisterResult = (RegisterResult) m.getData();

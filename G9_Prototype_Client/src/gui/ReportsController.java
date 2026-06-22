@@ -6,6 +6,7 @@ import logic.Message;
 import logic.Park;
 import logic.ReportCancelRow;
 import logic.ReportCancelDistribution;
+import logic.ReportDurationRow;
 import logic.ReportRequest;
 import logic.ReportUsageRow;
 import logic.ReportVisitorRow;
@@ -96,6 +97,11 @@ public class ReportsController {
     @FXML private Label                     lblUsageError;
     @FXML private LineChart<String, Number> chartUsage;
 
+    // ── Tab 4: Visit Duration Report ─────────────────────────────────────────
+    @FXML private Label                    lblDurationStatus;
+    @FXML private Label                    lblDurationError;
+    @FXML private BarChart<String, Number> chartDuration;
+
     /**
      * captures and clears the static park lock, sets up the period selector to the
      * current month, wires table columns, populates park filters, then auto-loads all
@@ -121,6 +127,7 @@ public class ReportsController {
         loadVisitorReport();
         loadCancelReport();
         loadUsageReport();
+        loadDurationReport();
     }
 
     // ── Period selector ───────────────────────────────────────────────────────
@@ -182,6 +189,7 @@ public class ReportsController {
         loadVisitorReport();
         loadCancelReport();
         loadUsageReport();
+        loadDurationReport();
     }
 
     // ── Cancel table setup ────────────────────────────────────────────────────
@@ -469,6 +477,45 @@ public class ReportsController {
             chartUsage.getData().add(series);
         }
         lblUsageStatus.setText(byPark.size() + " park(s) — " + period);
+    }
+
+    /** @param e the button-click event */
+    @FXML public void handleRefreshDuration(ActionEvent e) { loadDurationReport(); }
+
+    /**
+     * loads the average-visit-duration data for the selected month and plots one bar per
+     * visitor type (Individual, Group). each bar's height is the mean length of stay in
+     * hours for completed visits (those with both an entry and an exit recorded).
+     */
+    private void loadDurationReport() {
+        lblDurationError.setText("");
+        lblDurationStatus.setText("Loading…");
+
+        ChatClient.lastDurationReport = null;
+        ClientUI.chat.accept(new Message("GET_DURATION_REPORT", buildRequest(0)));
+        List<ReportDurationRow> rows = ChatClient.lastDurationReport;
+        chartDuration.getData().clear();
+
+        String period = periodLabel();
+        chartDuration.setTitle("Average Visit Duration by Visitor Type — " + period);
+
+        if (rows == null) {
+            lblDurationError.setText("Could not load duration data. Is the server running?");
+            lblDurationStatus.setText("");
+            return;
+        }
+        if (rows.isEmpty()) {
+            lblDurationStatus.setText("No completed visits with entry and exit times in " + period + ".");
+            return;
+        }
+
+        XYChart.Series<String, Number> series = new XYChart.Series<>();
+        series.setName("Avg Duration (hours)");
+        for (ReportDurationRow r : rows) {
+            series.getData().add(new XYChart.Data<>(r.getVisitorType(), r.getAvgHours()));
+        }
+        chartDuration.getData().add(series);
+        lblDurationStatus.setText(rows.size() + " visitor type(s) — " + period);
     }
 
     // ── Navigation ────────────────────────────────────────────────────────────

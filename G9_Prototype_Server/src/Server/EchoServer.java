@@ -19,6 +19,7 @@ import logic.RegisterRequest;
 import logic.RegisterResult;
 import logic.ReportCancelRow;
 import logic.ReportCancelDistribution;
+import logic.ReportDurationRow;
 import logic.ReportRequest;
 import logic.ReportUsageRow;
 import logic.ReportVisitorRow;
@@ -323,6 +324,26 @@ public class EchoServer extends AbstractServer {
                     break;
                 }
 
+                case "GET_ALTERNATIVE_SLOTS": {
+                    // payload: Object[] { parkId(int), visitDate(String), visitTime(String),
+                    //                     numVisitors(int), visitorId(String) }
+                    if (!(incoming.getData() instanceof Object[])) {
+                        client.sendToClient(new Message("ALTERNATIVE_SLOTS",
+                            new java.util.ArrayList<String>()));
+                        break;
+                    }
+                    Object[] p = (Object[]) incoming.getData();
+                    int    parkId      = (Integer) p[0];
+                    String visitDate   = (String)  p[1];
+                    String visitTime   = (String)  p[2];
+                    int    numVisitors = (Integer) p[3];
+                    String visitorId   = (String)  p[4];
+                    java.util.List<String> alts = DBController.getInstance()
+                        .findAlternativeSlots(parkId, visitDate, visitTime, numVisitors, visitorId);
+                    client.sendToClient(new Message("ALTERNATIVE_SLOTS", alts));
+                    break;
+                }
+
                 case "GET_MY_ORDERS": {
                     String visitorId = (String) incoming.getData();
                     if (visitorId == null || visitorId.trim().isEmpty()) {
@@ -532,6 +553,19 @@ public class EchoServer extends AbstractServer {
                     List<ReportUsageRow> uReport =
                         DBController.getInstance().getUsageReport(uYear, uMonth);
                     client.sendToClient(new Message("USAGE_REPORT_DATA", uReport));
+                    break;
+                }
+
+                case "GET_DURATION_REPORT": {
+                    ReportRequest drReq = (incoming.getData() instanceof ReportRequest)
+                        ? (ReportRequest) incoming.getData() : null;
+                    int drYear  = (drReq != null) ? drReq.getYear()
+                                                  : LocalDate.now().getYear();
+                    int drMonth = (drReq != null) ? drReq.getMonth()
+                                                  : LocalDate.now().getMonthValue();
+                    List<ReportDurationRow> drReport =
+                        DBController.getInstance().getVisitDurationByType(drYear, drMonth);
+                    client.sendToClient(new Message("DURATION_REPORT_DATA", drReport));
                     break;
                 }
 

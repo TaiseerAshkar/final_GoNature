@@ -55,6 +55,15 @@ public class BookingController {
     private final AtomicBoolean availCheckInFlight = new AtomicBoolean(false);
 
     /**
+     * when {@code true}, the date/time change listeners skip the background availability
+     * check. set while the form is being populated programmatically (e.g. applying an
+     * alternative slot) so the availability round-trip does not run concurrently with a
+     * BOOK_ORDER request — the two would race on the shared {@code awaitResponse} flag in
+     * {@link ChatClient} and clobber each other's results.
+     */
+    private boolean suppressAvailabilityCheck = false;
+
+    /**
      * loads parks, populates combo-boxes, pre-fills visitor ID/email from session,
      * and wires change listeners for the live price estimate.
      */
@@ -147,6 +156,9 @@ public class BookingController {
      */
     private void updateAvailability() {
         if (lblAvailability == null) return;
+        // skip while the form is being filled programmatically (alternative-slot apply),
+        // so this network call doesn't race with the BOOK_ORDER request on the same wire
+        if (suppressAvailabilityCheck) return;
         Park   park = cboPark.getValue();
         LocalDate date = dpDate.getValue();
         String time = cboTime.getValue();
@@ -361,17 +373,32 @@ public class BookingController {
     }
 
     /**
-     * offers to join the waiting list when the slot is full. sends {@code JOIN_WAITING_LIST}
-     * and navigates to the confirmation screen if the user accepts.
+     * offers to join the waiting list or book an alternative slot when the park is full.
      *
-     * @param req the original booking request, reused as-is for the waiting-list entry
+     * <p>fetches up to 3 nearby available slots from the server (same-day different time,
+     * then next-day same time). if alternatives exist a third "Book Alternative" button
+     * is shown alongside "Join Waiting List" and "Cancel". choosing "Book Alternative"
+     * opens a choice dialog so the visitor can pick a slot, then immediately re-submits
+     * the booking for that slot without leaving the form.
+     *
+     * @param req the original booking request, reused for waiting-list entry or as a
+     *            template for alternative bookings
      */
     private void offerWaitingList(BookingRequest req) {
+        // fetch alternative available slots from the server
+        ChatClient.lastAlternativeSlots = null;
+        ClientUI.chat.accept(new Message("GET_ALTERNATIVE_SLOTS",
+            new Object[]{ req.getParkId(), req.getVisitDate(),
+                          req.getVisitTime(), req.getNumVisitors(),
+                          req.getVisitorId() }));
+        List<String> alts = ChatClient.lastAlternativeSlots;
+        boolean hasAlts = alts != null && !alts.isEmpty();
+
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle("Park Fully Booked");
         alert.setHeaderText(req.getParkName() + " is fully booked for this slot");
 
-        // ── branded body: hourglass mark + pitch + booking-facts card (no plain content text) ──
+        // ── branded body: hourglass mark + pitch + booking-facts card ──────────
         Label pitch = new Label("Join the waiting list?");
         pitch.getStyleClass().add("card-title");
         Label pitchSub = new Label(
@@ -406,15 +433,47 @@ public class BookingController {
             + "-fx-border-color: -park-line; -fx-border-radius: 10; -fx-border-width: 1;");
 
         javafx.scene.layout.VBox body = new javafx.scene.layout.VBox(14, top, factsCard);
+
+        // ── alternative slots hint ───────────────────────────────────────────────
+        if (hasAlts) {
+            Label altHint = new Label("Available alternatives for " + req.getParkName() + ":");
+            altHint.getStyleClass().add("section-label");
+            javafx.scene.layout.VBox altList = new javafx.scene.layout.VBox(3);
+            for (String alt : alts) {
+                String[] parts = alt.split(" ");
+                String display = (parts.length == 2)
+                    ? parts[0] + "  at  " + parts[1]
+                    : alt;
+                Label lbl = new Label("  • " + display);
+                lbl.setStyle("-fx-font-weight: bold;");
+                altList.getChildren().add(lbl);
+            }
+            javafx.scene.layout.VBox altCard = new javafx.scene.layout.VBox(6, altHint, altList);
+            altCard.setPadding(new javafx.geometry.Insets(10, 16, 10, 16));
+            altCard.setStyle("-fx-background-color: -park-surface-2; -fx-background-radius: 10; "
+                + "-fx-border-color: -park-line; -fx-border-radius: 10; -fx-border-width: 1;");
+            body.getChildren().add(altCard);
+        }
+
         body.setPadding(new javafx.geometry.Insets(6, 4, 4, 4));
         alert.getDialogPane().setContent(body);
+        alert.getDialogPane().setPrefWidth(620);
 
-        ButtonType joinBtn   = new ButtonType("Join Waiting List", ButtonBar.ButtonData.YES);
-        ButtonType cancelBtn = new ButtonType("Cancel",            ButtonBar.ButtonData.NO);
-        alert.getButtonTypes().setAll(joinBtn, cancelBtn);
+        ButtonType joinBtn  = new ButtonType("Join Waiting List", ButtonBar.ButtonData.YES);
+        ButtonType altBtn   = new ButtonType("Book Alternative",  ButtonBar.ButtonData.OTHER);
+        ButtonType cancelBtn = new ButtonType("Cancel",           ButtonBar.ButtonData.NO);
+        if (hasAlts) {
+            alert.getButtonTypes().setAll(joinBtn, altBtn, cancelBtn);
+        } else {
+            alert.getButtonTypes().setAll(joinBtn, cancelBtn);
+        }
         ThemeManager.styleDialog(alert);
+        alert.getDialogPane().getStyleClass().add("help-adaptive");
+
         Optional<ButtonType> response = alert.showAndWait();
-        if (response.isPresent() && response.get() == joinBtn) {
+        if (!response.isPresent()) return;
+
+        if (response.get() == joinBtn) {
             ChatClient.lastBookingResult = null;
             ChatClient.lastBookingError  = null;
             ClientUI.chat.accept(new Message("JOIN_WAITING_LIST", req));
@@ -424,6 +483,51 @@ public class BookingController {
                 setError(ChatClient.lastBookingError != null
                     ? ChatClient.lastBookingError
                     : "Could not join waiting list. Please try again.");
+            }
+
+        } else if (response.get() == altBtn && hasAlts) {
+            // let the visitor pick which alternative slot to book
+            ChoiceDialog<String> pick = new ChoiceDialog<>(alts.get(0), alts);
+            pick.setTitle("Choose an Alternative Slot");
+            pick.setHeaderText("Available slots at " + req.getParkName());
+            pick.setContentText("Select a date and time:");
+            ThemeManager.styleDialog(pick);
+            pick.getDialogPane().getStyleClass().add("help-adaptive");
+            Optional<String> chosen = pick.showAndWait();
+            if (!chosen.isPresent()) return;
+
+            // parse "yyyy-MM-dd HH:mm" and pre-fill the form fields, then re-submit
+            String[] parts = chosen.get().split(" ");
+            if (parts.length == 2) {
+                try {
+                    // Suppress the availability listener while we set the fields so its
+                    // background network call can't run concurrently with BOOK_ORDER below;
+                    // they share ChatClient.awaitResponse and would clobber each other.
+                    suppressAvailabilityCheck = true;
+                    dpDate.setValue(LocalDate.parse(parts[0], DATE_FMT));
+                    cboTime.setValue(parts[1]);
+                    suppressAvailabilityCheck = false;
+
+                    // re-build the request with the new date/time and submit immediately
+                    BookingRequest altReq = buildAndValidate();
+                    if (altReq == null) return;   // validation message already shown
+                    ChatClient.lastBookingResult = null;
+                    ChatClient.lastBookingError  = null;
+                    ClientUI.chat.accept(new Message("BOOK_ORDER", altReq));
+                    if (ChatClient.lastBookingResult != null) {
+                        showConfirmation(ChatClient.lastBookingResult);
+                    } else if ("FULL".equals(ChatClient.lastBookingError)) {
+                        offerWaitingList(altReq);
+                    } else {
+                        setError(ChatClient.lastBookingError != null
+                            ? ChatClient.lastBookingError
+                            : "Booking failed. Please try again.");
+                    }
+                } catch (Exception e) {
+                    setError("Could not apply the selected slot. Please set the date and time manually.");
+                } finally {
+                    suppressAvailabilityCheck = false;  // always re-enable live checks
+                }
             }
         }
     }

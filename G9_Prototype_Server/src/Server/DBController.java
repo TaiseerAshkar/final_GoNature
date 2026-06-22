@@ -10,6 +10,7 @@ import logic.OrderDetail;
 import logic.Park;
 import logic.ReportCancelRow;
 import logic.ReportCancelDistribution;
+import logic.ReportDurationRow;
 import logic.ReportUsageRow;
 import logic.ReportVisitorRow;
 import logic.GuideDetail;
@@ -444,6 +445,147 @@ public class DBController {
         } finally {
             try { connection.setAutoCommit(oldAutoCommit); } catch (SQLException ignored) {}
         }
+    }
+
+    /**
+     * finds the 3 nearest slots to the requested date/time that this visitor can
+     * actually book for the same park.
+     *
+     * <p>candidate slots are every standard hourly slot (08:00–16:00) over the next 7
+     * days, ordered by absolute distance from the requested date/time so the closest
+     * openings are offered first. each candidate must pass <b>both</b> of these checks,
+     * which together guarantee that selecting it results in a confirmed booking:
+     * <ul>
+     *   <li><b>park capacity</b> — overlapping confirmed/pending visitors plus
+     *       {@code numVisitors} must not exceed {@code max_orders};</li>
+     *   <li><b>no self-overlap</b> — the visitor must not already hold a confirmed or
+     *       pending booking whose time window overlaps the candidate slot (mirrors the
+     *       duplicate-booking guard in {@link #checkAndBook}, which would otherwise
+     *       reject the booking).</li>
+     * </ul>
+     *
+     * @param parkId      the park to check
+     * @param visitDate   the originally requested date in {@code yyyy-MM-dd} format
+     * @param visitTime   the originally requested time in {@code HH:mm} format (excluded)
+     * @param numVisitors the party size that must fit in the alternative slot
+     * @param visitorId   the requesting visitor's ID, used for the self-overlap check
+     * @return up to 3 bookable alternative slots as {@code "yyyy-MM-dd HH:mm"} strings,
+     *         nearest first; empty if none are available within the 7-day window
+     */
+    public java.util.List<String> findAlternativeSlots(
+            int parkId, String visitDate, String visitTime, int numVisitors, String visitorId) {
+
+        java.util.List<String> result = new java.util.ArrayList<>();
+        if (connection == null) return result;
+
+        // All standard time slots the booking form offers.
+        String[] allSlots = {
+            "08:00", "09:00", "10:00", "11:00", "12:00",
+            "13:00", "14:00", "15:00", "16:00"
+        };
+
+        // Fetch the park's limits once; the duration is the same for every candidate.
+        int maxOrders, durationHours;
+        try (PreparedStatement st = connection.prepareStatement(
+                "SELECT max_orders, visit_duration_hours FROM parks WHERE id = ?")) {
+            st.setInt(1, parkId);
+            try (ResultSet rs = st.executeQuery()) {
+                if (!rs.next()) return result;   // park not found
+                maxOrders     = rs.getInt("max_orders");
+                durationHours = rs.getInt("visit_duration_hours");
+            }
+        } catch (SQLException e) {
+            System.out.println("findAlternativeSlots (park lookup) error: " + e.getMessage());
+            return result;
+        }
+
+        // Build every (date, time) candidate over the next 7 days and order them by how
+        // close they fall to the originally requested moment, nearest first.  The exact
+        // requested slot itself is skipped (it's the full one).
+        java.time.LocalDateTime requested;
+        try {
+            requested = java.time.LocalDateTime.of(
+                java.time.LocalDate.parse(visitDate),
+                java.time.LocalTime.parse(visitTime));
+        } catch (Exception e) {
+            return result;   // unparseable input; nothing to suggest
+        }
+
+        java.util.List<java.time.LocalDateTime> candidates = new java.util.ArrayList<>();
+        java.time.LocalDate baseDate = requested.toLocalDate();
+        for (int dayOffset = 0; dayOffset < 7; dayOffset++) {
+            java.time.LocalDate d = baseDate.plusDays(dayOffset);
+            for (String slot : allSlots) {
+                java.time.LocalDateTime cand = java.time.LocalDateTime.of(
+                    d, java.time.LocalTime.parse(slot));
+                if (cand.equals(requested)) continue;       // skip the full slot itself
+                if (cand.isBefore(java.time.LocalDateTime.now())) continue;  // no past slots
+                candidates.add(cand);
+            }
+        }
+        final java.time.LocalDateTime ref = requested;
+        candidates.sort(java.util.Comparator.comparingLong(
+            c -> Math.abs(java.time.Duration.between(ref, c).toMinutes())));
+
+        // Capacity check for one candidate slot.
+        String capacitySql =
+            "SELECT COALESCE(SUM(o.num_visitors), 0) AS occupied " +
+            "FROM orders o " +
+            "WHERE o.park_id = ? AND o.visit_date = ? " +
+            "  AND o.status IN ('confirmed', 'pending') " +
+            "  AND TIME(o.visit_time) < ADDTIME(TIME(?), SEC_TO_TIME(? * 3600)) " +
+            "  AND ADDTIME(TIME(o.visit_time), SEC_TO_TIME(? * 3600)) > TIME(?)";
+
+        // Self-overlap check: does this visitor already hold an overlapping booking
+        // (any park) on the candidate date?  Joins parks to use each existing booking's
+        // own duration, exactly as the duplicate guard in checkAndBook does.
+        String selfSql =
+            "SELECT COUNT(*) AS cnt " +
+            "FROM orders o JOIN parks p ON p.id = o.park_id " +
+            "WHERE o.visitor_id = ? AND o.visit_date = ? " +
+            "  AND o.status IN ('confirmed', 'pending') " +
+            "  AND TIME(o.visit_time) < ADDTIME(TIME(?), SEC_TO_TIME(? * 3600)) " +
+            "  AND ADDTIME(TIME(o.visit_time), SEC_TO_TIME(p.visit_duration_hours * 3600)) > TIME(?)";
+
+        try (PreparedStatement capSt  = connection.prepareStatement(capacitySql);
+             PreparedStatement selfSt = connection.prepareStatement(selfSql)) {
+            for (java.time.LocalDateTime cand : candidates) {
+                if (result.size() >= 3) break;
+                String dateStr = cand.toLocalDate().toString();                 // yyyy-MM-dd
+                String timeStr = String.format("%02d:%02d",
+                    cand.getHour(), cand.getMinute());                          // HH:mm
+
+                // 1) park capacity
+                capSt.setInt(1,    parkId);
+                capSt.setString(2, dateStr);
+                capSt.setString(3, timeStr);
+                capSt.setInt(4,    durationHours);
+                capSt.setInt(5,    durationHours);
+                capSt.setString(6, timeStr);
+                int occupied = 0;
+                try (ResultSet rs = capSt.executeQuery()) {
+                    if (rs.next()) occupied = rs.getInt("occupied");
+                }
+                if (occupied + numVisitors > maxOrders) continue;   // would be full
+
+                // 2) visitor's own overlap
+                selfSt.setString(1, visitorId);
+                selfSt.setString(2, dateStr);
+                selfSt.setString(3, timeStr);
+                selfSt.setInt(4,    durationHours);
+                selfSt.setString(5, timeStr);
+                int selfConflicts = 0;
+                try (ResultSet rs = selfSt.executeQuery()) {
+                    if (rs.next()) selfConflicts = rs.getInt("cnt");
+                }
+                if (selfConflicts > 0) continue;   // visitor already booked over this slot
+
+                result.add(dateStr + " " + timeStr);
+            }
+        } catch (SQLException e) {
+            System.out.println("findAlternativeSlots error: " + e.getMessage());
+        }
+        return result;
     }
 
     /**
@@ -1093,8 +1235,16 @@ public class DBController {
     }
 
     /**
-     * marks a PENDING order as CONFIRMED; used when a visitor confirms an upcoming visit.
-     * only rows currently {@code 'pending'} are changed; already-confirmed, cancelled, or
+     * marks a PENDING order as CONFIRMED; used when a visitor confirms an upcoming visit
+     * through the day-before reminder path.
+     *
+     * <p>also deletes any orphaned {@code waiting_list} row linked to this order.
+     * this can happen when a visitor confirms a waitlist-sourced booking via the
+     * ordinary reminder flow rather than the dedicated waitlist-promotion dialog:
+     * {@code confirmPromotedVisit} is never called, so the {@code WAITING} row would
+     * otherwise remain indefinitely, leaving the two tables inconsistent.
+     *
+     * <p>only rows currently {@code 'pending'} are changed; already-confirmed, cancelled, or
      * completed orders are left untouched.
      *
      * @param orderId the primary-key ID of the order to confirm
@@ -1106,7 +1256,17 @@ public class DBController {
                 "UPDATE orders SET status = 'confirmed' " +
                 "WHERE id = ? AND status = 'pending'")) {
             st.setInt(1, orderId);
-            return st.executeUpdate() > 0;
+            boolean updated = st.executeUpdate() > 0;
+            // clean up any waiting_list row linked to this order (WAITING or NOTIFIED)
+            // so the two tables stay consistent after confirmation via either path
+            try (PreparedStatement del = connection.prepareStatement(
+                    "DELETE FROM waiting_list WHERE order_id = ?")) {
+                del.setInt(1, orderId);
+                del.executeUpdate();
+            } catch (SQLException e) {
+                System.out.println("confirmOrder (waiting_list cleanup) error: " + e.getMessage());
+            }
+            return updated;
         } catch (SQLException e) {
             System.out.println("confirmOrder error: " + e.getMessage());
             return false;
@@ -1950,6 +2110,51 @@ public class DBController {
             }
         } catch (SQLException e) {
             System.out.println("getUsageReport error: " + e.getMessage());
+        }
+        return list;
+    }
+
+    /**
+     * average-visit-duration report: the mean length of stay (in hours) for each visitor
+     * type during the given calendar month, across all parks.
+     *
+     * <p>only orders that recorded both an {@code entry_time} and an {@code exit_time}
+     * contribute, so in-progress and future visits never skew the average. each visit's
+     * duration is {@code TIMESTAMPDIFF(MINUTE, entry_time, exit_time) / 60.0} hours, and the
+     * {@code order_type} column is folded into two buckets — {@code 'group'} becomes
+     * {@code "Group"}, everything else ({@code 'individual'}, {@code 'family'}) becomes
+     * {@code "Individual"} — to match the "individual vs organized group" split the
+     * department-manager report calls for.
+     *
+     * @param year  the four-digit calendar year
+     * @param month the month number 1-12
+     * @return a list of {@link ReportDurationRow} ordered by visitor type; empty on error or
+     *         when the period has no completed visits
+     */
+    public List<ReportDurationRow> getVisitDurationByType(int year, int month) {
+        List<ReportDurationRow> list = new ArrayList<>();
+        if (connection == null) return list;
+        try (PreparedStatement st = connection.prepareStatement(
+                "SELECT CASE WHEN LOWER(o.order_type) = 'group' THEN 'Group' " +
+                "            ELSE 'Individual' END AS visitor_type, " +
+                "       ROUND(AVG(TIMESTAMPDIFF(MINUTE, o.entry_time, o.exit_time) / 60.0), 2) " +
+                "         AS avg_hours " +
+                "FROM orders o " +
+                "WHERE o.entry_time IS NOT NULL AND o.exit_time IS NOT NULL " +
+                "  AND YEAR(o.visit_date) = ? AND MONTH(o.visit_date) = ? " +
+                "GROUP BY visitor_type " +
+                "ORDER BY visitor_type ASC")) {
+            st.setInt(1, year);
+            st.setInt(2, month);
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) {
+                    list.add(new ReportDurationRow(
+                        rs.getString("visitor_type"),
+                        rs.getDouble("avg_hours")));
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println("getVisitDurationByType error: " + e.getMessage());
         }
         return list;
     }

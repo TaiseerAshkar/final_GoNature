@@ -192,5 +192,36 @@
             </VBox>
         </Tab>
 
+        <!-- ── TAB 4: VISIT DURATION REPORT ──────────────── -->
+        <Tab text="  ⏱  Visit Duration  ">
+            <VBox spacing="12" style="-fx-padding: 16;">
+
+                <!-- Info bar -->
+                <HBox spacing="12" alignment="CENTER_LEFT" styleClass="card"
+                      style="-fx-padding: 12 16;">
+                    <Label text="⏱  Average visit duration by visitor type"
+                           styleClass="lbl-hint" style="-fx-font-style:normal;"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Label fx:id="lblDurationStatus" styleClass="lbl-hint"/>
+                    <Button text="🔄  Refresh" onAction="#handleRefreshDuration"
+                            styleClass="btn-blue" style="-fx-padding:8 16;"/>
+                </HBox>
+
+                <Label fx:id="lblDurationError" text="" styleClass="lbl-error" wrapText="true"/>
+
+                <BarChart fx:id="chartDuration" VBox.vgrow="ALWAYS"
+                          animated="false" barGap="2" categoryGap="40"
+                          legendVisible="false" styleClass="chart">
+                    <xAxis>
+                        <CategoryAxis label="Visitor Type"/>
+                    </xAxis>
+                    <yAxis>
+                        <NumberAxis label="Avg Duration (hours)" lowerBound="0" autoRanging="true"/>
+                    </yAxis>
+                </BarChart>
+
+            </VBox>
+        </Tab>
+
     </TabPane>
 </VBox>
