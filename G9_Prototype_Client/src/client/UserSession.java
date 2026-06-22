@@ -1,4 +1,6 @@
-package logic;
+package client;
+
+import logic.LoginResult;
 
 /**
  * holds the currently logged-in user for the lifetime of a client session.

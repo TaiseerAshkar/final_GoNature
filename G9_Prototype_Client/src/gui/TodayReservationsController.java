@@ -4,7 +4,7 @@ import client.ChatClient;
 import client.ClientUI;
 import logic.Message;
 import logic.OrderDetail;
-import logic.UserSession;
+import client.UserSession;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.event.ActionEvent;
@@ -123,7 +123,7 @@ public class TodayReservationsController {
     public void start(Stage stage) throws Exception {
         Parent root = FXMLLoader.load(
             getClass().getResource("/gui/TodayReservationsFrame.fxml"));
-        stage.setTitle("GoNature — Today's Reservations");
+        stage.setTitle("GoNature â€” Today's Reservations");
         Scene scene = new Scene(root);
         ThemeManager.register(scene);
         stage.setScene(scene);
@@ -131,3 +131,4 @@ public class TodayReservationsController {
         stage.show();
     }
 }
+

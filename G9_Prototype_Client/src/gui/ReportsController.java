@@ -9,7 +9,7 @@ import logic.ReportCancelDistribution;
 import logic.ReportRequest;
 import logic.ReportUsageRow;
 import logic.ReportVisitorRow;
-import logic.UserSession;
+import client.UserSession;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.event.ActionEvent;
@@ -44,7 +44,7 @@ import java.util.TreeSet;
  */
 public class ReportsController {
 
-    // ── Month names in order ─────────────────────────────────────────────────
+    // â”€â”€ Month names in order â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     private static final List<String> MONTH_NAMES = Arrays.asList(
         "January", "February", "March", "April", "May", "June",
         "July", "August", "September", "October", "November", "December"
@@ -63,18 +63,18 @@ public class ReportsController {
     @FXML private Label  lblManagerName;
     @FXML private Button btnTheme;
 
-    // ── Period selector (shared across all tabs) ─────────────────────────────
+    // â”€â”€ Period selector (shared across all tabs) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     @FXML private ComboBox<String>  cboMonth;
     @FXML private ComboBox<Integer> cboYear;
     @FXML private Label             lblPeriodBadge;
 
-    // ── Tab 1: Visitor Report ────────────────────────────────────────────────
+    // â”€â”€ Tab 1: Visitor Report â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     @FXML private ComboBox<Park>           cboVisitorPark;
     @FXML private Label                    lblVisitorStatus;
     @FXML private Label                    lblVisitorError;
     @FXML private BarChart<String, Number> chartVisitors;
 
-    // ── Tab 2: Cancellation Report ───────────────────────────────────────────
+    // â”€â”€ Tab 2: Cancellation Report â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     @FXML private ComboBox<Park>               cboCancelPark;
     @FXML private Label                        lblCancelStatus;
     @FXML private Label                        lblCancelError;
@@ -91,7 +91,7 @@ public class ReportsController {
     @FXML private BarChart<String, Number>              chartCancelDist;
     @FXML private Label                                 lblCancelDistStatus;
 
-    // ── Tab 3: Usage Report ──────────────────────────────────────────────────
+    // â”€â”€ Tab 3: Usage Report â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     @FXML private Label                     lblUsageStatus;
     @FXML private Label                     lblUsageError;
     @FXML private LineChart<String, Number> chartUsage;
@@ -111,7 +111,7 @@ public class ReportsController {
         UserSession s = UserSession.getInstance();
         if (s != null) {
             String name = s.getFullName();
-            if (myParkId != null) name += "  —  Park #" + myParkId + " (locked)";
+            if (myParkId != null) name += "  â€”  Park #" + myParkId + " (locked)";
             lblManagerName.setText(name);
         }
 
@@ -123,7 +123,7 @@ public class ReportsController {
         loadUsageReport();
     }
 
-    // ── Period selector ───────────────────────────────────────────────────────
+    // â”€â”€ Period selector â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /**
      * populates month and year ComboBoxes and defaults to the current calendar month.
@@ -184,7 +184,7 @@ public class ReportsController {
         loadUsageReport();
     }
 
-    // ── Cancel table setup ────────────────────────────────────────────────────
+    // â”€â”€ Cancel table setup â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /**
      * wires cell-value factories for the cancellation table.
@@ -213,7 +213,7 @@ public class ReportsController {
         UiCells.applyStatusChip(colCancelStatus);
     }
 
-    // ── Park filter setup ─────────────────────────────────────────────────────
+    // â”€â”€ Park filter setup â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /**
      * loads parks and populates both filter combos.
@@ -260,7 +260,7 @@ public class ReportsController {
         }
     }
 
-    // ── Tab load methods ──────────────────────────────────────────────────────
+    // â”€â”€ Tab load methods â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /** @param e the button-click event */
     @FXML public void handleRefreshVisitor(ActionEvent e) { loadVisitorReport(); }
@@ -271,7 +271,7 @@ public class ReportsController {
      */
     private void loadVisitorReport() {
         lblVisitorError.setText("");
-        lblVisitorStatus.setText("Loading…");
+        lblVisitorStatus.setText("Loadingâ€¦");
 
         Integer parkId = (myParkId != null) ? myParkId : null;
         if (myParkId == null) {
@@ -286,7 +286,7 @@ public class ReportsController {
         chartVisitors.getData().clear();
 
         String period = periodLabel();
-        chartVisitors.setTitle("Visitor Report — " + period);
+        chartVisitors.setTitle("Visitor Report â€” " + period);
 
         if (rows == null) {
             lblVisitorError.setText("Could not load visitor data. Is the server running?");
@@ -318,7 +318,7 @@ public class ReportsController {
         }
         chartVisitors.getData().addAll(indSeries, grpSeries);
         lblVisitorStatus.setText(
-            total + " visitor(s) across " + byDay.size() + " day(s) — " + period);
+            total + " visitor(s) across " + byDay.size() + " day(s) â€” " + period);
     }
 
     /** @param e the button-click event */
@@ -331,7 +331,7 @@ public class ReportsController {
      */
     private void loadCancelReport() {
         lblCancelError.setText("");
-        lblCancelStatus.setText("Loading…");
+        lblCancelStatus.setText("Loadingâ€¦");
 
         Integer parkId = (myParkId != null) ? myParkId : null;
         if (myParkId == null) {
@@ -358,8 +358,8 @@ public class ReportsController {
         long cancelled = rows.stream().filter(r -> "CANCELLED".equals(r.getStatus())).count();
         long noShow    = rows.stream().filter(r -> "NO_SHOW".equals(r.getStatus())).count();
         lblCancelStatus.setText(
-            rows.size() + " record(s) — " + cancelled + " cancelled, "
-            + noShow + " no-show — " + period);
+            rows.size() + " record(s) â€” " + cancelled + " cancelled, "
+            + noShow + " no-show â€” " + period);
 
         loadCancelDistribution(parkFilter, period);
     }
@@ -379,7 +379,7 @@ public class ReportsController {
         ReportCancelDistribution dist = ChatClient.lastCancelDistribution;
 
         chartCancelDist.getData().clear();
-        chartCancelDist.setTitle("Cancellations by Day of Week — " + period);
+        chartCancelDist.setTitle("Cancellations by Day of Week â€” " + period);
 
         if (dist == null) {
             lblCancelDistStatus.setText("");
@@ -401,7 +401,7 @@ public class ReportsController {
         chartCancelDist.getData().add(series);
 
         lblCancelDistStatus.setText(String.format(
-            "Avg %.2f/weekday  ·  %.2f per active day  ·  peak %s (%d)  ·  %d total over %d active day(s)",
+            "Avg %.2f/weekday  Â·  %.2f per active day  Â·  peak %s (%d)  Â·  %d total over %d active day(s)",
             dist.getAvgPerWeekday(), dist.getAvgPerWorkday(),
             dist.getPeakDay(), dist.getPeakCount(),
             dist.getTotal(), dist.getDistinctWorkdays()));
@@ -416,7 +416,7 @@ public class ReportsController {
      */
     private void loadUsageReport() {
         lblUsageError.setText("");
-        lblUsageStatus.setText("Loading…");
+        lblUsageStatus.setText("Loadingâ€¦");
 
         ChatClient.lastUsageReport = null;
         ClientUI.chat.accept(new Message("GET_USAGE_REPORT", buildRequest(0)));
@@ -424,7 +424,7 @@ public class ReportsController {
         chartUsage.getData().clear();
 
         String period = periodLabel();
-        chartUsage.setTitle("Usage Report — " + period);
+        chartUsage.setTitle("Usage Report â€” " + period);
 
         if (rows == null) {
             lblUsageError.setText("Could not load usage data. Is the server running?");
@@ -468,10 +468,10 @@ public class ReportsController {
             }
             chartUsage.getData().add(series);
         }
-        lblUsageStatus.setText(byPark.size() + " park(s) — " + period);
+        lblUsageStatus.setText(byPark.size() + " park(s) â€” " + period);
     }
 
-    // ── Navigation ────────────────────────────────────────────────────────────
+    // â”€â”€ Navigation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /**
      * closes the reports dashboard window.
@@ -489,7 +489,7 @@ public class ReportsController {
      */
     public void start(Stage stage) throws Exception {
         Parent root = FXMLLoader.load(getClass().getResource("/gui/ReportsFrame.fxml"));
-        stage.setTitle("GoNature — Reports Dashboard");
+        stage.setTitle("GoNature â€” Reports Dashboard");
         Scene scene = new Scene(root);
         ThemeManager.register(scene);
         stage.setScene(scene);
@@ -497,3 +497,4 @@ public class ReportsController {
         stage.show();
     }
 }
+

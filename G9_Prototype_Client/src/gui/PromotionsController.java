@@ -4,7 +4,7 @@ import client.ChatClient;
 import client.ClientUI;
 import logic.Message;
 import logic.Promotion;
-import logic.UserSession;
+import client.UserSession;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -53,7 +53,7 @@ public class PromotionsController {
             String name = (s.getParkName() != null && !s.getParkName().isEmpty())
                 ? s.getParkName()
                 : (s.getParkId() != null ? "Park #" + s.getParkId() : "your park");
-            lblParkName.setText("Promotions — " + name);
+            lblParkName.setText("Promotions â€” " + name);
         }
 
         colDescription.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getDescription()));
@@ -73,7 +73,7 @@ public class PromotionsController {
 
         tablePromotions.setPlaceholder(EmptyState.of(Icons.inbox(34),
             "No promotions yet",
-            "Create a promotion above — it will appear here once submitted."));
+            "Create a promotion above â€” it will appear here once submitted."));
 
         loadPromotions();
     }
@@ -127,7 +127,7 @@ public class PromotionsController {
             setError("End date must be on or after the start date."); return;
         }
         if (end.isBefore(LocalDate.now())) {
-            setError("The end date is in the past — choose a current or future date."); return;
+            setError("The end date is in the past â€” choose a current or future date."); return;
         }
 
         String parkName = (s.getParkName() != null) ? s.getParkName() : "";
@@ -199,7 +199,7 @@ public class PromotionsController {
      */
     public void start(Stage stage) throws Exception {
         Parent root = FXMLLoader.load(getClass().getResource("/gui/PromotionsFrame.fxml"));
-        stage.setTitle("GoNature — Promotions");
+        stage.setTitle("GoNature â€” Promotions");
         Scene scene = new Scene(root);
         ThemeManager.register(scene);
         stage.setScene(scene);
@@ -207,3 +207,4 @@ public class PromotionsController {
         stage.show();
     }
 }
+

@@ -5,7 +5,7 @@ import client.ClientUI;
 import logic.Message;
 import logic.Park;
 import logic.ParkSettingsRequest;
-import logic.UserSession;
+import client.UserSession;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -84,7 +84,7 @@ public class ParkSettingsController {
 
         UserSession s = UserSession.getInstance();
         if (s == null || s.getParkId() == null) {
-            setError("Session error — please log in again.");
+            setError("Session error â€” please log in again.");
             return;
         }
 
@@ -162,7 +162,7 @@ public class ParkSettingsController {
      */
     public void start(Stage stage) throws Exception {
         Parent root = FXMLLoader.load(getClass().getResource("/gui/ParkSettingsFrame.fxml"));
-        stage.setTitle("GoNature — Park Settings");
+        stage.setTitle("GoNature â€” Park Settings");
         Scene scene = new Scene(root);
         ThemeManager.register(scene);
         stage.setScene(scene);
@@ -170,3 +170,4 @@ public class ParkSettingsController {
         stage.show();
     }
 }
+

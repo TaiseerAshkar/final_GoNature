@@ -25,6 +25,14 @@ public class NotificationCenter {
     private static final List<String> entries = new ArrayList<>();
 
     /**
+     * order IDs the visitor has explicitly confirmed during this app process.
+     * survives logout/re-login so the confirm button stays disabled after confirming.
+     * deliberately NOT cleared by {@link #clear()} — only cleared when the app exits.
+     */
+    private static final java.util.Set<Integer> confirmedVisits =
+        new java.util.HashSet<>();
+
+    /**
      * pushes a new notification to the top of the list.
      *
      * @param icon    emoji prefix, e.g. {@code "✅"}, {@code "📨"}, {@code "🔔"}
@@ -43,6 +51,12 @@ public class NotificationCenter {
 
     /** @return how many notifications are currently stored */
     public static int count() { return entries.size(); }
+
+    /** records that the visitor explicitly confirmed this order during this app run. */
+    public static void markVisitConfirmed(int orderId) { confirmedVisits.add(orderId); }
+
+    /** @return {@code true} if the visitor already confirmed this order this app run. */
+    public static boolean isVisitConfirmed(int orderId) { return confirmedVisits.contains(orderId); }
 
     /** wipes all entries; call on logout so the next user starts clean. */
     public static void clear() { entries.clear(); }

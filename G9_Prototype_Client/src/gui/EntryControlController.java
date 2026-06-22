@@ -8,7 +8,7 @@ import logic.ExitRequest;
 import logic.Message;
 import logic.OrderDetail;
 import logic.Park;
-import logic.UserSession;
+import client.UserSession;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.TextInputDialog;
@@ -35,17 +35,17 @@ public class EntryControlController {
     @FXML private Label lblParkName;
     @FXML private Button btnTheme;
 
-    // ── Mode toggle ────────────────────────────────────────────────────────────
+    // â”€â”€ Mode toggle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     @FXML private ToggleButton btnModePrebooked;
     @FXML private ToggleButton btnModeWalkin;
 
-    // ── Shared check-in input ──────────────────────────────────────────────────
+    // â”€â”€ Shared check-in input â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     @FXML private TextField txtVisitorId;
 
-    // ── Pre-booked mode ────────────────────────────────────────────────────────
+    // â”€â”€ Pre-booked mode â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     @FXML private VBox   panePrebooked;
 
-    // ── Booking details card ───────────────────────────────────────────────────
+    // â”€â”€ Booking details card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     @FXML private VBox  paneBookingDetails;
     @FXML private Label lblBookingStatus;
     @FXML private Label lblBookingOrderId;
@@ -56,13 +56,13 @@ public class EntryControlController {
     @FXML private Label lblBookingVisitors;
     @FXML private Label lblBookingType;
 
-    // ── Walk-in mode ───────────────────────────────────────────────────────────
+    // â”€â”€ Walk-in mode â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     @FXML private VBox             paneWalkin;
     @FXML private TextField        txtWalkInVisitors;
     @FXML private ComboBox<String> cboOrderType;
     @FXML private Label            lblVisitorHint;
 
-    // ── Feedback + result card ────────────────────────────────────────────────
+    // â”€â”€ Feedback + result card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     @FXML private Label lblCheckInMessage;
     @FXML private VBox  paneResult;
     @FXML private HBox  bannerBox;
@@ -75,7 +75,7 @@ public class EntryControlController {
     @FXML private Label lblResultPayment;
     @FXML private Label lblResultNote;
 
-    // ── Exit tab ───────────────────────────────────────────────────────────────
+    // â”€â”€ Exit tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     @FXML private ComboBox<Park> cboExitPark;
     @FXML private TextField      txtExitVisitorId;
     @FXML private Label          lblExitMessage;
@@ -128,7 +128,7 @@ public class EntryControlController {
         cboExitPark.setDisable(true);
     }
 
-    // ── Mode toggle ────────────────────────────────────────────────────────────
+    // â”€â”€ Mode toggle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @FXML
     public void handleModeToggle(ActionEvent event) {
@@ -161,7 +161,7 @@ public class EntryControlController {
         lblCheckInMessage.setStyle("-fx-font-size:12px;");
     }
 
-    // ── Pre-booked mode ────────────────────────────────────────────────────────
+    // â”€â”€ Pre-booked mode â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /** sends FIND_TODAY_BOOKING and shows the booking details card, or an error hint. */
     @FXML
@@ -243,7 +243,7 @@ public class EntryControlController {
         }
     }
 
-    // ── Walk-in mode ────────────────────────────────────────────────────────────
+    // â”€â”€ Walk-in mode â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @FXML
     public void handleCheckIn(ActionEvent event) {
@@ -274,7 +274,7 @@ public class EntryControlController {
                 if (numVisitors != 1) { setCheckInError("SOLO check-in allows exactly 1 visitor."); return; }
                 break;
             case "FAMILY":
-                if (numVisitors < 2 || numVisitors > 15) { setCheckInError("FAMILY requires 2–15 visitors."); return; }
+                if (numVisitors < 2 || numVisitors > 15) { setCheckInError("FAMILY requires 2â€“15 visitors."); return; }
                 break;
             case "GROUP":
                 if (numVisitors < 2) { setCheckInError("Minimum 2 visitors required for a GROUP check-in."); return; }
@@ -295,7 +295,7 @@ public class EntryControlController {
                 ? ChatClient.lastEntryError : "Check-in failed. Please try again.");
     }
 
-    // ── Shared result card ──────────────────────────────────────────────────────
+    // â”€â”€ Shared result card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private void showEntryResult(EntryResult r,
                                   String fallbackVisitorId,
@@ -311,10 +311,10 @@ public class EntryControlController {
         String bannerColor = prebooked ? "#1b5e20" : "#0d47a1";
         bannerBox.setStyle("-fx-padding: 10 14; -fx-background-radius: 6; -fx-background-color: " + bannerColor + ";");
         lblResultStatus.setText(prebooked
-            ? "ENTRY APPROVED — PRE-BOOKED " + oType
-            : "ENTRY APPROVED — WALK-IN " + oType);
+            ? "ENTRY APPROVED â€” PRE-BOOKED " + oType
+            : "ENTRY APPROVED â€” WALK-IN " + oType);
 
-        lblResultOrderId.setText(r.getOrderId() > 0 ? "#" + r.getOrderId() : "—");
+        lblResultOrderId.setText(r.getOrderId() > 0 ? "#" + r.getOrderId() : "â€”");
         lblResultVisitorId.setText(vId);
         lblResultPark.setText(park);
         lblResultVisitors.setText(String.valueOf(vis));
@@ -325,7 +325,7 @@ public class EntryControlController {
         paneResult.setManaged(true);
     }
 
-    // ── Exit tab ────────────────────────────────────────────────────────────────
+    // â”€â”€ Exit tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @FXML
     public void handleRegisterExit(ActionEvent event) {
@@ -356,13 +356,13 @@ public class EntryControlController {
         }
     }
 
-    // ── QR scan ─────────────────────────────────────────────────────────────────
+    // â”€â”€ QR scan â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @FXML
     public void handleScanQRCode(ActionEvent event) {
         TextInputDialog dlg = new TextInputDialog();
         dlg.setTitle("QR Code Scanner");
-        dlg.setHeaderText("📷  Scan Visitor Entry QR Code");
+        dlg.setHeaderText("ðŸ“·  Scan Visitor Entry QR Code");
         dlg.setContentText(
             "Enter the value from the visitor's QR code\n" +
             "or type their government ID directly:");
@@ -381,7 +381,7 @@ public class EntryControlController {
         });
     }
 
-    // ── Misc ────────────────────────────────────────────────────────────────────
+    // â”€â”€ Misc â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @FXML
     public void handleClose(ActionEvent event) {
@@ -390,7 +390,7 @@ public class EntryControlController {
 
     public void start(Stage stage) throws Exception {
         Parent root = FXMLLoader.load(getClass().getResource("/gui/EntryControlFrame.fxml"));
-        stage.setTitle("GoNature — Entry Control");
+        stage.setTitle("GoNature â€” Entry Control");
         Scene scene = new Scene(root);
         ThemeManager.register(scene);
         stage.setScene(scene);
@@ -411,13 +411,13 @@ public class EntryControlController {
                 txtWalkInVisitors.setDisable(false);
                 txtWalkInVisitors.setStyle("");
                 if ("1".equals(txtWalkInVisitors.getText().trim())) txtWalkInVisitors.setText("2");
-                lblVisitorHint.setText("FAMILY: 2–15 visitors (15% discount for subscribers).");
+                lblVisitorHint.setText("FAMILY: 2â€“15 visitors (15% discount for subscribers).");
                 break;
             case "GROUP":
                 txtWalkInVisitors.setDisable(false);
                 txtWalkInVisitors.setStyle("");
                 if ("1".equals(txtWalkInVisitors.getText().trim())) txtWalkInVisitors.setText("2");
-                lblVisitorHint.setText("GROUP: 2–16 visitors. The Visitor ID must belong to an approved guide.");
+                lblVisitorHint.setText("GROUP: 2â€“16 visitors. The Visitor ID must belong to an approved guide.");
                 break;
             default:
                 txtWalkInVisitors.setDisable(false);
@@ -440,3 +440,4 @@ public class EntryControlController {
         lblExitMessage.setText(msg);
     }
 }
+

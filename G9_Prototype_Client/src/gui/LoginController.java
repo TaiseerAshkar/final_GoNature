@@ -5,7 +5,7 @@ import client.ClientUI;
 import javafx.application.Platform;
 import logic.LoginResult;
 import logic.Message;
-import logic.UserSession;
+import client.UserSession;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -227,18 +227,18 @@ public class LoginController {
      */
     @FXML
     public void handleHelp(MouseEvent event) {
-        showHelp("GoNature — Help",
-            "Welcome to GoNature — National Park Reservation System\n\n" +
+        showHelp("GoNature â€” Help",
+            "Welcome to GoNature â€” National Park Reservation System\n\n" +
             "VISITOR / GUIDE LOGIN\n" +
-            "  • Enter your 9-digit government ID number.\n" +
-            "  • Leave the password field blank.\n" +
-            "  • Guides are recognised automatically by their registered ID.\n\n" +
+            "  â€¢ Enter your 9-digit government ID number.\n" +
+            "  â€¢ Leave the password field blank.\n" +
+            "  â€¢ Guides are recognised automatically by their registered ID.\n\n" +
             "STAFF LOGIN\n" +
-            "  • Enter your assigned username and password.\n" +
-            "  • The system identifies your role automatically after login.\n\n" +
+            "  â€¢ Enter your assigned username and password.\n" +
+            "  â€¢ The system identifies your role automatically after login.\n\n" +
             "NEW USER?\n" +
-            "  • Click 'Create an Account' to register as a visitor.\n" +
-            "  • Family Member Club (subscriber) membership is set up in person by a service representative.");
+            "  â€¢ Click 'Create an Account' to register as a visitor.\n" +
+            "  â€¢ Family Member Club (subscriber) membership is set up in person by a service representative.");
     }
 
     /**
@@ -260,7 +260,7 @@ public class LoginController {
      */
     public void start(Stage primaryStage) throws Exception {
         Parent root = FXMLLoader.load(getClass().getResource("/gui/LoginFrame.fxml"));
-        primaryStage.setTitle("GoNature — Login");
+        primaryStage.setTitle("GoNature â€” Login");
         Scene scene = new Scene(root);
         ThemeManager.register(scene);   // keep the chosen light/dark theme across logout
         primaryStage.setScene(scene);
@@ -269,3 +269,4 @@ public class LoginController {
         Animations.introduce(root);     // subtle fade-and-rise on load
     }
 }
+

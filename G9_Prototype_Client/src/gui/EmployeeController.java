@@ -5,7 +5,7 @@ import client.ClientUI;
 import logic.Message;
 import logic.OrderDetail;
 import logic.Park;
-import logic.UserSession;
+import client.UserSession;
 import java.util.List;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -84,7 +84,7 @@ public class EmployeeController {
         startStatsAutoRefresh();
     }
 
-    // ── Header: theme toggle + session timer ──────────────────────────────────
+    // â”€â”€ Header: theme toggle + session timer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /**
      * flips the whole app between light and dark mode and updates this button's icon.
@@ -199,9 +199,9 @@ public class EmployeeController {
 
         int pct = (capacity > 0) ? (int) Math.round(inside * 100.0 / capacity) : 0;
         lblStats.setText(
-            "📅 Today's bookings: " + todayCount
-            + "      👥 Currently inside: " + inside
-            + "      🏕 Capacity: " + pct + "%");
+            "ðŸ“… Today's bookings: " + todayCount
+            + "      ðŸ‘¥ Currently inside: " + inside
+            + "      ðŸ• Capacity: " + pct + "%");
     }
 
     /** collapses the stats strip when there's nothing meaningful to show. */
@@ -210,7 +210,7 @@ public class EmployeeController {
         lblStats.setManaged(false);
     }
 
-    // ── Button handlers ───────────────────────────────────────────────────────
+    // â”€â”€ Button handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /**
      * opens Today's Reservations as a modal for the employee's assigned park.
@@ -218,21 +218,21 @@ public class EmployeeController {
     @FXML
     public void handleTodayReservations(ActionEvent event) {
         openModal(stage -> new TodayReservationsController().start(stage),
-                  "GoNature — Today's Reservations");
+                  "GoNature â€” Today's Reservations");
     }
 
     /** opens Entry Control as a modal. */
     @FXML
     public void handleEntryControl(ActionEvent event) {
         openModal(stage -> new EntryControlController().start(stage),
-                  "GoNature — Entry Control");
+                  "GoNature â€” Entry Control");
     }
 
     /** opens the Waiting List screen as a modal for the employee's assigned park. */
     @FXML
     public void handleWaitingList(ActionEvent event) {
         openModal(stage -> new WaitingListController().start(stage),
-                  "GoNature — Waiting List");
+                  "GoNature â€” Waiting List");
     }
 
     /**
@@ -244,7 +244,7 @@ public class EmployeeController {
         UserSession s = UserSession.getInstance();
         ReportsController.lockedParkId = s.getParkId();   // lock before opening
         openModal(stage -> new ReportsController().start(stage),
-                  "GoNature — Park Reports");
+                  "GoNature â€” Park Reports");
     }
 
     /**
@@ -254,7 +254,7 @@ public class EmployeeController {
     @FXML
     public void handleParkSettings(ActionEvent event) {
         openModal(stage -> new ParkSettingsController().start(stage),
-                  "GoNature — Park Settings");
+                  "GoNature â€” Park Settings");
     }
 
     /**
@@ -264,10 +264,10 @@ public class EmployeeController {
     @FXML
     public void handlePromotions(ActionEvent event) {
         openModal(stage -> new PromotionsController().start(stage),
-                  "GoNature — Promotions");
+                  "GoNature â€” Promotions");
     }
 
-    // ── Utility ───────────────────────────────────────────────────────────────
+    // â”€â”€ Utility â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /** lambda that opens a screen into a given stage; may throw on FXML load failure. */
     @FunctionalInterface
@@ -292,7 +292,7 @@ public class EmployeeController {
         }
     }
 
-    // ── Standard buttons ──────────────────────────────────────────────────────
+    // â”€â”€ Standard buttons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /** @param event the button-click event */
     @FXML
@@ -313,53 +313,53 @@ public class EmployeeController {
         String content;
         if ("PARK_MANAGER".equals(role)) {
             content =
-                "PARK MANAGER — QUICK GUIDE\n\n" +
+                "PARK MANAGER â€” QUICK GUIDE\n\n" +
                 "TODAY'S RESERVATIONS\n" +
-                "  • Click 'View Today's Reservations' to see all bookings for today at your park.\n\n" +
+                "  â€¢ Click 'View Today's Reservations' to see all bookings for today at your park.\n\n" +
                 "ENTRY CONTROL\n" +
-                "  • Click 'Entry Control (Check-In / Exit)' to open the gate console.\n" +
-                "  • Use the Check-In tab to admit visitors (pre-booked or walk-in).\n" +
-                "  • Use the Register Exit tab to log departures.\n\n" +
+                "  â€¢ Click 'Entry Control (Check-In / Exit)' to open the gate console.\n" +
+                "  â€¢ Use the Check-In tab to admit visitors (pre-booked or walk-in).\n" +
+                "  â€¢ Use the Register Exit tab to log departures.\n\n" +
                 "WAITING LIST\n" +
-                "  • Click 'Manage Waiting List' to see visitors queued for your park.\n\n" +
+                "  â€¢ Click 'Manage Waiting List' to see visitors queued for your park.\n\n" +
                 "REPORTS DASHBOARD\n" +
-                "  • Click 'View Park Reports' to open your park's analytics.\n" +
-                "  • The park filter is locked to your park automatically.\n" +
-                "  • Visitor Report: daily visitor counts split by booking type.\n" +
-                "  • Cancellation Report: cancelled and no-show orders, plus a day-of-week\n" +
+                "  â€¢ Click 'View Park Reports' to open your park's analytics.\n" +
+                "  â€¢ The park filter is locked to your park automatically.\n" +
+                "  â€¢ Visitor Report: daily visitor counts split by booking type.\n" +
+                "  â€¢ Cancellation Report: cancelled and no-show orders, plus a day-of-week\n" +
                 "    distribution chart with average cancellations per weekday.\n" +
-                "  • Usage Report: hourly park capacity utilisation.\n\n" +
+                "  â€¢ Usage Report: hourly park capacity utilisation.\n\n" +
                 "PRICING (ENTRY CONTROL)\n" +
-                "  • Pre-booked SOLO or FAMILY: 15% advance discount.\n" +
-                "  • Pre-booked GROUP (guide-led): guide enters free + 25%+12% advance discount\n" +
+                "  â€¢ Pre-booked SOLO or FAMILY: 15% advance discount.\n" +
+                "  â€¢ Pre-booked GROUP (guide-led): guide enters free + 25%+12% advance discount\n" +
                 "    (about 34% off) for the rest of the group.\n" +
-                "  • Walk-in SOLO — subscriber: 10% discount (Family Member Club benefit).\n" +
-                "  • Walk-in SOLO — regular visitor: full price.\n" +
-                "  • Walk-in GROUP (guide-led): guide pays; 10% discount applies to everyone\n" +
+                "  â€¢ Walk-in SOLO â€” subscriber: 10% discount (Family Member Club benefit).\n" +
+                "  â€¢ Walk-in SOLO â€” regular visitor: full price.\n" +
+                "  â€¢ Walk-in GROUP (guide-led): guide pays; 10% discount applies to everyone\n" +
                 "    including the guide.";
         } else {
             content =
-                "PARK EMPLOYEE — QUICK GUIDE\n\n" +
+                "PARK EMPLOYEE â€” QUICK GUIDE\n\n" +
                 "TODAY'S RESERVATIONS\n" +
-                "  • Click 'View Today's Reservations' to see all bookings for today at your park.\n\n" +
+                "  â€¢ Click 'View Today's Reservations' to see all bookings for today at your park.\n\n" +
                 "CHECKING IN A VISITOR\n" +
-                "  • Click 'Entry Control (Check-In / Exit)' then go to the Check-In tab.\n" +
-                "  • Enter the visitor's ID number and select the park.\n" +
-                "  • Pre-booked visitors: the system finds today's confirmed booking automatically.\n" +
-                "  • Walk-in visitors: also enter number of visitors and order type, then click Check In.\n" +
-                "  • Unknown visitor ID: if the visitor has no account, the system creates a minimal\n" +
-                "    record automatically — no pre-registration needed.\n\n" +
+                "  â€¢ Click 'Entry Control (Check-In / Exit)' then go to the Check-In tab.\n" +
+                "  â€¢ Enter the visitor's ID number and select the park.\n" +
+                "  â€¢ Pre-booked visitors: the system finds today's confirmed booking automatically.\n" +
+                "  â€¢ Walk-in visitors: also enter number of visitors and order type, then click Check In.\n" +
+                "  â€¢ Unknown visitor ID: if the visitor has no account, the system creates a minimal\n" +
+                "    record automatically â€” no pre-registration needed.\n\n" +
                 "REGISTERING AN EXIT\n" +
-                "  • Go to the 'Register Exit' tab.\n" +
-                "  • Enter the visitor's ID number and click 'Register Exit'.\n\n" +
+                "  â€¢ Go to the 'Register Exit' tab.\n" +
+                "  â€¢ Enter the visitor's ID number and click 'Register Exit'.\n\n" +
                 "WAITING LIST\n" +
-                "  • Click 'Manage Waiting List' to see visitors queued for your park.\n\n" +
+                "  â€¢ Click 'Manage Waiting List' to see visitors queued for your park.\n\n" +
                 "NOTES\n" +
-                "  • A visitor already checked in today cannot check in a second time.\n" +
-                "  • Walk-ins are only allowed when the park has sufficient remaining capacity.\n" +
-                "  • All pricing is calculated automatically at check-in time.";
+                "  â€¢ A visitor already checked in today cannot check in a second time.\n" +
+                "  â€¢ Walk-ins are only allowed when the park has sufficient remaining capacity.\n" +
+                "  â€¢ All pricing is calculated automatically at check-in time.";
         }
-        showHelp("GoNature — Help (" + role + ")", content);
+        showHelp("GoNature â€” Help (" + role + ")", content);
     }
 
     /**
@@ -394,7 +394,7 @@ public class EmployeeController {
      */
     public void start(Stage primaryStage) throws Exception {
         Parent root = FXMLLoader.load(getClass().getResource("/gui/EmployeeFrame.fxml"));
-        primaryStage.setTitle("GoNature — " + UserSession.getInstance().getRole());
+        primaryStage.setTitle("GoNature â€” " + UserSession.getInstance().getRole());
         Scene scene = new Scene(root);
         ThemeManager.register(scene);   // apply the current light/dark theme to this screen
         primaryStage.setScene(scene);
@@ -403,3 +403,4 @@ public class EmployeeController {
         Animations.introduce(root);     // subtle fade-and-rise on load
     }
 }
+

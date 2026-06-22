@@ -5,7 +5,7 @@ import client.ClientUI;
 import logic.Message;
 import logic.RegisterRequest;
 import logic.RegisterResult;
-import logic.UserSession;
+import client.UserSession;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -63,7 +63,7 @@ public class RegisterController {
     public void handleRegister(ActionEvent event) {
         lblError.setText("");
 
-        // ── Personal information validation ──────────────────────────────────
+        // â”€â”€ Personal information validation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         String idNumber = txtIdNumber.getText().trim();
         if (idNumber.isEmpty())           { setError("ID number is required.");         return; }
         if (!idNumber.matches("\\d+"))  { setError("ID number must contain numbers only."); return; }
@@ -90,7 +90,7 @@ public class RegisterController {
         if (!phone.matches("\\d+"))    { setError("Phone number must contain numbers only.");        return; }
         if (phone.length() != 10)      { setError("Phone number must be exactly 10 digits.");        return; }
 
-        // ── Send to server ───────────────────────────────────────────────────
+        // â”€â”€ Send to server â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // Plain visitor account only. Subscriber sign-up is handled by a service rep
         // (ServiceRepController.handleRegisterSubscriber), so these are always non-subscriber.
         RegisterRequest req = new RegisterRequest(
@@ -177,7 +177,7 @@ public class RegisterController {
      */
     public void start(Stage stage) throws Exception {
         Parent root = FXMLLoader.load(getClass().getResource("/gui/RegisterFrame.fxml"));
-        stage.setTitle("GoNature — Create Account");
+        stage.setTitle("GoNature â€” Create Account");
         Scene scene = new Scene(root);
         ThemeManager.register(scene);
         stage.setScene(scene);
@@ -185,3 +185,4 @@ public class RegisterController {
         stage.show();
     }
 }
+

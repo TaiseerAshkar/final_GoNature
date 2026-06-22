@@ -1926,8 +1926,9 @@ public class DBController {
     // ── Reminder service ──────────────────────────────────────────────────────
 
     /**
-     * returns all pending/confirmed orders for tomorrow; used by {@link ReminderService}
-     * at startup to decide who needs a reminder notification.
+     * returns ALL pending/confirmed orders for tomorrow so the server UI can display them
+     * on every startup. each entry carries a {@code reminderSent} flag so
+     * {@link ReminderService} can skip re-sending emails for orders already reminded.
      *
      * @return a list of {@link ReminderOrderInfo} sorted by visit time; empty if none or on error
      */
@@ -1940,7 +1941,8 @@ public class DBController {
                 "       COALESCE(o.email, '') AS email, " +
                 "       DATE_FORMAT(o.visit_date, '%Y-%m-%d') AS visit_date, " +
                 "       TIME_FORMAT(o.visit_time, '%H:%i')    AS visit_time, " +
-                "       p.name AS park_name " +
+                "       p.name AS park_name, " +
+                "       o.reminder_sent " +
                 "FROM orders o " +
                 "JOIN parks p ON p.id = o.park_id " +
                 "WHERE o.visit_date = DATE_ADD(CURDATE(), INTERVAL 1 DAY) " +
@@ -1953,13 +1955,32 @@ public class DBController {
                     rs.getString("email"),
                     rs.getString("visit_date"),
                     rs.getString("visit_time"),
-                    rs.getString("park_name")
+                    rs.getString("park_name"),
+                    rs.getBoolean("reminder_sent")
                 ));
             }
         } catch (SQLException e) {
             System.out.println("getTomorrowOrdersForReminder error: " + e.getMessage());
         }
         return list;
+    }
+
+    /**
+     * marks an order as reminded so subsequent server starts skip it.
+     * called immediately after each reminder email is sent.
+     *
+     * @param orderId the order to mark
+     */
+    public void markReminderSent(int orderId) {
+        if (connection == null) return;
+        try {
+            PreparedStatement st = connection.prepareStatement(
+                "UPDATE orders SET reminder_sent = 1 WHERE id = ?");
+            st.setInt(1, orderId);
+            st.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println("markReminderSent error (order #" + orderId + "): " + e.getMessage());
+        }
     }
 
     // ── Registration ─────────────────────────────────────────────────────────

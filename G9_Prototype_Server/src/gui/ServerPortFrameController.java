@@ -399,6 +399,8 @@ public class ServerPortFrameController {
         Scene scene = new Scene(root);
         primaryStage.setTitle("G9 — Server");
         primaryStage.setScene(scene);
+        primaryStage.setMinWidth(920);
+        primaryStage.setWidth(920);
         primaryStage.show();
     }
 }

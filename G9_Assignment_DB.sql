@@ -108,7 +108,8 @@ CREATE TABLE orders (
     email        VARCHAR(100) NOT NULL,
     entry_time   TIMESTAMP    NULL DEFAULT NULL,
     exit_time    TIMESTAMP    NULL DEFAULT NULL,
-    created_at   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+    created_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+    reminder_sent TINYINT(1)   NOT NULL DEFAULT 0,
     CONSTRAINT chk_orders_visitors CHECK (num_visitors >= 1),
     CONSTRAINT fk_orders_park FOREIGN KEY (park_id) REFERENCES parks(id)
         ON DELETE CASCADE ON UPDATE CASCADE,
@@ -5339,3 +5340,7 @@ WHERE o.status='completed' AND o.entry_time IS NOT NULL AND o.exit_time IS NOT N
   AND YEAR(o.visit_date)=2026 AND MONTH(o.visit_date)=4
 GROUP BY p.id, p.name, p.capacity, hour, d.day_count
 ORDER BY p.name, hour;
+
+-- Mark past orders as already reminded so a fresh server start does not
+-- re-send reminders for visits that have already occurred.
+UPDATE orders SET reminder_sent = 1 WHERE status IN ('completed', 'no_show', 'cancelled');

@@ -1,6 +1,6 @@
 package client;
 
-import common.ChatIF;
+import client.ChatIF;
 import logic.BookingResult;
 import logic.CancelResult;
 import logic.EntryResult;

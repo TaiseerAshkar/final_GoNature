@@ -63,10 +63,12 @@ public class ReminderService {
     }
 
     /**
-     * queries tomorrow's orders, logs a simulation reminder for each, shows a popup,
-     * and schedules the auto-cancel check. returns immediately (async).
+     * queries ALL of tomorrow's confirmed/pending orders and logs them on every startup
+     * so the server operator can see who is booked for tomorrow. reminder emails are sent
+     * only once (when {@code reminderSent == false}); subsequent starts skip the email but
+     * still display the order in the log and popup.
      *
-     * @param db the database controller used to query and later cancel the orders
+     * @param db the database controller used to query, mark, and later cancel the orders
      */
     public void runStartupCheck(DBController db) {
         scheduler.execute(() -> {
@@ -79,42 +81,51 @@ public class ReminderService {
             log("=== Startup Reminder Check — " + orders.size() + " order(s) for tomorrow ===");
             for (ReminderOrderInfo o : orders) remindedOrderIds.add(o.id);
 
-            StringBuilder popup = new StringBuilder();
+            int newlySent  = 0;
+            int alreadyDone = 0;
             for (ReminderOrderInfo o : orders) {
-                String line = String.format(
-                    "📧 Reminder sent → %s  |  %s  |  %s at %s  |  Order #%d",
-                    o.email, o.parkName, o.visitDate, o.visitTime, o.id);
-                log(line);
-                EmailService.sendEmail(o.email,
-                    "GoNature — Visit Reminder (Order #" + o.id + ")",
-                    "Hello,\n\n" +
-                    "This is a friendly reminder about your visit tomorrow.\n\n" +
-                    "Order #: " + o.id + "\n" +
-                    "Park: " + o.parkName + "\n" +
-                    "Date: " + o.visitDate + " at " + o.visitTime + "\n\n" +
-                    "Please confirm your visit in the GoNature app within " + CONFIRM_WINDOW_HOURS +
-                    " hour(s), or your booking may be automatically cancelled.\n\n" +
-                    "— GoNature Parks");
-                popup.append("• ").append(o.email)
-                     .append(" — ").append(o.parkName)
-                     .append(" on ").append(o.visitDate)
-                     .append(" at ").append(o.visitTime).append("\n");
+                if (o.reminderSent) {
+                    alreadyDone++;
+                    log(String.format(
+                        "✅ Already reminded → %s  |  %s  |  %s at %s  |  Order #%d",
+                        o.email, o.parkName, o.visitDate, o.visitTime, o.id));
+                } else {
+                    newlySent++;
+                    log(String.format(
+                        "📧 Reminder sent → %s  |  %s  |  %s at %s  |  Order #%d",
+                        o.email, o.parkName, o.visitDate, o.visitTime, o.id));
+                    EmailService.sendEmail(o.email,
+                        "GoNature — Visit Reminder (Order #" + o.id + ")",
+                        "Hello,\n\n" +
+                        "This is a friendly reminder about your visit tomorrow.\n\n" +
+                        "Order #: " + o.id + "\n" +
+                        "Park: " + o.parkName + "\n" +
+                        "Date: " + o.visitDate + " at " + o.visitTime + "\n\n" +
+                        "Please confirm your visit in the GoNature app within " + CONFIRM_WINDOW_HOURS +
+                        " hour(s), or your booking may be automatically cancelled.\n\n" +
+                        "— GoNature Parks");
+                    db.markReminderSent(o.id);
+                }
             }
 
-            final String alertContent = popup.toString();
-            final int    count        = orders.size();
+            final int finalTotal      = orders.size();
+            final int finalNewlySent  = newlySent;
+            final int finalAlreadyDone = alreadyDone;
+            final String visitDate    = orders.get(0).visitDate;
             Platform.runLater(() -> {
                 Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                alert.setTitle("Simulation — Reminder Sent");
-                alert.setHeaderText(count + " day-before reminder(s) sent");
+                alert.setTitle("Reminder Check — " + visitDate);
+                alert.setHeaderText(finalTotal + " order(s) scheduled for tomorrow  (" + visitDate + ")");
                 alert.setContentText(
-                    alertContent.trim() + "\n\n"
-                    + "Visitors have " + CONFIRM_WINDOW_HOURS
-                    + " hour(s) to confirm. Unconfirmed bookings will be auto-cancelled.");
+                    "📧  New reminders sent:      " + finalNewlySent + "\n" +
+                    "✅  Already reminded:        " + finalAlreadyDone + "\n\n" +
+                    "Visitors have " + CONFIRM_WINDOW_HOURS + " hour(s) to confirm.\n" +
+                    "Unconfirmed bookings will be auto-cancelled.\n\n" +
+                    "Full per-order details are in the simulation log below.");
 
                 DialogPane pane = alert.getDialogPane();
-                pane.setMinWidth(500);
-                pane.setGraphic(null);   // remove the default blue info icon
+                pane.setMinWidth(420);
+                pane.setGraphic(null);
                 java.net.URL css = ReminderService.class.getResource("/gui/ServerPort.css");
                 if (css != null) pane.getStylesheets().add(css.toExternalForm());
                 pane.getStyleClass().add("help-dialog");

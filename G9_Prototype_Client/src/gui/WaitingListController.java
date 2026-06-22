@@ -4,7 +4,7 @@ import client.ChatClient;
 import client.ClientUI;
 import logic.Message;
 import logic.OrderDetail;
-import logic.UserSession;
+import client.UserSession;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.event.ActionEvent;
@@ -114,7 +114,7 @@ public class WaitingListController {
     public void start(Stage stage) throws Exception {
         Parent root = FXMLLoader.load(
             getClass().getResource("/gui/WaitingListFrame.fxml"));
-        stage.setTitle("GoNature — Waiting List");
+        stage.setTitle("GoNature â€” Waiting List");
         Scene scene = new Scene(root);
         ThemeManager.register(scene);
         stage.setScene(scene);
@@ -122,3 +122,4 @@ public class WaitingListController {
         stage.show();
     }
 }
+

@@ -1,4 +1,4 @@
-package common;
+package client;
 
 /**
  * display contract for any component that renders messages to the user.

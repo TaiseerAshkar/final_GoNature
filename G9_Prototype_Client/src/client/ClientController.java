@@ -1,6 +1,6 @@
 package client;
 
-import common.ChatIF;
+import client.ChatIF;
 import logic.Message;
 import java.io.IOException;
 
