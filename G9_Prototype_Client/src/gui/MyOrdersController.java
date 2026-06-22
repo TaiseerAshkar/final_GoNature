@@ -194,16 +194,16 @@ public class MyOrdersController {
             lblCancelTitle.setText("Order #" + selected.getId() + " cancelled successfully.");
             lblCancelDetail.setText(
                 "Park: " + selected.getParkName()
-                + "   Â·   Date: " + selected.getVisitDate()
+                + "   ·   Date: " + selected.getVisitDate()
                 + " at " + selected.getVisitTime()
-                + "   Â·   Visitors: " + selected.getNumVisitors());
+                + "   ·   Visitors: " + selected.getNumVisitors());
             paneCancelConfirm.setVisible(true);
             paneCancelConfirm.setManaged(true);
 
             // also log to the notification inbox
-            NotificationCenter.add("ðŸš«",
-                "Order #" + selected.getId() + " cancelled â€” "
-                + selected.getParkName() + " Â· " + selected.getVisitDate()
+            NotificationCenter.add("🚫",
+                "Order #" + selected.getId() + " cancelled — "
+                + selected.getParkName() + " · " + selected.getVisitDate()
                 + " at " + selected.getVisitTime() + ". "
                 + "Your reserved slot remains counted; cancellation confirmation sent to your email.");
 
@@ -234,12 +234,12 @@ public class MyOrdersController {
 
         if (Boolean.TRUE.equals(ChatClient.lastConfirmVisitOk)) {
             NotificationCenter.markVisitConfirmed(selected.getId());
-            NotificationCenter.add("âœ…",
-                "Visit confirmed â€” Order #" + selected.getId()
+            NotificationCenter.add("✅",
+                "Visit confirmed — Order #" + selected.getId()
                 + " at " + selected.getParkName()
                 + " on " + selected.getVisitDate()
                 + " at " + selected.getVisitTime()
-                + ". You're all set â€” see you there!");
+                + ". You're all set — see you there!");
             // reload so the status chip refreshes from PENDING to CONFIRMED
             loadOrders(txtVisitorId.getText().trim());
             Toast.success("Visit confirmed! Order #" + selected.getId()
@@ -281,7 +281,7 @@ public class MyOrdersController {
      */
     public void start(Stage stage) throws Exception {
         Parent root = FXMLLoader.load(getClass().getResource("/gui/MyOrdersFrame.fxml"));
-        stage.setTitle("GoNature â€” My Orders");
+        stage.setTitle("GoNature — My Orders");
         Scene scene = new Scene(root);
         ThemeManager.register(scene);
         stage.setScene(scene);

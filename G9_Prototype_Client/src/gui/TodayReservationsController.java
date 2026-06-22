@@ -123,7 +123,7 @@ public class TodayReservationsController {
     public void start(Stage stage) throws Exception {
         Parent root = FXMLLoader.load(
             getClass().getResource("/gui/TodayReservationsFrame.fxml"));
-        stage.setTitle("GoNature â€” Today's Reservations");
+        stage.setTitle("GoNature — Today's Reservations");
         Scene scene = new Scene(root);
         ThemeManager.register(scene);
         stage.setScene(scene);

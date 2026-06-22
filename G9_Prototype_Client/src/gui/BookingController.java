@@ -166,7 +166,7 @@ public class BookingController {
 
         lblAvailability.getStyleClass().setAll("lbl-loading");
         lblAvailability.setStyle("");
-        lblAvailability.setText("Checking availabilityâ€¦");
+        lblAvailability.setText("Checking availability…");
 
         Thread worker = new Thread(() -> {
             try {
@@ -187,7 +187,7 @@ public class BookingController {
                         lblAvailability.getStyleClass().setAll("lbl-warning");
                         lblAvailability.setStyle("");
                         lblAvailability.setText(
-                            "This slot is fully booked â€” you may join the waiting list.");
+                            "This slot is fully booked — you may join the waiting list.");
                     } else {
                         lblAvailability.getStyleClass().setAll("lbl-success");
                         lblAvailability.setStyle("");
@@ -213,16 +213,16 @@ public class BookingController {
         if (orderType == null) return;
         switch (orderType) {
             case "SOLO":
-                lblVisitorHint.setText("1 visitor â€” 15% pre-booked discount");
+                lblVisitorHint.setText("1 visitor — 15% pre-booked discount");
                 txtVisitors.setText("1");
                 txtVisitors.setDisable(true);
                 break;
             case "FAMILY":
-                lblVisitorHint.setText("2â€“15 visitors â€” 15% family discount");
+                lblVisitorHint.setText("2–15 visitors — 15% family discount");
                 txtVisitors.setDisable(false);
                 break;
             case "GROUP":
-                lblVisitorHint.setText("2â€“16 total (guide enters free Â· up to 15 guests Â· 25%+12% advance discount)");
+                lblVisitorHint.setText("2–16 total (guide enters free · up to 15 guests · 25%+12% advance discount)");
                 txtVisitors.setDisable(false);
                 break;
         }
@@ -230,9 +230,9 @@ public class BookingController {
 
     /**
      * recomputes the price estimate live. clears the label if inputs are incomplete.
-     * SOLO:   1 Ã— fullPrice Ã— 0.85 (15% pre-booked discount).
-     * FAMILY: visitors Ã— fullPrice Ã— 0.85 (15% family discount).
-     * GROUP:  (visitors âˆ’ 1) Ã— fullPrice Ã— 0.75 Ã— 0.88 (guide free + 25% group + 12% advance).
+     * SOLO:   1 × fullPrice × 0.85 (15% pre-booked discount).
+     * FAMILY: visitors × fullPrice × 0.85 (15% family discount).
+     * GROUP:  (visitors − 1) × fullPrice × 0.75 × 0.88 (guide free + 25% group + 12% advance).
      */
     private void updatePriceEstimate() {
         Park   park   = cboPark.getValue();
@@ -245,10 +245,10 @@ public class BookingController {
             double total;
             String note;
             if ("GROUP".equals(type)) {
-                // pre-booked group: guide free; 25% group + 12% advance stacked (0.75 Ã— 0.88)
+                // pre-booked group: guide free; 25% group + 12% advance stacked (0.75 × 0.88)
                 int paying = Math.max(0, visitors - 1); // guide enters free
                 total = paying * park.getFullPrice() * 0.75 * 0.88;
-                note  = String.format(" (guide free Â· %d paying Â· 25%%+12%% advance discount)", paying);
+                note  = String.format(" (guide free · %d paying · 25%%+12%% advance discount)", paying);
             } else if ("FAMILY".equals(type)) {
                 total = visitors * park.getFullPrice() * 0.85;
                 note  = " (15% family discount)";
@@ -330,7 +330,7 @@ public class BookingController {
                 break;
             case "FAMILY":
                 if (visitors < 2 || visitors > 15) {
-                    setError("FAMILY bookings require 2â€“15 visitors."); return null;
+                    setError("FAMILY bookings require 2–15 visitors."); return null;
                 }
                 break;
             case "GROUP":
@@ -341,7 +341,7 @@ public class BookingController {
                 }
                 // guide books the full headcount (themselves + up to 15 guests = max 16 total)
                 if (visitors < 2 || visitors > 16) {
-                    setError("Guide GROUP bookings require 2â€“16 visitors total (you enter free)."); return null;
+                    setError("Guide GROUP bookings require 2–16 visitors total (you enter free)."); return null;
                 }
                 break;
         }
@@ -371,7 +371,7 @@ public class BookingController {
         alert.setTitle("Park Fully Booked");
         alert.setHeaderText(req.getParkName() + " is fully booked for this slot");
 
-        // â”€â”€ branded body: hourglass mark + pitch + booking-facts card (no plain content text) â”€â”€
+        // ── branded body: hourglass mark + pitch + booking-facts card (no plain content text) ──
         Label pitch = new Label("Join the waiting list?");
         pitch.getStyleClass().add("card-title");
         Label pitchSub = new Label(
@@ -438,20 +438,20 @@ public class BookingController {
     private void showConfirmation(BookingResult result) {
         // simulate the email/SMS notification the visitor would receive
         if ("WAITING".equals(result.getStatus())) {
-            NotificationCenter.add("â³",
-                "Added to waiting list â€” " + result.getParkName()
+            NotificationCenter.add("⏳",
+                "Added to waiting list — " + result.getParkName()
                 + " on " + result.getVisitDate() + " at " + result.getVisitTime()
                 + ". You'll be notified at " + result.getEmail() + " if a spot opens.");
         } else {
-            NotificationCenter.add("âœ…",
-                "Booking confirmed â€” " + result.getParkName()
+            NotificationCenter.add("✅",
+                "Booking confirmed — " + result.getParkName()
                 + " on " + result.getVisitDate() + " at " + result.getVisitTime()
-                + " Â· " + result.getNumVisitors() + " visitor(s)."
+                + " · " + result.getNumVisitors() + " visitor(s)."
                 + " Confirmation email sent to " + result.getEmail() + ".");
             // add a reminder if the visit is tomorrow
             String tomorrow = LocalDate.now().plusDays(1).format(DATE_FMT);
             if (result.getVisitDate().equals(tomorrow)) {
-                NotificationCenter.add("ðŸ””",
+                NotificationCenter.add("🔔",
                     "Reminder: your visit to " + result.getParkName()
                     + " is tomorrow at " + result.getVisitTime()
                     + " (Order #" + result.getId() + "). Please arrive 15 minutes early.");
@@ -471,7 +471,7 @@ public class BookingController {
             BookingConfirmationController ctrl = loader.getController();
 
             Stage stage = (Stage) btnSubmit.getScene().getWindow();
-            stage.setTitle("GoNature â€” " +
+            stage.setTitle("GoNature — " +
                 ("WAITING".equals(result.getStatus()) ? "Waiting List" : "Booking Confirmed"));
             Scene scene = new Scene(root);
             ThemeManager.register(scene);                            // theme the confirmation screen
@@ -499,7 +499,7 @@ public class BookingController {
      */
     public void start(Stage stage) throws Exception {
         Parent root = FXMLLoader.load(getClass().getResource("/gui/BookingFrame.fxml"));
-        stage.setTitle("GoNature â€” New Booking");
+        stage.setTitle("GoNature — New Booking");
         Scene scene = new Scene(root);
         ThemeManager.register(scene);
         stage.setScene(scene);

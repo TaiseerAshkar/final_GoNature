@@ -104,7 +104,7 @@ public class ServiceRepController {
             "Click \"Load Orders\" to fetch the current reservations."));
     }
 
-    // â”€â”€ Header: theme toggle + session timer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Header: theme toggle + session timer ──────────────────────────────────
 
     /**
      * flips the whole app between light and dark mode and updates this button's icon.
@@ -159,7 +159,7 @@ public class ServiceRepController {
      */
     @FXML
     public void loadOrders(ActionEvent event) {
-        lblResult.setText("Loadingâ€¦");
+        lblResult.setText("Loading…");
         ChatClient.lastLiveOrders = null;
         ClientUI.chat.accept(new Message("GET_LIVE_ORDERS", null));
         List<OrderDetail> orders = ChatClient.lastLiveOrders;
@@ -168,7 +168,7 @@ public class ServiceRepController {
             lblResult.setText("Loaded " + orders.size() + " order(s).");
         } else {
             tableOrders.getItems().clear();
-            lblResult.setText("Could not load orders â€” is the server running?");
+            lblResult.setText("Could not load orders — is the server running?");
         }
     }
 
@@ -316,8 +316,8 @@ public class ServiceRepController {
         TextField fldLastName   = new TextField(); fldLastName.setPromptText("Last name");
         TextField fldEmail      = new TextField(); fldEmail.setPromptText("name@example.com");
         TextField fldPhone      = new TextField(); fldPhone.setPromptText("10 digits");
-        TextField fldFamilySize = new TextField(); fldFamilySize.setPromptText("Family members (1â€“10)");
-        TextField fldCreditCard = new TextField(); fldCreditCard.setPromptText("16 digits â€” optional (blank = cash)");
+        TextField fldFamilySize = new TextField(); fldFamilySize.setPromptText("Family members (1–10)");
+        TextField fldCreditCard = new TextField(); fldCreditCard.setPromptText("16 digits — optional (blank = cash)");
         for (TextField f : new TextField[]{ fldId, fldFirstName, fldLastName, fldEmail,
                                             fldPhone, fldFamilySize, fldCreditCard }) {
             f.getStyleClass().add("text-field");
@@ -373,7 +373,7 @@ public class ServiceRepController {
             String fsStr = fldFamilySize.getText().trim();
             String cc    = fldCreditCard.getText().trim();
 
-            // ID â€” exactly 9 digits (matches RegisterController)
+            // ID — exactly 9 digits (matches RegisterController)
             if (!id.matches("\\d+")) {
                 lblErr.setText("ID number must contain digits only."); ev.consume(); return;
             }
@@ -381,7 +381,7 @@ public class ServiceRepController {
                 lblErr.setText("ID number must be exactly 9 digits."); ev.consume(); return;
             }
 
-            // Names â€” letters, spaces, hyphens and apostrophes only (matches RegisterController)
+            // Names — letters, spaces, hyphens and apostrophes only (matches RegisterController)
             if (!first.matches("[\\p{L} '-]+")) {
                 lblErr.setText("First name must contain letters only."); ev.consume(); return;
             }
@@ -400,7 +400,7 @@ public class ServiceRepController {
                 lblErr.setText("Please enter a valid email address."); ev.consume(); return;
             }
 
-            // Phone â€” exactly 10 digits (matches RegisterController)
+            // Phone — exactly 10 digits (matches RegisterController)
             if (!phone.matches("\\d+")) {
                 lblErr.setText("Mobile phone must contain digits only."); ev.consume(); return;
             }
@@ -419,7 +419,7 @@ public class ServiceRepController {
                 lblErr.setText("Family size must be between 1 and 10."); ev.consume(); return;
             }
 
-            // Credit card â€” optional; if filled must be exactly 16 digits
+            // Credit card — optional; if filled must be exactly 16 digits
             String creditCard = null;
             if (!cc.isEmpty()) {
                 if (!cc.matches("\\d{16}")) {
@@ -429,7 +429,7 @@ public class ServiceRepController {
                 creditCard = cc;
             }
 
-            // All client-side checks passed â€” send to server
+            // All client-side checks passed — send to server
             ChatClient.lastRegisterResult = null;
             ChatClient.lastRegisterError  = null;
             ClientUI.chat.accept(new Message("REGISTER_SUBSCRIBER",
@@ -441,7 +441,7 @@ public class ServiceRepController {
                     ? "  Subscriber ID: " + res.getSubscriberId() : "";
                 succeeded[0]  = true;
                 successMsg[0] = "Subscriber registered." + sub;
-                // don't consume â€” let dialog close normally
+                // don't consume — let dialog close normally
             } else {
                 lblErr.setText(ChatClient.lastRegisterError != null
                     ? ChatClient.lastRegisterError : "Registration failed. Try again.");
@@ -493,7 +493,7 @@ public class ServiceRepController {
                     return;
                 }
             } catch (DateTimeParseException e) {
-                lblResult.setText("Invalid date format â€” use YYYY-MM-DD.");
+                lblResult.setText("Invalid date format — use YYYY-MM-DD.");
                 return;
             }
 
@@ -538,33 +538,33 @@ public class ServiceRepController {
      */
     @FXML
     public void handleHelp(ActionEvent event) {
-        HelpDialog.show("GoNature â€” Service Representative Guide",
+        HelpDialog.show("GoNature — Service Representative Guide",
             "LOADING ORDERS\n" +
-            "  â€¢ Click 'Load All Orders' to see every active booking in the system.\n\n" +
+            "  • Click 'Load All Orders' to see every active booking in the system.\n\n" +
             "UPDATING AN ORDER\n" +
-            "  â€¢ Enter the Order Number, a new future Date (YYYY-MM-DD),\n" +
-            "    and a new visitor count (1â€“15), then click 'Update Order'.\n\n" +
+            "  • Enter the Order Number, a new future Date (YYYY-MM-DD),\n" +
+            "    and a new visitor count (1–15), then click 'Update Order'.\n\n" +
             "REGISTERING A VISITOR\n" +
-            "  â€¢ Click 'Register New Visitor' to open the registration form.\n" +
-            "  â€¢ Fill in the visitor's details on their behalf and submit.\n" +
-            "  â€¢ The visitor can then log in with their government ID.\n\n" +
+            "  • Click 'Register New Visitor' to open the registration form.\n" +
+            "  • Fill in the visitor's details on their behalf and submit.\n" +
+            "  • The visitor can then log in with their government ID.\n\n" +
             "REGISTERING A GUIDE\n" +
-            "  â€¢ Click 'Register New Guide' to register an approved tour guide.\n" +
-            "  â€¢ The guide's ID is then authorised to make GROUP bookings.\n\n" +
+            "  • Click 'Register New Guide' to register an approved tour guide.\n" +
+            "  • The guide's ID is then authorised to make GROUP bookings.\n\n" +
             "REGISTERING A SUBSCRIBER\n" +
-            "  â€¢ Click 'â­ Register Subscriber' to open the Family Member Club form.\n" +
-            "  â€¢ Enter the visitor's name, government ID, phone, email, family size,\n" +
+            "  • Click '⭐ Register Subscriber' to open the Family Member Club form.\n" +
+            "  • Enter the visitor's name, government ID, phone, email, family size,\n" +
             "    and optionally a credit card number (leave blank for cash payment).\n" +
-            "  â€¢ A subscriber ID is issued immediately on successful registration.\n" +
-            "  â€¢ Subscribers receive a 10% discount on top of any applicable booking discount.\n\n" +
+            "  • A subscriber ID is issued immediately on successful registration.\n" +
+            "  • Subscribers receive a 10% discount on top of any applicable booking discount.\n\n" +
             "REPORTS\n" +
-            "  â€¢ Click 'View Reports Dashboard' to access visitor, cancellation,\n" +
+            "  • Click 'View Reports Dashboard' to access visitor, cancellation,\n" +
             "    and usage reports across all parks.\n\n" +
             "ORDER STATUS REFERENCE\n" +
-            "  PENDING   â€” booked, awaiting park confirmation\n" +
-            "  CONFIRMED â€” confirmed by the park\n" +
-            "  COMPLETED â€” visitor has checked in and out\n" +
-            "  CANCELLED â€” cancelled by visitor or system");
+            "  PENDING   — booked, awaiting park confirmation\n" +
+            "  CONFIRMED — confirmed by the park\n" +
+            "  COMPLETED — visitor has checked in and out\n" +
+            "  CANCELLED — cancelled by visitor or system");
     }
 
     /**
@@ -592,7 +592,7 @@ public class ServiceRepController {
      */
     public void start(Stage primaryStage) throws Exception {
         Parent root = FXMLLoader.load(getClass().getResource("/gui/ServiceRepFrame.fxml"));
-        primaryStage.setTitle("GoNature â€” Service Representative");
+        primaryStage.setTitle("GoNature — Service Representative");
         Scene scene = new Scene(root);
         ThemeManager.register(scene);   // apply the current light/dark theme to this screen
         primaryStage.setScene(scene);

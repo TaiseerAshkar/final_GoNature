@@ -137,7 +137,11 @@ public class LoginController {
         ChatClient.lastLoginError  = null;
         ClientUI.chat.accept(new Message("LOGIN_VISITOR", id));
         if (ChatClient.lastLoginResult != null) onLoginSuccess();
-        else setError("ID not found. Please register first.");
+        // surface the server's specific reason (already-logged-in vs not-registered)
+        // instead of always blaming a missing account
+        else setError(ChatClient.lastLoginError != null
+                ? ChatClient.lastLoginError
+                : "ID not found. Please register first.");
     }
 
     /**
@@ -154,7 +158,9 @@ public class LoginController {
             onLoginSuccess();
         } else {
             String reason = ChatClient.lastLoginError;
-            if (reason != null && reason.contains("ID not registered")) {
+            if (reason != null && reason.contains("already logged in")) {
+                setError(reason);
+            } else if (reason != null && reason.contains("ID not registered")) {
                 setError("Username not found.");
             } else {
                 setError("Incorrect password. Please try again.");
@@ -227,18 +233,18 @@ public class LoginController {
      */
     @FXML
     public void handleHelp(MouseEvent event) {
-        showHelp("GoNature â€” Help",
-            "Welcome to GoNature â€” National Park Reservation System\n\n" +
+        showHelp("GoNature — Help",
+            "Welcome to GoNature — National Park Reservation System\n\n" +
             "VISITOR / GUIDE LOGIN\n" +
-            "  â€¢ Enter your 9-digit government ID number.\n" +
-            "  â€¢ Leave the password field blank.\n" +
-            "  â€¢ Guides are recognised automatically by their registered ID.\n\n" +
+            "  • Enter your 9-digit government ID number.\n" +
+            "  • Leave the password field blank.\n" +
+            "  • Guides are recognised automatically by their registered ID.\n\n" +
             "STAFF LOGIN\n" +
-            "  â€¢ Enter your assigned username and password.\n" +
-            "  â€¢ The system identifies your role automatically after login.\n\n" +
+            "  • Enter your assigned username and password.\n" +
+            "  • The system identifies your role automatically after login.\n\n" +
             "NEW USER?\n" +
-            "  â€¢ Click 'Create an Account' to register as a visitor.\n" +
-            "  â€¢ Family Member Club (subscriber) membership is set up in person by a service representative.");
+            "  • Click 'Create an Account' to register as a visitor.\n" +
+            "  • Family Member Club (subscriber) membership is set up in person by a service representative.");
     }
 
     /**
@@ -260,7 +266,7 @@ public class LoginController {
      */
     public void start(Stage primaryStage) throws Exception {
         Parent root = FXMLLoader.load(getClass().getResource("/gui/LoginFrame.fxml"));
-        primaryStage.setTitle("GoNature â€” Login");
+        primaryStage.setTitle("GoNature — Login");
         Scene scene = new Scene(root);
         ThemeManager.register(scene);   // keep the chosen light/dark theme across logout
         primaryStage.setScene(scene);

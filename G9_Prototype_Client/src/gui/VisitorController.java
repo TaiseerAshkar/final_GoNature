@@ -71,7 +71,7 @@ public class VisitorController {
     @FXML private Label           lblSessionTimer;
     @FXML private Button          btnTheme;
 
-    // action tiles (built in code â†’ see buildActionTiles)
+    // action tiles (built in code → see buildActionTiles)
     @FXML private GridPane        actionGrid;
     private Button                btnConfirmVisit;   // kept so we can mark it done
     private Label                 lblConfirmTitle;
@@ -109,7 +109,7 @@ public class VisitorController {
             case "SUBSCRIBER":
                 lblEyebrow.setText("MEMBER DASHBOARD");
                 lblInfo.setText(
-                    "Family Member Club â€” your ID gives you a 15% discount on walk-in visits,\n" +
+                    "Family Member Club — your ID gives you a 15% discount on walk-in visits,\n" +
                     "on top of the standard 15% advance-booking discount.");
                 break;
             default: // VISITOR
@@ -163,7 +163,7 @@ public class VisitorController {
         refreshNotifications();
     }
 
-    // â”€â”€ Action-tile grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Action-tile grid ──────────────────────────────────────────────────────
 
     /**
      * builds the home-screen action grid: a compact 2-up grid of tiles, each a small
@@ -225,7 +225,7 @@ public class VisitorController {
         chip.getStyleClass().addAll("tile-chip", chipClass);
 
         // keep titles at their full preferred width so the tile label never ellipsizes
-        // (e.g. "View My Reservatiâ€¦") when the grid cell is tight.
+        // (e.g. "View My Reservati…") when the grid cell is tight.
         title.setMinWidth(Region.USE_PREF_SIZE);
 
         VBox text = new VBox(1, title, desc);
@@ -241,7 +241,7 @@ public class VisitorController {
         return b;
     }
 
-    // â”€â”€ Header: theme toggle + session timer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Header: theme toggle + session timer ──────────────────────────────────
 
     /**
      * flips the whole app between light and dark mode and updates this button's icon.
@@ -319,7 +319,7 @@ public class VisitorController {
         String when = daysUntil == 0 ? "Today"
                     : daysUntil == 1 ? "Tomorrow"
                     : "In " + daysUntil + " days";
-        String summary = "Next: " + next.getParkName() + "  â€¢  " + when
+        String summary = "Next: " + next.getParkName() + "  •  " + when
             + " at " + next.getVisitTime()
             + "  (" + next.getNumVisitors()
             + " visitor" + (next.getNumVisitors() == 1 ? "" : "s") + ")";
@@ -328,7 +328,7 @@ public class VisitorController {
         lblUpcoming.setText(summary);
     }
 
-    // â”€â”€ Notification panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Notification panel ────────────────────────────────────────────────────
 
     /**
      * refreshes the notification panel from {@link NotificationCenter}.
@@ -390,7 +390,7 @@ public class VisitorController {
             if (!alreadyAdded) {
                 String deadline = o.getConfirmationDeadline() != null
                     ? o.getConfirmationDeadline() : "soon";
-                NotificationCenter.add("ðŸŽ‰",
+                NotificationCenter.add("🎉",
                     "A spot opened up for you! Your waitlist spot for "
                     + o.getParkName() + " on " + o.getVisitDate()
                     + " at " + o.getVisitTime()
@@ -411,7 +411,7 @@ public class VisitorController {
             if (lblConfirmDesc  != null) {
                 String deadline = pending.get(0).getConfirmationDeadline();
                 lblConfirmDesc.setText(deadline != null
-                    ? "Spot waiting â€” confirm by " + deadline
+                    ? "Spot waiting — confirm by " + deadline
                     : "A waitlist spot is waiting for you!");
             }
         }
@@ -430,8 +430,8 @@ public class VisitorController {
         ButtonType laterBtn   = new ButtonType("Later",        ButtonBar.ButtonData.CANCEL_CLOSE);
 
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("GoNature â€” Waitlist Spot Available");
-        alert.setHeaderText("ðŸŽ‰  Good News!");
+        alert.setTitle("GoNature — Waitlist Spot Available");
+        alert.setHeaderText("🎉  Good News!");
         alert.getButtonTypes().setAll(confirmBtn, laterBtn);
         alert.setContentText(
             "A spot opened up for you!\n\n"
@@ -457,7 +457,7 @@ public class VisitorController {
         ClientUI.chat.accept(new Message("CONFIRM_VISIT", o.getId()));
 
         if (Boolean.TRUE.equals(ChatClient.lastConfirmVisitOk)) {
-            NotificationCenter.add("âœ…",
+            NotificationCenter.add("✅",
                 "Your visit is confirmed! Your waitlist spot for "
                 + o.getParkName() + " on " + o.getVisitDate()
                 + " at " + o.getVisitTime()
@@ -467,8 +467,8 @@ public class VisitorController {
             String err = ChatClient.lastConfirmVisitError != null
                 ? ChatClient.lastConfirmVisitError
                 : "Could not confirm Order #" + o.getId()
-                  + ". Your window may have expired â€” please check My Reservations.";
-            NotificationCenter.add("âš ï¸", err);
+                  + ". Your window may have expired — please check My Reservations.";
+            NotificationCenter.add("⚠️", err);
             return false;
         }
     }
@@ -498,28 +498,28 @@ public class VisitorController {
 
             hasTomorrowOrders = true;
 
-            // visitor already confirmed this order â€” add a one-time "already confirmed" notice
+            // visitor already confirmed this order — add a one-time "already confirmed" notice
             if (NotificationCenter.isVisitConfirmed(o.getId())) {
                 String confirmedTag = "(Order #" + o.getId() + " confirmed)";
                 boolean alreadyNotified = NotificationCenter.getAll().stream()
                     .anyMatch(n -> n.contains(confirmedTag));
                 if (!alreadyNotified) {
-                    NotificationCenter.add("âœ…",
+                    NotificationCenter.add("✅",
                         "Your visit to " + o.getParkName()
                         + " tomorrow at " + o.getVisitTime()
-                        + " is confirmed â€” you're all set! " + confirmedTag);
+                        + " is confirmed — you're all set! " + confirmedTag);
                 }
                 continue;
             }
 
             anyUnconfirmed = true;
 
-            // dedup per order ID â€” the tag "(Order #X)" is embedded in the notification text
+            // dedup per order ID — the tag "(Order #X)" is embedded in the notification text
             String orderTag = "(Order #" + o.getId() + ")";
             boolean alreadyAdded = NotificationCenter.getAll().stream()
-                .anyMatch(n -> n.contains("ðŸ””") && n.contains(orderTag));
+                .anyMatch(n -> n.contains("🔔") && n.contains(orderTag));
             if (!alreadyAdded) {
-                NotificationCenter.add("ðŸ””",
+                NotificationCenter.add("🔔",
                     "Reminder: your visit to " + o.getParkName()
                     + " is tomorrow at " + o.getVisitTime()
                     + " " + orderTag + ". Please arrive 15 minutes early.");
@@ -534,7 +534,7 @@ public class VisitorController {
         }
     }
 
-    // â”€â”€ Button handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Button handlers ───────────────────────────────────────────────────────
 
     /**
      * opens the booking form as a modal. after it closes the notification panel
@@ -588,7 +588,7 @@ public class VisitorController {
         UserSession s = UserSession.getInstance();
         if (s == null || s.getUserId() == null) return;
 
-        // â”€â”€ Waitlist-promotion path (takes priority) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Waitlist-promotion path (takes priority) ──────────────────────────
         // check for any pending orders that came from a waitlist promotion and
         // still have a live 1-hour confirmation window.
         ChatClient.lastPendingWaitlistOrders = null;
@@ -602,7 +602,7 @@ public class VisitorController {
             } else {
                 List<String> labels = waitlistPending.stream()
                     .map(o -> "Order #" + o.getId()
-                        + " â€” " + o.getParkName()
+                        + " — " + o.getParkName()
                         + " on " + o.getVisitDate()
                         + " at " + o.getVisitTime()
                         + " (confirm by " + o.getConfirmationDeadline() + ")")
@@ -629,7 +629,7 @@ public class VisitorController {
                 if (Boolean.TRUE.equals(ChatClient.lastConfirmVisitOk)) {
                     anyConfirmed = true;
                     NotificationCenter.markVisitConfirmed(order.getId());
-                    NotificationCenter.add("âœ…",
+                    NotificationCenter.add("✅",
                         "Your visit is confirmed! Your waitlist spot for "
                         + order.getParkName() + " on " + order.getVisitDate()
                         + " at " + order.getVisitTime()
@@ -638,8 +638,8 @@ public class VisitorController {
                     String err = ChatClient.lastConfirmVisitError != null
                         ? ChatClient.lastConfirmVisitError
                         : "Could not confirm Order #" + order.getId()
-                          + ". Your window may have expired â€” please check My Reservations.";
-                    NotificationCenter.add("âš ï¸", err);
+                          + ". Your window may have expired — please check My Reservations.";
+                    NotificationCenter.add("⚠️", err);
                 }
             }
             if (anyConfirmed && btnConfirmVisit != null) {
@@ -651,14 +651,14 @@ public class VisitorController {
             return;
         }
 
-        // â”€â”€ Day-before reminder path â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Day-before reminder path ──────────────────────────────────────────
         // no pending waitlist promotions; fall through to the ordinary reminder flow.
         ChatClient.lastMyOrders = null;
         ClientUI.chat.accept(new Message("GET_MY_ORDERS", s.getUserId()));
         List<OrderDetail> orders = ChatClient.lastMyOrders;
 
         if (orders == null || orders.isEmpty()) {
-            NotificationCenter.add("ðŸ’¬", "No reservations found to confirm.");
+            NotificationCenter.add("💬", "No reservations found to confirm.");
             refreshNotifications();
             return;
         }
@@ -670,7 +670,7 @@ public class VisitorController {
             .collect(Collectors.toList());
 
         if (eligible.isEmpty()) {
-            NotificationCenter.add("ðŸ’¬",
+            NotificationCenter.add("💬",
                 "No bookings for tomorrow that need confirmation.");
             refreshNotifications();
             return;
@@ -683,7 +683,7 @@ public class VisitorController {
         } else {
             List<String> labels = eligible.stream()
                 .map(o -> "Order #" + o.getId()
-                    + " â€” " + o.getParkName()
+                    + " — " + o.getParkName()
                     + " at " + o.getVisitTime()
                     + " (" + o.getNumVisitors() + " visitor(s))")
                 .collect(Collectors.toList());
@@ -708,8 +708,8 @@ public class VisitorController {
             if (Boolean.TRUE.equals(ChatClient.lastConfirmVisitOk)) {
                 anyConfirmed = true;
                 NotificationCenter.markVisitConfirmed(order.getId());
-                NotificationCenter.add("âœ…",
-                    "Visit confirmed â€” Order #" + order.getId()
+                NotificationCenter.add("✅",
+                    "Visit confirmed — Order #" + order.getId()
                     + " at " + order.getParkName()
                     + " tomorrow at " + order.getVisitTime()
                     + ". Your booking will not be auto-cancelled. See you there!");
@@ -717,7 +717,7 @@ public class VisitorController {
                 String err = ChatClient.lastConfirmVisitError != null
                     ? ChatClient.lastConfirmVisitError
                     : "Could not confirm Order #" + order.getId() + ". Please try again.";
-                NotificationCenter.add("âš ï¸", err);
+                NotificationCenter.add("⚠️", err);
             }
         }
         if (anyConfirmed && btnConfirmVisit != null) {
@@ -743,7 +743,7 @@ public class VisitorController {
         List<Park> parks = ChatClient.lastParkList;
 
         if (parks == null || parks.isEmpty()) {
-            NotificationCenter.add("âš ï¸", "Could not load park list. Please try again.");
+            NotificationCenter.add("⚠️", "Could not load park list. Please try again.");
             refreshNotifications();
             return;
         }
@@ -760,13 +760,13 @@ public class VisitorController {
             new ExitRequest(s.getUserId(), park.getId())));
 
         if (ChatClient.lastExitSuccess) {
-            NotificationCenter.add("ðŸš—",
-                "Exit from " + park.getName() + " registered â€” thank you for visiting! Have a great day.");
+            NotificationCenter.add("🚗",
+                "Exit from " + park.getName() + " registered — thank you for visiting! Have a great day.");
         } else {
             String reason = ChatClient.lastExitError != null
                 ? ChatClient.lastExitError
                 : "No active check-in found for today at " + park.getName() + ".";
-            NotificationCenter.add("âš ï¸", "Exit registration failed â€” " + reason);
+            NotificationCenter.add("⚠️", "Exit registration failed — " + reason);
         }
         refreshNotifications();
     }
@@ -790,14 +790,14 @@ public class VisitorController {
         DialogPane pane = dlg.getDialogPane();
         pane.setPrefWidth(400);
         ThemeManager.styleDialog(dlg);
-        // opt into dark mode â€” without this, help-dialog forces the parchment palette regardless
+        // opt into dark mode — without this, help-dialog forces the parchment palette regardless
         pane.getStyleClass().add("help-adaptive");
 
         ButtonType confirmType = new ButtonType("Register Exit", ButtonBar.ButtonData.OK_DONE);
         pane.getButtonTypes().addAll(confirmType, ButtonType.CANCEL);
 
-        // â”€â”€ elevated content card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        Label title = new Label("ðŸš—  Leaving a Park");
+        // ── elevated content card ──────────────────────────────────────────────
+        Label title = new Label("🚗  Leaving a Park");
         title.getStyleClass().add("card-title");
 
         Label hint = new Label("Select the park you're leaving and we'll log your exit time.");
@@ -811,17 +811,17 @@ public class VisitorController {
         combo.getItems().setAll(parks);
         combo.getSelectionModel().selectFirst();
         combo.setMaxWidth(Double.MAX_VALUE);
-        combo.setPromptText("Choose a parkâ€¦");
+        combo.setPromptText("Choose a park…");
         combo.setCellFactory(lv -> new ListCell<>() {
             @Override protected void updateItem(Park p, boolean empty) {
                 super.updateItem(p, empty);
-                setText(empty || p == null ? null : "ðŸ“  " + p.getName());
+                setText(empty || p == null ? null : "📍  " + p.getName());
             }
         });
         combo.setButtonCell(new ListCell<>() {
             @Override protected void updateItem(Park p, boolean empty) {
                 super.updateItem(p, empty);
-                setText(empty || p == null ? null : "ðŸ“  " + p.getName());
+                setText(empty || p == null ? null : "📍  " + p.getName());
             }
         });
 
@@ -834,7 +834,7 @@ public class VisitorController {
         wrap.setPadding(new Insets(8, 6, 4, 6));
         pane.setContent(wrap);
 
-        // â”€â”€ themed buttons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── themed buttons ─────────────────────────────────────────────────────
         Node ok = pane.lookupButton(confirmType);
         ok.getStyleClass().add("btn-primary");
         Node cancel = pane.lookupButton(ButtonType.CANCEL);
@@ -859,42 +859,42 @@ public class VisitorController {
         if ("GUIDE".equals(s != null ? s.getRole() : "")) {
             content =
                 "GROUP BOOKING (Guide)\n" +
-                "  â€¢ Click 'Book a Visit' and select visit type GROUP.\n" +
-                "  â€¢ Enter the total headcount including yourself (2â€“16 people).\n" +
-                "  â€¢ You enter the park free of charge as the group leader.\n" +
-                "  â€¢ A 25% group + 12% advance discount (about 34% off, stacked) applies to the rest of the group; you enter free.\n\n" +
+                "  • Click 'Book a Visit' and select visit type GROUP.\n" +
+                "  • Enter the total headcount including yourself (2–16 people).\n" +
+                "  • You enter the park free of charge as the group leader.\n" +
+                "  • A 25% group + 12% advance discount (about 34% off, stacked) applies to the rest of the group; you enter free.\n\n" +
                 "SOLO BOOKING (Guide visiting alone)\n" +
-                "  â€¢ Select SOLO â€” treated the same as any other solo visitor.\n" +
-                "  â€¢ 15% pre-booked discount applied automatically.\n\n" +
+                "  • Select SOLO — treated the same as any other solo visitor.\n" +
+                "  • 15% pre-booked discount applied automatically.\n\n" +
                 "MANAGING ORDERS\n" +
-                "  â€¢ Use 'View My Reservations' to see and cancel bookings.\n\n" +
+                "  • Use 'View My Reservations' to see and cancel bookings.\n\n" +
                 "NOTIFICATIONS\n" +
-                "  â€¢ The Notifications panel shows booking confirmations, cancellations,\n" +
+                "  • The Notifications panel shows booking confirmations, cancellations,\n" +
                 "    waiting-list alerts, and day-before reminders.\n" +
-                "  â€¢ Click 'â†» Refresh' to pull the latest events.\n\n" +
+                "  • Click '↻ Refresh' to pull the latest events.\n\n" +
                 "STATUS COLOURS\n" +
                 "  GREEN = Confirmed  |  ORANGE = Pending  |  GREY = Completed\n" +
                 "  RED = Cancelled";
         } else {
             content =
                 "BOOKING A VISIT\n" +
-                "  â€¢ Click 'Book a Visit' to open the reservation form.\n" +
-                "  â€¢ SOLO: 1 visitor â€” 15% pre-booked discount.\n" +
-                "  â€¢ FAMILY: 2-15 visitors, 15% pre-booked discount.\n\n" +
+                "  • Click 'Book a Visit' to open the reservation form.\n" +
+                "  • SOLO: 1 visitor — 15% pre-booked discount.\n" +
+                "  • FAMILY: 2-15 visitors, 15% pre-booked discount.\n\n" +
                 "VIEWING YOUR RESERVATIONS\n" +
-                "  â€¢ Click 'View My Reservations' to see all your bookings.\n\n" +
+                "  • Click 'View My Reservations' to see all your bookings.\n\n" +
                 "CANCELLING A RESERVATION\n" +
-                "  â€¢ Select an order in 'View My Reservations' and click 'Cancel Order'.\n" +
-                "  â€¢ Only PENDING or CONFIRMED orders can be cancelled.\n\n" +
+                "  • Select an order in 'View My Reservations' and click 'Cancel Order'.\n" +
+                "  • Only PENDING or CONFIRMED orders can be cancelled.\n\n" +
                 "WAITING LIST\n" +
-                "  â€¢ If a park is fully booked, you can join the waiting list.\n" +
-                "  â€¢ You'll get a notification here if a spot opens.\n\n" +
+                "  • If a park is fully booked, you can join the waiting list.\n" +
+                "  • You'll get a notification here if a spot opens.\n\n" +
                 "NOTIFICATIONS\n" +
-                "  â€¢ The Notifications panel shows booking confirmations, cancellations,\n" +
+                "  • The Notifications panel shows booking confirmations, cancellations,\n" +
                 "    waiting-list alerts, and day-before reminders.\n" +
-                "  â€¢ Click 'â†» Refresh' to pull the latest events.";
+                "  • Click '↻ Refresh' to pull the latest events.";
         }
-        showHelp("GoNature â€” Help (" + (s != null ? s.getRole() : "VISITOR") + ")", content);
+        showHelp("GoNature — Help (" + (s != null ? s.getRole() : "VISITOR") + ")", content);
     }
 
     /**
@@ -931,7 +931,7 @@ public class VisitorController {
      */
     public void start(Stage primaryStage) throws Exception {
         Parent root = FXMLLoader.load(getClass().getResource("/gui/VisitorFrame.fxml"));
-        primaryStage.setTitle("GoNature â€” " + UserSession.getInstance().getRole());
+        primaryStage.setTitle("GoNature — " + UserSession.getInstance().getRole());
         Scene scene = new Scene(root);
         ThemeManager.register(scene);   // apply the current light/dark theme to this screen
         primaryStage.setScene(scene);

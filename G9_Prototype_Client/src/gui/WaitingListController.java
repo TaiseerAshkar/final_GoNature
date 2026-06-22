@@ -114,7 +114,7 @@ public class WaitingListController {
     public void start(Stage stage) throws Exception {
         Parent root = FXMLLoader.load(
             getClass().getResource("/gui/WaitingListFrame.fxml"));
-        stage.setTitle("GoNature â€” Waiting List");
+        stage.setTitle("GoNature — Waiting List");
         Scene scene = new Scene(root);
         ThemeManager.register(scene);
         stage.setScene(scene);

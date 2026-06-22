@@ -73,14 +73,14 @@ public class BookingConfirmationController {
             bannerBox.getStyleClass().remove("banner-confirmed");
             if (!bannerBox.getStyleClass().contains("banner-waiting"))
                 bannerBox.getStyleClass().add("banner-waiting");
-            lblStatusIcon.setText("â³");
+            lblStatusIcon.setText("⏳");
             lblStatusTitle.setText("Added to Waiting List");
             lblBookingId.setText("Waiting List Reference: #" + r.getId());
             lblEmailNote.setText(
                 "You are on the waiting list. We'll notify you at the email below " +
-                "if a spot opens up â€” usually within 24 hours of the visit date.");
+                "if a spot opens up — usually within 24 hours of the visit date.");
         } else {
-            lblStatusIcon.setText("âœ“");
+            lblStatusIcon.setText("✓");
             lblStatusTitle.setText("Booking Confirmed!");
             lblBookingId.setText("Booking Reference: #" + r.getId());
             lblEmailNote.setText(
@@ -121,10 +121,10 @@ public class BookingConfirmationController {
      */
     private void generateEntryPass(BookingResult r) {
         UserSession s = UserSession.getInstance();
-        String visitorId = (s != null && s.getUserId() != null) ? s.getUserId() : "â€”";
+        String visitorId = (s != null && s.getUserId() != null) ? s.getUserId() : "—";
         String payload   = QRCodeUtil.buildPayload(r.getId(), visitorId);
 
-        // draw the QR grid (8 px per module â†’ 168 Ã— 168 px total)
+        // draw the QR grid (8 px per module → 168 × 168 px total)
         Canvas qr = QRCodeUtil.generate(payload, 8);
 
         // thin black border, matches the style in the help dialog
@@ -137,8 +137,8 @@ public class BookingConfirmationController {
         // entry reference shown as plain text below the QR so it can also be quoted verbally
         lblEntryCode.setText(
             "Entry #" + r.getId()
-            + "   Â·   " + r.getParkName()
-            + "   Â·   " + r.getVisitDate() + " at " + r.getVisitTime());
+            + "   ·   " + r.getParkName()
+            + "   ·   " + r.getVisitDate() + " at " + r.getVisitTime());
 
         paneEntryPass.setVisible(true);
         paneEntryPass.setManaged(true);

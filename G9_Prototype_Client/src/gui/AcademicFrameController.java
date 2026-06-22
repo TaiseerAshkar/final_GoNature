@@ -53,7 +53,7 @@ public class AcademicFrameController {
     /** ticks once a second to refresh the logged-in-duration label in the header. */
     private Timeline sessionTimeline;
 
-    // â”€â”€ live-orders table â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── live-orders table ─────────────────────────────────────────────────────
     @FXML private TableView<OrderDetail>            tableOrders;
     @FXML private TableColumn<OrderDetail, Integer> colId;
     @FXML private TableColumn<OrderDetail, String>  colPark;
@@ -65,7 +65,7 @@ public class AcademicFrameController {
     @FXML private TableColumn<OrderDetail, String>  colStatus;
     @FXML private TableColumn<OrderDetail, String>  colBookedOn;
 
-    // â”€â”€ update-order form â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── update-order form ─────────────────────────────────────────────────────
     @FXML private TextField        txtOrderNum;
     @FXML private TextField        txtNewDate;
     @FXML private ComboBox<String> cboNewOrderType;
@@ -132,7 +132,7 @@ public class AcademicFrameController {
             });
     }
 
-    // â”€â”€ Header: theme toggle + session timer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Header: theme toggle + session timer ──────────────────────────────────
 
     /**
      * flips the whole app between light and dark mode and updates this button's icon.
@@ -201,7 +201,7 @@ public class AcademicFrameController {
      * @param event the button-click event
      */
     public void loadOrders(ActionEvent event) {
-        lblResult.setText("Loadingâ€¦");
+        lblResult.setText("Loading…");
         ChatClient.lastLiveOrders = null;
         ClientUI.chat.accept(new Message("GET_LIVE_ORDERS", null));
         List<OrderDetail> orders = ChatClient.lastLiveOrders;
@@ -210,7 +210,7 @@ public class AcademicFrameController {
             lblResult.setText("Loaded " + orders.size() + " orders.");
         } else {
             tableOrders.getItems().clear();
-            lblResult.setText("Could not load orders â€” is the server running?");
+            lblResult.setText("Could not load orders — is the server running?");
         }
     }
 
@@ -227,7 +227,7 @@ public class AcademicFrameController {
      */
     public void updateOrder(ActionEvent event) {
         try {
-            // â”€â”€ Order number â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            // ── Order number ─────────────────────────────────────────────────
             String orderNumText = txtOrderNum.getText().trim();
             if (orderNumText.isEmpty()) {
                 lblResult.setText("Please enter an order number.");
@@ -235,7 +235,7 @@ public class AcademicFrameController {
             }
             int num = Integer.parseInt(orderNumText);
 
-            // â”€â”€ Date â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            // ── Date ─────────────────────────────────────────────────────────
             String date = txtNewDate.getText().trim();
             if (date.isEmpty()) { lblResult.setText("Please enter a new date."); return; }
             try {
@@ -245,18 +245,18 @@ public class AcademicFrameController {
                     return;
                 }
             } catch (DateTimeParseException e) {
-                lblResult.setText("Invalid date format â€” please use YYYY-MM-DD.");
+                lblResult.setText("Invalid date format — please use YYYY-MM-DD.");
                 return;
             }
 
-            // â”€â”€ Visit type â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            // ── Visit type ───────────────────────────────────────────────────
             String orderType = cboNewOrderType.getValue();
             if (orderType == null) {
                 lblResult.setText("Please select a visit type.");
                 return;
             }
 
-            // â”€â”€ Visitor count (type-specific rules) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            // ── Visitor count (type-specific rules) ──────────────────────────
             String visText = txtNewVisitors.getText().trim();
             if (visText.isEmpty()) {
                 lblResult.setText("Please enter the number of visitors.");
@@ -273,13 +273,13 @@ public class AcademicFrameController {
                     break;
                 case "FAMILY":
                     if (vis < 2 || vis > 15) {
-                        lblResult.setText("FAMILY orders require 2â€“15 visitors.");
+                        lblResult.setText("FAMILY orders require 2–15 visitors.");
                         return;
                     }
                     break;
                 case "GROUP":
                     if (vis < 2 || vis > 15) {
-                        lblResult.setText("GROUP orders require 2â€“15 visitors " +
+                        lblResult.setText("GROUP orders require 2–15 visitors " +
                                           "(the guide enters free at the gate).");
                         return;
                     }
@@ -312,15 +312,15 @@ public class AcademicFrameController {
         Stage stage = new Stage();
         stage.initModality(Modality.WINDOW_MODAL);
         stage.initOwner(lblUserName.getScene().getWindow());
-        stage.setTitle("GoNature â€” Manage Guides");
+        stage.setTitle("GoNature — Manage Guides");
 
-        Label titleLbl = new Label("ðŸ§­  Guide Management");
+        Label titleLbl = new Label("🧭  Guide Management");
         titleLbl.getStyleClass().add("screen-title");
 
-        Label statusLbl = new Label("Loadingâ€¦");
+        Label statusLbl = new Label("Loading…");
         statusLbl.getStyleClass().add("lbl-hint");
 
-        // â”€â”€ Table â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Table ────────────────────────────────────────────────────────────
         TableView<GuideDetail> table = new TableView<>();
         table.getStyleClass().add("table-view");
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
@@ -353,8 +353,8 @@ public class AcademicFrameController {
         TableColumn<GuideDetail, Void> colActions = new TableColumn<>("Actions");
         colActions.setMinWidth(190);
         colActions.setCellFactory(col -> new TableCell<GuideDetail, Void>() {
-            private final Button btnApprove = new Button("âœ…  Approve");
-            private final Button btnReject  = new Button("âŒ  Reject");
+            private final Button btnApprove = new Button("✅  Approve");
+            private final Button btnReject  = new Button("❌  Reject");
             {
                 btnApprove.getStyleClass().add("btn-primary");
                 btnApprove.setStyle("-fx-font-size:11px; -fx-padding:4 10; -fx-background-radius:6;");
@@ -368,10 +368,10 @@ public class AcademicFrameController {
                     ClientUI.chat.accept(new Message("APPROVE_GUIDE", g.getIdNumber()));
                     if (ChatClient.lastGuideActionSuccess != null) {
                         statusLbl.getStyleClass().setAll("lbl-success");
-                        statusLbl.setText("âœ…  Approved: " + g.getFullName());
+                        statusLbl.setText("✅  Approved: " + g.getFullName());
                     } else {
                         statusLbl.getStyleClass().setAll("lbl-error");
-                        statusLbl.setText("âŒ  " + (ChatClient.lastGuideActionFail != null
+                        statusLbl.setText("❌  " + (ChatClient.lastGuideActionFail != null
                             ? ChatClient.lastGuideActionFail : "Approval failed."));
                     }
                     refreshGuideTable(table, statusLbl);
@@ -392,10 +392,10 @@ public class AcademicFrameController {
                         ClientUI.chat.accept(new Message("REJECT_GUIDE", g.getIdNumber()));
                         if (ChatClient.lastGuideActionSuccess != null) {
                             statusLbl.getStyleClass().setAll("lbl-hint");
-                            statusLbl.setText("ðŸ—‘  Removed: " + g.getFullName());
+                            statusLbl.setText("🗑  Removed: " + g.getFullName());
                         } else {
                             statusLbl.getStyleClass().setAll("lbl-error");
-                            statusLbl.setText("âŒ  " + (ChatClient.lastGuideActionFail != null
+                            statusLbl.setText("❌  " + (ChatClient.lastGuideActionFail != null
                                 ? ChatClient.lastGuideActionFail : "Rejection failed."));
                         }
                         refreshGuideTable(table, statusLbl);
@@ -419,7 +419,7 @@ public class AcademicFrameController {
             "No guides registered yet",
             "Guides registered by service reps will appear here."));
 
-        Button btnRefresh = new Button("ðŸ”„  Refresh");
+        Button btnRefresh = new Button("🔄  Refresh");
         btnRefresh.getStyleClass().add("btn-teal");
         btnRefresh.setStyle("-fx-font-size:12px; -fx-padding:7 16; -fx-background-radius:8;");
         btnRefresh.setOnAction(e -> refreshGuideTable(table, statusLbl));
@@ -460,12 +460,12 @@ public class AcademicFrameController {
             long pending  = guides.stream().filter(g -> g.getIsApproved() == 0).count();
             long approved = guides.stream().filter(g -> g.getIsApproved() == 1).count();
             statusLbl.getStyleClass().setAll("lbl-hint");
-            statusLbl.setText(guides.size() + " guide(s)  â€”  " + pending
+            statusLbl.setText(guides.size() + " guide(s)  —  " + pending
                 + " pending  |  " + approved + " approved");
         } else {
             table.getItems().clear();
             statusLbl.getStyleClass().setAll("lbl-error");
-            statusLbl.setText("Could not load guides â€” is the server running?");
+            statusLbl.setText("Could not load guides — is the server running?");
         }
     }
 
@@ -482,15 +482,15 @@ public class AcademicFrameController {
         Stage stage = new Stage();
         stage.initModality(Modality.WINDOW_MODAL);
         stage.initOwner(lblUserName.getScene().getWindow());
-        stage.setTitle("GoNature â€” Pending Park Settings Approvals");
+        stage.setTitle("GoNature — Pending Park Settings Approvals");
 
-        Label titleLbl = new Label("âš™  Pending Park Settings Requests");
+        Label titleLbl = new Label("⚙  Pending Park Settings Requests");
         titleLbl.getStyleClass().add("screen-title");
 
-        Label statusLbl = new Label("Loadingâ€¦");
+        Label statusLbl = new Label("Loading…");
         statusLbl.getStyleClass().add("lbl-hint");
 
-        // â”€â”€ Table â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Table ────────────────────────────────────────────────────────────
         TableView<ParkSettingsRequest> table = new TableView<>();
         table.getStyleClass().add("table-view");
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
@@ -511,8 +511,8 @@ public class AcademicFrameController {
         TableColumn<ParkSettingsRequest, Void> colActions = new TableColumn<>("Actions");
         colActions.setMinWidth(190);
         colActions.setCellFactory(col -> new TableCell<ParkSettingsRequest, Void>() {
-            private final Button btnApprove = new Button("âœ…  Approve");
-            private final Button btnReject  = new Button("âŒ  Reject");
+            private final Button btnApprove = new Button("✅  Approve");
+            private final Button btnReject  = new Button("❌  Reject");
             {
                 btnApprove.getStyleClass().add("btn-primary");
                 btnApprove.setStyle("-fx-font-size:11px; -fx-padding:4 10; -fx-background-radius:6;");
@@ -526,11 +526,11 @@ public class AcademicFrameController {
                     ClientUI.chat.accept(new Message("APPROVE_SETTINGS", r.getId()));
                     if (ChatClient.lastSettingsActionSuccess != null) {
                         statusLbl.getStyleClass().setAll("lbl-success");
-                        statusLbl.setText("âœ…  Approved request #" + r.getId()
-                            + " â€” " + r.getParkName() + " settings updated.");
+                        statusLbl.setText("✅  Approved request #" + r.getId()
+                            + " — " + r.getParkName() + " settings updated.");
                     } else {
                         statusLbl.getStyleClass().setAll("lbl-error");
-                        statusLbl.setText("âŒ  " + (ChatClient.lastSettingsActionFail != null
+                        statusLbl.setText("❌  " + (ChatClient.lastSettingsActionFail != null
                             ? ChatClient.lastSettingsActionFail : "Approval failed."));
                     }
                     refreshRequestsTable(table, statusLbl);
@@ -552,11 +552,11 @@ public class AcademicFrameController {
                         ClientUI.chat.accept(new Message("REJECT_SETTINGS", r.getId()));
                         if (ChatClient.lastSettingsActionSuccess != null) {
                             statusLbl.getStyleClass().setAll("lbl-hint");
-                            statusLbl.setText("ðŸ—‘  Rejected request #" + r.getId()
+                            statusLbl.setText("🗑  Rejected request #" + r.getId()
                                 + " from " + r.getRequestedBy() + ".");
                         } else {
                             statusLbl.getStyleClass().setAll("lbl-error");
-                            statusLbl.setText("âŒ  " + (ChatClient.lastSettingsActionFail != null
+                            statusLbl.setText("❌  " + (ChatClient.lastSettingsActionFail != null
                                 ? ChatClient.lastSettingsActionFail : "Rejection failed."));
                         }
                         refreshRequestsTable(table, statusLbl);
@@ -578,7 +578,7 @@ public class AcademicFrameController {
             "All caught up",
             "Pending park-settings requests will appear here."));
 
-        Button btnRefresh = new Button("ðŸ”„  Refresh");
+        Button btnRefresh = new Button("🔄  Refresh");
         btnRefresh.getStyleClass().add("btn-teal");
         btnRefresh.setStyle("-fx-font-size:12px; -fx-padding:7 16; -fx-background-radius:8;");
         btnRefresh.setOnAction(e -> refreshRequestsTable(table, statusLbl));
@@ -621,12 +621,12 @@ public class AcademicFrameController {
         Stage stage = new Stage();
         stage.initModality(Modality.WINDOW_MODAL);
         stage.initOwner(lblUserName.getScene().getWindow());
-        stage.setTitle("GoNature â€” Pending Promotions");
+        stage.setTitle("GoNature — Pending Promotions");
 
-        Label titleLbl = new Label("ðŸŽ‰  Pending Promotions");
+        Label titleLbl = new Label("🎉  Pending Promotions");
         titleLbl.getStyleClass().add("screen-title");
 
-        Label statusLbl = new Label("Loadingâ€¦");
+        Label statusLbl = new Label("Loading…");
         statusLbl.getStyleClass().add("lbl-hint");
 
         TableView<Promotion> table = new TableView<>();
@@ -652,8 +652,8 @@ public class AcademicFrameController {
         TableColumn<Promotion, Void> colActions = new TableColumn<>("Actions");
         colActions.setMinWidth(190);
         colActions.setCellFactory(col -> new TableCell<Promotion, Void>() {
-            private final Button btnApprove = new Button("âœ…  Approve");
-            private final Button btnReject  = new Button("âŒ  Reject");
+            private final Button btnApprove = new Button("✅  Approve");
+            private final Button btnReject  = new Button("❌  Reject");
             {
                 btnApprove.getStyleClass().add("btn-primary");
                 btnApprove.setStyle("-fx-font-size:11px; -fx-padding:4 10; -fx-background-radius:6;");
@@ -667,11 +667,11 @@ public class AcademicFrameController {
                     ClientUI.chat.accept(new Message("APPROVE_PROMOTION", p.getId()));
                     if (ChatClient.lastPromotionActionSuccess != null) {
                         statusLbl.getStyleClass().setAll("lbl-success");
-                        statusLbl.setText("âœ…  Approved: " + p.getDiscountLabel()
+                        statusLbl.setText("✅  Approved: " + p.getDiscountLabel()
                             + " at " + p.getParkName() + " is now active.");
                     } else {
                         statusLbl.getStyleClass().setAll("lbl-error");
-                        statusLbl.setText("âŒ  " + (ChatClient.lastPromotionActionFail != null
+                        statusLbl.setText("❌  " + (ChatClient.lastPromotionActionFail != null
                             ? ChatClient.lastPromotionActionFail : "Approval failed."));
                     }
                     refreshPromotionsTable(table, statusLbl);
@@ -693,10 +693,10 @@ public class AcademicFrameController {
                         ClientUI.chat.accept(new Message("REJECT_PROMOTION", p.getId()));
                         if (ChatClient.lastPromotionActionSuccess != null) {
                             statusLbl.getStyleClass().setAll("lbl-hint");
-                            statusLbl.setText("ðŸ—‘  Rejected the promotion for " + p.getParkName() + ".");
+                            statusLbl.setText("🗑  Rejected the promotion for " + p.getParkName() + ".");
                         } else {
                             statusLbl.getStyleClass().setAll("lbl-error");
-                            statusLbl.setText("âŒ  " + (ChatClient.lastPromotionActionFail != null
+                            statusLbl.setText("❌  " + (ChatClient.lastPromotionActionFail != null
                                 ? ChatClient.lastPromotionActionFail : "Rejection failed."));
                         }
                         refreshPromotionsTable(table, statusLbl);
@@ -718,7 +718,7 @@ public class AcademicFrameController {
             "All caught up",
             "Pending promotions submitted by park managers will appear here."));
 
-        Button btnRefresh = new Button("ðŸ”„  Refresh");
+        Button btnRefresh = new Button("🔄  Refresh");
         btnRefresh.getStyleClass().add("btn-teal");
         btnRefresh.setStyle("-fx-font-size:12px; -fx-padding:7 16; -fx-background-radius:8;");
         btnRefresh.setOnAction(e -> refreshPromotionsTable(table, statusLbl));
@@ -763,7 +763,7 @@ public class AcademicFrameController {
         } else {
             table.getItems().clear();
             statusLbl.getStyleClass().setAll("lbl-error");
-            statusLbl.setText("Could not load promotions â€” is the server running?");
+            statusLbl.setText("Could not load promotions — is the server running?");
         }
     }
 
@@ -781,7 +781,7 @@ public class AcademicFrameController {
         } else {
             table.getItems().clear();
             statusLbl.getStyleClass().setAll("lbl-error");
-            statusLbl.setText("Could not load requests â€” is the server running?");
+            statusLbl.setText("Could not load requests — is the server running?");
         }
     }
 
@@ -793,25 +793,25 @@ public class AcademicFrameController {
     public void handleHelp(ActionEvent event) {
         UserSession s = UserSession.getInstance();
         String content =
-            "DEPARTMENT MANAGER â€” QUICK GUIDE\n\n" +
+            "DEPARTMENT MANAGER — QUICK GUIDE\n\n" +
             "MANAGING ORDERS\n" +
-            "  â€¢ Click 'Load All Orders' to view all live bookings.\n" +
-            "  â€¢ Columns: Order #, Park, Visitor ID, Date, Time, Visitors, Type, Status, Booked On.\n" +
-            "  â€¢ To update: click a row to pre-fill the form, or enter the Order Number manually.\n" +
+            "  • Click 'Load All Orders' to view all live bookings.\n" +
+            "  • Columns: Order #, Park, Visitor ID, Date, Time, Visitors, Type, Status, Booked On.\n" +
+            "  • To update: click a row to pre-fill the form, or enter the Order Number manually.\n" +
             "    Set a new Date (YYYY-MM-DD), choose a Visit Type, and adjust visitor count:\n" +
-            "      SOLO   â†’ exactly 1 visitor.\n" +
-            "      FAMILY â†’ 2â€“15 visitors.\n" +
-            "      GROUP  â†’ 2â€“15 visitors; only allowed when the visitor is an approved guide.\n" +
+            "      SOLO   → exactly 1 visitor.\n" +
+            "      FAMILY → 2–15 visitors.\n" +
+            "      GROUP  → 2–15 visitors; only allowed when the visitor is an approved guide.\n" +
             "    Then click 'Update Order'.\n\n" +
             "REPORTS DASHBOARD\n" +
-            "  â€¢ Click 'View Reports Dashboard' to open the analytics panel.\n\n" +
-            "  Visitor Report â€” bar chart of daily visitors for the last 30 days,\n" +
+            "  • Click 'View Reports Dashboard' to open the analytics panel.\n\n" +
+            "  Visitor Report — bar chart of daily visitors for the last 30 days,\n" +
             "    split by Solo vs Group bookings.\n\n" +
-            "  Cancellation Report â€” table of all cancelled and no-show orders,\n" +
+            "  Cancellation Report — table of all cancelled and no-show orders,\n" +
             "    plus a day-of-week distribution chart with the average cancellations per weekday.\n\n" +
-            "  Usage Report â€” line chart of hourly park capacity utilisation.\n\n" +
-            "  â€¢ Use the park filter to narrow any report to a specific park.";
-        showHelp("GoNature â€” Help (DEPARTMENT_MANAGER)", content);
+            "  Usage Report — line chart of hourly park capacity utilisation.\n\n" +
+            "  • Use the park filter to narrow any report to a specific park.";
+        showHelp("GoNature — Help (DEPARTMENT_MANAGER)", content);
     }
 
     /**
@@ -873,7 +873,7 @@ public class AcademicFrameController {
         Parent root = FXMLLoader.load(getClass().getResource("/gui/AcademicFrame.fxml"));
         Scene scene = new Scene(root);
         ThemeManager.register(scene);   // apply the current light/dark theme to this screen
-        primaryStage.setTitle("GoNature â€” Management Dashboard");
+        primaryStage.setTitle("GoNature — Management Dashboard");
         primaryStage.setScene(scene);
         primaryStage.centerOnScreen();
         primaryStage.show();
