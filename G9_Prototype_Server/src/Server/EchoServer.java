@@ -193,6 +193,12 @@ public class EchoServer extends AbstractServer {
                             client.sendToClient(new Message("BOOKING_FULL", null));
                             break;
                         }
+                        if (orderId == -2) {
+                            client.sendToClient(new Message("BOOKING_ERROR",
+                                "You already have a booking that overlaps with this time slot. "
+                                + "A visitor can only be in one place at a time."));
+                            break;
+                        }
                         if (orderId < 0) {
                             client.sendToClient(new Message("BOOKING_ERROR",
                                 "We couldn't complete your booking. Please try again."));

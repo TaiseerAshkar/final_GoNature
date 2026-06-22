@@ -376,7 +376,38 @@ public class DBController {
                 return 0;
             }
 
-            // Both checks passed; insert the confirmed order.
+            // Reject duplicate bookings: a visitor cannot hold two active bookings whose
+            // time windows overlap, even across different parks — they can only be in one
+            // place at a time.  We join orders with parks to get each existing booking's
+            // duration so the overlap test is accurate regardless of which park was booked.
+            // The new booking's window is [newTime, newTime + durationHours).
+            // An existing booking at existingTime with existingDuration overlaps when:
+            //   existingTime < newTime + newDuration  AND  existingTime + existingDuration > newTime
+            try (PreparedStatement st = connection.prepareStatement(
+                    "SELECT COUNT(*) AS cnt " +
+                    "FROM orders o " +
+                    "JOIN parks p ON p.id = o.park_id " +
+                    "WHERE o.visitor_id = ? " +
+                    "  AND o.visit_date = ? " +
+                    "  AND o.status IN ('confirmed', 'pending') " +
+                    "  AND TIME(o.visit_time) < ADDTIME(TIME(?), SEC_TO_TIME(? * 3600)) " +
+                    "  AND ADDTIME(TIME(o.visit_time), SEC_TO_TIME(p.visit_duration_hours * 3600)) > TIME(?)")) {
+                st.setString(1, req.getVisitorId());
+                st.setString(2, req.getVisitDate());
+                st.setString(3, req.getVisitTime());
+                st.setInt(4,    durationHours);
+                st.setString(5, req.getVisitTime());
+                try (ResultSet rs = st.executeQuery()) {
+                    if (rs.next() && rs.getInt("cnt") > 0) {
+                        connection.rollback();
+                        System.out.printf("[checkAndBook] duplicate rejected — visitor %s already has "
+                            + "an overlapping booking on %s%n", req.getVisitorId(), req.getVisitDate());
+                        return -2;
+                    }
+                }
+            }
+
+            // All checks passed; insert the confirmed order.
             String orderTypeValue = toDbOrderType(req.getOrderType());
             int orderId;
             try (PreparedStatement st = connection.prepareStatement(
