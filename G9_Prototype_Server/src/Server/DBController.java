@@ -69,6 +69,19 @@ public class DBController {
     private static String dbPass = "";
 
     /**
+     * resolves a visitor's contact email at query time. {@code orders.email} was removed for BCNF
+     * normalization (email is functionally determined by {@code visitor_id} and lives authoritatively
+     * in the visitors / subscribers / guides tables), so order SELECTs derive it instead of storing it.
+     * drop this expression into any order query that aliases the orders table as {@code o}; it yields
+     * the same {@code email} column the result-mapping code already reads. lookup priority matches
+     * {@link #getVisitorEmail}: visitor → subscriber → guide, falling back to an empty string.
+     */
+    private static final String ORDER_EMAIL_SUBQUERY =
+        "COALESCE((SELECT email FROM visitors    WHERE id_number = o.visitor_id), " +
+        "         (SELECT email FROM subscribers WHERE id_number = o.visitor_id), " +
+        "         (SELECT email FROM guides      WHERE id_number = o.visitor_id), '')";
+
+    /**
      * stores the password entered by the operator at startup. must be called before {@link #connect()}.
      *
      * @param pass the plain-text password for the database user
@@ -413,8 +426,8 @@ public class DBController {
             int orderId;
             try (PreparedStatement st = connection.prepareStatement(
                     "INSERT INTO orders " +
-                    "(visitor_id, park_id, visit_date, visit_time, num_visitors, order_type, status, email) " +
-                    "VALUES (?, ?, ?, ?, ?, ?, 'confirmed', ?)",
+                    "(visitor_id, park_id, visit_date, visit_time, num_visitors, order_type, status) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, 'confirmed')",
                     Statement.RETURN_GENERATED_KEYS)) {
                 st.setString(1, req.getVisitorId());
                 st.setInt(2,    req.getParkId());
@@ -422,7 +435,6 @@ public class DBController {
                 st.setString(4, req.getVisitTime());
                 st.setInt(5,    req.getNumVisitors());
                 st.setString(6, orderTypeValue);
-                st.setString(7, req.getEmail());
                 st.executeUpdate();
                 try (ResultSet keys = st.getGeneratedKeys()) {
                     if (!keys.next()) {
@@ -645,7 +657,7 @@ public class DBController {
                 "       o.num_visitors, " +
                 "       CASE UPPER(o.order_type) WHEN 'INDIVIDUAL' THEN 'SOLO' WHEN 'SOLO' THEN 'SOLO' WHEN 'FAMILY' THEN 'FAMILY' WHEN 'GROUP' THEN 'GROUP' ELSE UPPER(o.order_type) END AS order_type, " +
                 "       UPPER(o.status)      AS status, " +
-                "       o.email, " +
+                "       " + ORDER_EMAIL_SUBQUERY + " AS email, " +
                 "       DATE_FORMAT(o.created_at, '%Y-%m-%d %H:%i') AS created_at " +
                 "FROM orders o " +
                 "JOIN parks p ON p.id = o.park_id " +
@@ -690,7 +702,7 @@ public class DBController {
                 "       o.num_visitors, " +
                 "       CASE UPPER(o.order_type) WHEN 'INDIVIDUAL' THEN 'SOLO' WHEN 'SOLO' THEN 'SOLO' WHEN 'FAMILY' THEN 'FAMILY' WHEN 'GROUP' THEN 'GROUP' ELSE UPPER(o.order_type) END AS order_type, " +
                 "       UPPER(o.status)     AS status, " +
-                "       o.email, " +
+                "       " + ORDER_EMAIL_SUBQUERY + " AS email, " +
                 "       DATE_FORMAT(o.created_at, '%Y-%m-%d %H:%i') AS created_at " +
                 "FROM orders o JOIN parks p ON p.id = o.park_id " +
                 "WHERE o.id = ?");
@@ -735,7 +747,7 @@ public class DBController {
                 "           WHEN 'FAMILY' THEN 'FAMILY' WHEN 'GROUP' THEN 'GROUP' " +
                 "           ELSE UPPER(o.order_type) END                      AS order_type, " +
                 "       UPPER(o.status)                                        AS status, " +
-                "       o.email, " +
+                "       " + ORDER_EMAIL_SUBQUERY + " AS email, " +
                 "       DATE_FORMAT(o.created_at, '%Y-%m-%d %H:%i')          AS created_at, " +
                 "       DATE_FORMAT(wl.confirmation_deadline, '%Y-%m-%d %H:%i') AS confirmation_deadline " +
                 "FROM orders o " +
@@ -886,8 +898,8 @@ public class DBController {
         try {
             PreparedStatement ins = connection.prepareStatement(
                 "INSERT INTO orders " +
-                "(visitor_id, park_id, visit_date, visit_time, num_visitors, order_type, status, email) " +
-                "VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)",
+                "(visitor_id, park_id, visit_date, visit_time, num_visitors, order_type, status) " +
+                "VALUES (?, ?, ?, ?, ?, ?, 'pending')",
                 Statement.RETURN_GENERATED_KEYS);
             ins.setString(1, visitorId);
             ins.setInt(2,    parkId);
@@ -895,7 +907,6 @@ public class DBController {
             ins.setTime(4,   visitTime);
             ins.setInt(5,    numVisitors);
             ins.setString(6, dbOrderType);
-            ins.setString(7, email);
             ins.executeUpdate();
             ResultSet keys = ins.getGeneratedKeys();
             newOrderId = keys.next() ? keys.getInt(1) : -1;
@@ -1466,7 +1477,8 @@ public class DBController {
         try {
             PreparedStatement st = connection.prepareStatement(
                 "SELECT o.id, o.visitor_id, o.num_visitors, o.order_type, " +
-                "       o.visit_date, o.visit_time, o.status, o.email, o.created_at, " +
+                "       o.visit_date, o.visit_time, o.status, " +
+                "       " + ORDER_EMAIL_SUBQUERY + " AS email, o.created_at, " +
                 "       p.name AS park_name " +
                 "FROM orders o JOIN parks p ON p.id = o.park_id " +
                 "WHERE o.visitor_id=? AND o.park_id=? AND o.visit_date=CURDATE() " +
@@ -1636,8 +1648,8 @@ public class DBController {
             ensureVisitorRow(visitorId, "Walk-in", "Guest", "", "");
             try (PreparedStatement st = connection.prepareStatement(
                     "INSERT INTO orders " +
-                    "(visitor_id, park_id, visit_date, visit_time, num_visitors, order_type, status, email, entry_time) " +
-                    "VALUES (?, ?, CURDATE(), CURTIME(), ?, ?, 'completed', '', NOW())",
+                    "(visitor_id, park_id, visit_date, visit_time, num_visitors, order_type, status, entry_time) " +
+                    "VALUES (?, ?, CURDATE(), CURTIME(), ?, ?, 'completed', NOW())",
                     Statement.RETURN_GENERATED_KEYS)) {
                 st.setString(1, visitorId);
                 st.setInt(2,    parkId);
@@ -2177,7 +2189,7 @@ public class DBController {
         try {
             PreparedStatement st = connection.prepareStatement(
                 "SELECT o.id, " +
-                "       COALESCE(o.email, '') AS email, " +
+                "       " + ORDER_EMAIL_SUBQUERY + " AS email, " +
                 "       DATE_FORMAT(o.visit_date, '%Y-%m-%d') AS visit_date, " +
                 "       TIME_FORMAT(o.visit_time, '%H:%i')    AS visit_time, " +
                 "       p.name AS park_name, " +
@@ -2418,7 +2430,7 @@ public class DBController {
                 "       o.num_visitors, " +
                 "       CASE UPPER(o.order_type) WHEN 'INDIVIDUAL' THEN 'SOLO' WHEN 'SOLO' THEN 'SOLO' WHEN 'FAMILY' THEN 'FAMILY' WHEN 'GROUP' THEN 'GROUP' ELSE UPPER(o.order_type) END AS order_type, " +
                 "       UPPER(o.status)     AS status," +
-                "       o.email, " +
+                "       " + ORDER_EMAIL_SUBQUERY + " AS email, " +
                 "       DATE_FORMAT(o.created_at, '%Y-%m-%d %H:%i') AS created_at " +
                 "FROM orders o JOIN parks p ON p.id = o.park_id " +
                 "ORDER BY o.created_at DESC");
@@ -2456,7 +2468,7 @@ public class DBController {
                 "       o.num_visitors, " +
                 "       CASE UPPER(o.order_type) WHEN 'INDIVIDUAL' THEN 'SOLO' WHEN 'SOLO' THEN 'SOLO' WHEN 'FAMILY' THEN 'FAMILY' WHEN 'GROUP' THEN 'GROUP' ELSE UPPER(o.order_type) END AS order_type, " +
                 "       UPPER(o.status)     AS status," +
-                "       o.email, " +
+                "       " + ORDER_EMAIL_SUBQUERY + " AS email, " +
                 "       DATE_FORMAT(o.created_at, '%Y-%m-%d %H:%i') AS created_at " +
                 "FROM orders o JOIN parks p ON p.id = o.park_id " +
                 "WHERE o.park_id = ? AND o.visit_date = CURDATE() " +
