@@ -1246,6 +1246,37 @@ public class DBController {
     }
 
     /**
+     * declines a promoted waitlist offer at the visitor's own request, before the 1-hour window
+     * expires. reuses the exact release path the timeout uses ({@link #expireWaitlistEntry}): the
+     * held PENDING order is cancelled, the visitor's waiting-list row is removed, and the freed slot
+     * is offered to the next eligible visitor in line (starting their own 1-hour window). idempotent —
+     * if the offer is no longer live (already confirmed, expired, or handled), nothing changes.
+     *
+     * @param orderId the held promotion order the visitor is declining
+     * @return {@code true} if the spot was released and re-offered to the next visitor;
+     *         {@code false} if it was no longer a live NOTIFIED promotion
+     */
+    public synchronized boolean declineWaitlistPromotion(int orderId) {
+        if (connection == null) return false;
+        int wlId;
+        try (PreparedStatement st = connection.prepareStatement(
+                "SELECT id FROM waiting_list WHERE order_id = ? AND status = 'NOTIFIED'")) {
+            st.setInt(1, orderId);
+            ResultSet rs = st.executeQuery();
+            if (!rs.next()) return false;   // not a live promotion offer
+            wlId = rs.getInt("id");
+        } catch (SQLException e) {
+            System.out.println("declineWaitlistPromotion (lookup) error: " + e.getMessage());
+            return false;
+        }
+        PromotedEntry e = getNotifiedEntryById(wlId);
+        if (e == null) return false;        // raced with a confirm or the timeout sweep
+        // same proven release path as the 1-hour timeout: cancel held order, drop the
+        // waiting-list row, and promote the next eligible visitor in line.
+        return expireWaitlistEntry(e);
+    }
+
+    /**
      * marks a PENDING order as CONFIRMED; used when a visitor confirms an upcoming visit
      * through the day-before reminder path.
      *
@@ -2556,6 +2587,78 @@ public class DBController {
             System.out.println("getWaitingList error: " + e.getMessage());
         }
         return list;
+    }
+
+    /**
+     * returns a single visitor's own still-waiting entries (across all parks) so they can be
+     * shown in the visitor's "My Orders" screen with a status of {@code "WAITING"}.
+     *
+     * <p>only entries that are genuinely WAITING are returned: a row that has already been
+     * promoted (status {@code NOTIFIED}) is excluded here, because that case is handled by the
+     * dedicated confirm/decline dialog rather than the ordinary "leave the waiting list" action.
+     * mirrors {@link #getWaitingList(int)} but filters by {@code visitor_id} instead of park.
+     *
+     * @param visitorId the visitor's government ID
+     * @return a list of {@link OrderDetail} with status {@code "WAITING"}; empty if none or on error
+     */
+    public List<OrderDetail> getVisitorWaitingEntries(String visitorId) {
+        List<OrderDetail> list = new ArrayList<>();
+        if (connection == null) return list;
+        try {
+            PreparedStatement st = connection.prepareStatement(
+                "SELECT wl.id, p.name AS park_name, wl.visitor_id, " +
+                "       DATE_FORMAT(wl.visit_date, '%Y-%m-%d')    AS visit_date, " +
+                "       TIME_FORMAT(wl.visit_time, '%H:%i')        AS visit_time, " +
+                "       wl.num_visitors, " +
+                "       CASE UPPER(wl.order_type) WHEN 'INDIVIDUAL' THEN 'SOLO' WHEN 'SOLO' THEN 'SOLO' WHEN 'FAMILY' THEN 'FAMILY' WHEN 'GROUP' THEN 'GROUP' ELSE UPPER(wl.order_type) END AS order_type, " +
+                "       'WAITING'            AS status, " +
+                "       DATE_FORMAT(wl.created_at, '%Y-%m-%d %H:%i') AS created_at " +
+                "FROM waiting_list wl JOIN parks p ON p.id = wl.park_id " +
+                "WHERE wl.visitor_id = ? AND COALESCE(wl.status, 'WAITING') = 'WAITING' " +
+                "ORDER BY wl.visit_date, wl.visit_time, wl.created_at");
+            st.setString(1, visitorId);
+            ResultSet rs = st.executeQuery();
+            while (rs.next()) {
+                String vid = rs.getString("visitor_id");
+                list.add(new OrderDetail(
+                    rs.getInt("id"),          rs.getString("park_name"),
+                    vid,                        rs.getString("visit_date"),
+                    rs.getString("visit_time"), rs.getInt("num_visitors"),
+                    rs.getString("order_type"), rs.getString("status"),
+                    getVisitorEmail(vid),       rs.getString("created_at")));
+            }
+        } catch (SQLException e) {
+            System.out.println("getVisitorWaitingEntries error: " + e.getMessage());
+        }
+        return list;
+    }
+
+    /**
+     * removes a visitor's own still-waiting entry from the waiting list ("leave the queue").
+     *
+     * <p>guarded two ways so it can never delete the wrong row: the {@code visitor_id} must match
+     * the requester (you can only leave your own entry), and the status must still be
+     * {@code WAITING} — a row that has already been promoted to {@code NOTIFIED} (a held slot
+     * awaiting confirmation) is left untouched, since that must be released through the
+     * confirm/decline path instead. leaving a plain WAITING entry frees nothing, so no promotion
+     * cascade is triggered.
+     *
+     * @param wlId      the {@code waiting_list} row id to remove
+     * @param visitorId the requesting visitor's government ID (ownership guard)
+     * @return {@code true} if a WAITING row was removed; {@code false} if none matched
+     */
+    public synchronized boolean leaveWaitingList(int wlId, String visitorId) {
+        if (connection == null) return false;
+        try (PreparedStatement st = connection.prepareStatement(
+                "DELETE FROM waiting_list " +
+                "WHERE id = ? AND visitor_id = ? AND COALESCE(status, 'WAITING') = 'WAITING'")) {
+            st.setInt(1, wlId);
+            st.setString(2, visitorId);
+            return st.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.out.println("leaveWaitingList error: " + e.getMessage());
+            return false;
+        }
     }
 
     /**

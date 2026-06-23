@@ -405,19 +405,27 @@ public class VisitorController {
             if (showWaitlistPromotionDialog(o)) anyConfirmedNow = true;
         }
 
-        // update the Confirm tile
-        if (anyConfirmedNow && btnConfirmVisit != null) {
-            btnConfirmVisit.setDisable(true);
-            if (lblConfirmTitle != null) lblConfirmTitle.setText("Visit Confirmed");
-            if (lblConfirmDesc  != null) lblConfirmDesc.setText("Your booking is locked in");
-        } else if (btnConfirmVisit != null) {
-            btnConfirmVisit.setDisable(false);
-            if (lblConfirmTitle != null) lblConfirmTitle.setText("Confirm Waitlist Spot!");
-            if (lblConfirmDesc  != null) {
-                String deadline = pending.get(0).getConfirmationDeadline();
-                lblConfirmDesc.setText(deadline != null
-                    ? "Spot waiting — confirm by " + deadline
-                    : "A waitlist spot is waiting for you!");
+        // update the Confirm tile from the TRUE current state — re-fetch so confirmations,
+        // declines, and expiries are all reflected (the local 'pending' list is now stale).
+        if (btnConfirmVisit != null) {
+            ChatClient.lastPendingWaitlistOrders = null;
+            ClientUI.chat.accept(new Message("GET_PENDING_WAITLIST_ORDERS", s.getUserId()));
+            List<OrderDetail> stillPending = ChatClient.lastPendingWaitlistOrders;
+            if (stillPending != null && !stillPending.isEmpty()) {
+                btnConfirmVisit.setDisable(false);
+                if (lblConfirmTitle != null) lblConfirmTitle.setText("Confirm Waitlist Spot!");
+                if (lblConfirmDesc  != null) {
+                    String deadline = stillPending.get(0).getConfirmationDeadline();
+                    lblConfirmDesc.setText(deadline != null
+                        ? "Spot waiting — confirm by " + deadline
+                        : "A waitlist spot is waiting for you!");
+                }
+            } else {
+                btnConfirmVisit.setDisable(true);
+                if (lblConfirmTitle != null)
+                    lblConfirmTitle.setText(anyConfirmedNow ? "Visit Confirmed" : "No Pending Spots");
+                if (lblConfirmDesc != null)
+                    lblConfirmDesc.setText(anyConfirmedNow ? "Your booking is locked in" : "You're all set");
             }
         }
     }
@@ -425,19 +433,21 @@ public class VisitorController {
     /**
      * shows a GoNature-themed "Good News!" dialog for a single waitlist-promotion order.
      * "Confirm Now" immediately sends {@code CONFIRM_VISIT} and returns {@code true}.
-     * "Later" dismisses without confirming and returns {@code false}.
+     * "Decline" releases the spot to the next visitor in line and returns {@code false}.
+     * "Later" dismisses without confirming or declining and returns {@code false}.
      */
     private boolean showWaitlistPromotionDialog(OrderDetail o) {
         String deadline = o.getConfirmationDeadline() != null
             ? o.getConfirmationDeadline() : "soon";
 
         ButtonType confirmBtn = new ButtonType("Confirm Now",  ButtonBar.ButtonData.OK_DONE);
+        ButtonType declineBtn = new ButtonType("Decline",      ButtonBar.ButtonData.OTHER);
         ButtonType laterBtn   = new ButtonType("Later",        ButtonBar.ButtonData.CANCEL_CLOSE);
 
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("GoNature — Waitlist Spot Available");
         alert.setHeaderText("🎉  Good News!");
-        alert.getButtonTypes().setAll(confirmBtn, laterBtn);
+        alert.getButtonTypes().setAll(confirmBtn, declineBtn, laterBtn);
         alert.setContentText(
             "A spot opened up for you!\n\n"
             + "Park:      " + o.getParkName()    + "\n"
@@ -446,8 +456,9 @@ public class VisitorController {
             + "Visitors:  " + o.getNumVisitors() + "\n\n"
             + "Confirm your visit before " + deadline + ".\n"
             + "If you don't confirm in time, the spot will pass to the next visitor.\n\n"
-            + "Pressing \"Later\" will dismiss this dialog — you can still confirm\n"
-            + "by clicking the \"Confirm Waitlist Spot\" tile on your home screen.");
+            + "• \"Decline\" gives the spot up now and offers it to the next visitor.\n"
+            + "• \"Later\" just dismisses this — you can still confirm from the\n"
+            + "  \"Confirm Waitlist Spot\" tile on your home screen.");
 
         if (lblWelcome.getScene() != null)
             alert.initOwner(lblWelcome.getScene().getWindow());
@@ -456,6 +467,7 @@ public class VisitorController {
         alert.getDialogPane().getStyleClass().add("help-adaptive");
 
         Optional<ButtonType> result = alert.showAndWait();
+        if (result.isPresent() && result.get() == declineBtn) { declineWaitlistSpot(o); return false; }
         if (!result.isPresent() || result.get() != confirmBtn) return false;
 
         // visitor chose "Confirm Now"; send confirmation to server
@@ -478,6 +490,52 @@ public class VisitorController {
             NotificationCenter.add("⚠️", err);
             return false;
         }
+    }
+
+    /**
+     * declines a waitlist-promotion offer at the visitor's request, after a confirmation prompt.
+     * sends {@code DECLINE_WAITLIST} so the server releases the held order and offers the spot to
+     * the next eligible visitor in line, then refreshes the inbox.
+     *
+     * @param o the held promotion order the visitor is declining
+     */
+    private void declineWaitlistSpot(OrderDetail o) {
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Decline Waitlist Spot");
+        confirm.setHeaderText("Give up this spot?");
+        confirm.setContentText(
+            "Your spot for " + o.getParkName() + " on " + o.getVisitDate()
+            + " at " + o.getVisitTime() + " will be released and offered to the next "
+            + "visitor in line.\n\nThis can't be undone.");
+        ButtonType yesBtn = new ButtonType("Yes, Decline", ButtonBar.ButtonData.YES);
+        ButtonType noBtn  = new ButtonType("Keep It",      ButtonBar.ButtonData.NO);
+        confirm.getButtonTypes().setAll(yesBtn, noBtn);
+        if (lblWelcome.getScene() != null)
+            confirm.initOwner(lblWelcome.getScene().getWindow());
+        confirm.initModality(Modality.WINDOW_MODAL);
+        ThemeManager.styleDialog(confirm);
+        confirm.getDialogPane().getStyleClass().add("help-adaptive");
+
+        Optional<ButtonType> resp = confirm.showAndWait();
+        if (!resp.isPresent() || resp.get() != yesBtn) return;   // visitor kept the spot
+
+        ChatClient.lastWaitlistDeclined     = null;
+        ChatClient.lastWaitlistDeclineError = null;
+        ClientUI.chat.accept(new Message("DECLINE_WAITLIST", o.getId()));
+
+        if (Boolean.TRUE.equals(ChatClient.lastWaitlistDeclined)) {
+            NotificationCenter.add("🙅",
+                "You declined your waitlist spot for " + o.getParkName() + " on "
+                + o.getVisitDate() + " at " + o.getVisitTime()
+                + " (Order #" + o.getId() + "). It's been offered to the next visitor in line.");
+        } else {
+            String err = ChatClient.lastWaitlistDeclineError != null
+                ? ChatClient.lastWaitlistDeclineError
+                : "Could not decline Order #" + o.getId()
+                  + " — it may already be confirmed or expired.";
+            NotificationCenter.add("⚠️", err);
+        }
+        refreshNotifications();
     }
 
     /**

@@ -352,6 +352,10 @@ public class EchoServer extends AbstractServer {
                     }
                     List<OrderDetail> myOrders =
                         DBController.getInstance().getOrdersByVisitor(visitorId.trim());
+                    // also surface the visitor's still-waiting waiting-list entries (status
+                    // WAITING) so they appear in My Orders and can be left from there.
+                    myOrders.addAll(
+                        DBController.getInstance().getVisitorWaitingEntries(visitorId.trim()));
                     client.sendToClient(new Message("MY_ORDERS_LIST", myOrders));
                     break;
                 }
@@ -830,6 +834,63 @@ public class EchoServer extends AbstractServer {
                     // shows as CONFIRMED in the visitor's My Orders (no-op if already confirmed)
                     DBController.getInstance().confirmOrder(orderId);
                     client.sendToClient(new Message("CONFIRM_VISIT_OK", orderId));
+                    break;
+                }
+
+                case "DECLINE_WAITLIST": {
+                    if (!(incoming.getData() instanceof Integer)) {
+                        client.sendToClient(new Message("WAITLIST_DECLINE_FAIL",
+                            "We couldn't identify that offer. Please refresh and try again."));
+                        break;
+                    }
+                    int orderId = (Integer) incoming.getData();
+                    if (orderId <= 0) {
+                        client.sendToClient(new Message("WAITLIST_DECLINE_FAIL",
+                            "We couldn't identify that offer. Please refresh and try again."));
+                        break;
+                    }
+                    // releases the held order and promotes the next eligible visitor (same path
+                    // as the 1-hour timeout); promoteFromWaitingList emails the next person.
+                    boolean released = DBController.getInstance().declineWaitlistPromotion(orderId);
+                    if (released) {
+                        ServerPortFrameController.logSimulation(
+                            "🙅 Waitlist offer declined → Order #" + orderId
+                            + " released; spot offered to the next visitor in line.");
+                        client.sendToClient(new Message("WAITLIST_DECLINED", orderId));
+                    } else {
+                        client.sendToClient(new Message("WAITLIST_DECLINE_FAIL",
+                            "This offer is no longer active — it may already be confirmed or expired."));
+                    }
+                    break;
+                }
+
+                case "LEAVE_WAITLIST": {
+                    // payload: Object[] { waitlistId(Integer), visitorId(String) }
+                    if (!(incoming.getData() instanceof Object[])
+                            || ((Object[]) incoming.getData()).length < 2) {
+                        client.sendToClient(new Message("WAITLIST_LEAVE_FAIL",
+                            "We couldn't read that request. Please refresh and try again."));
+                        break;
+                    }
+                    Object[] lw = (Object[]) incoming.getData();
+                    if (!(lw[0] instanceof Integer) || !(lw[1] instanceof String)) {
+                        client.sendToClient(new Message("WAITLIST_LEAVE_FAIL",
+                            "We couldn't read that request. Please refresh and try again."));
+                        break;
+                    }
+                    int    wlId        = (Integer) lw[0];
+                    String wlLeaveVid  = ((String) lw[1]).trim();
+                    boolean left = DBController.getInstance().leaveWaitingList(wlId, wlLeaveVid);
+                    if (left) {
+                        ServerPortFrameController.logSimulation(
+                            "👋 Visitor " + wlLeaveVid + " left the waiting list "
+                            + "(waiting_list #" + wlId + ").");
+                        client.sendToClient(new Message("WAITLIST_LEFT", wlId));
+                    } else {
+                        client.sendToClient(new Message("WAITLIST_LEAVE_FAIL",
+                            "This waiting-list entry is no longer active — a spot may already "
+                            + "have been offered to you. Check your reservations."));
+                    }
                     break;
                 }
 

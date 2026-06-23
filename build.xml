@@ -200,4 +200,47 @@
     </target>
 
     <target name="all" depends="jar-client,jar-server"/>
+
+    <!-- ===================== javadoc (three separate folders) ===================== -->
+    <path id="javadoc.full.cp">
+        <fileset dir="${client.lib}/javafx"><patternset refid="jfx.jars"/></fileset>
+        <fileset dir="${server.lib}">
+            <include name="mysql-connector-j-8.0.33.jar"/>
+            <include name="mail-1.4.7.jar"/>
+            <include name="activation-1.1.1.jar"/>
+        </fileset>
+        <pathelement location="${ocsf.classes}"/>
+        <pathelement location="${shared.classes}"/>
+        <pathelement location="${client.classes}"/>
+        <pathelement location="${server.classes}"/>
+    </path>
+
+    <target name="javadoc" depends="compile-ocsf,compile-shared,compile-client,compile-server">
+        <!-- common / shared DTOs -->
+        <mkdir dir="${dist}/javadoc/G9_common_JavaDoc"/>
+        <javadoc destdir="${dist}/javadoc/G9_common_JavaDoc"
+                 access="private" encoding="UTF-8" charset="UTF-8" docencoding="UTF-8"
+                 windowtitle="GoNature – Group 9 – Common" failonerror="false">
+            <sourcepath><pathelement location="${shared.src}"/></sourcepath>
+            <classpath refid="javadoc.full.cp"/>
+        </javadoc>
+
+        <!-- client -->
+        <mkdir dir="${dist}/javadoc/G9_client_JavaDoc"/>
+        <javadoc destdir="${dist}/javadoc/G9_client_JavaDoc"
+                 access="private" encoding="UTF-8" charset="UTF-8" docencoding="UTF-8"
+                 windowtitle="GoNature – Group 9 – Client" failonerror="false">
+            <sourcepath><pathelement location="${client.src}"/></sourcepath>
+            <classpath refid="javadoc.full.cp"/>
+        </javadoc>
+
+        <!-- server -->
+        <mkdir dir="${dist}/javadoc/G9_server_JavaDoc"/>
+        <javadoc destdir="${dist}/javadoc/G9_server_JavaDoc"
+                 access="private" encoding="UTF-8" charset="UTF-8" docencoding="UTF-8"
+                 windowtitle="GoNature – Group 9 – Server" failonerror="false">
+            <sourcepath><pathelement location="${server.src}"/></sourcepath>
+            <classpath refid="javadoc.full.cp"/>
+        </javadoc>
+    </target>
 </project>

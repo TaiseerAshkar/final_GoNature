@@ -98,6 +98,14 @@ public class ChatClient extends AbstractClient {
     public static Boolean lastConfirmVisitOk    = null;
     public static String  lastConfirmVisitError = null;
 
+    // ── Waitlist decline ──────────────────────────────────────────────────────
+    public static Boolean lastWaitlistDeclined     = null;
+    public static String  lastWaitlistDeclineError = null;
+
+    // ── Waitlist leave (voluntary, while still WAITING) ───────────────────────
+    public static Boolean lastWaitlistLeft       = null;
+    public static String  lastWaitlistLeaveError = null;
+
     // ── Park settings ─────────────────────────────────────────────────────────
     public static Park   lastParkSettings      = null;
     public static String lastParkSettingsError = null;
@@ -280,6 +288,22 @@ public class ChatClient extends AbstractClient {
             case "CONFIRM_VISIT_FAIL":
                 lastConfirmVisitOk    = false;
                 lastConfirmVisitError = (String) m.getData();
+                break;
+            case "WAITLIST_DECLINED":
+                lastWaitlistDeclined     = true;
+                lastWaitlistDeclineError = null;
+                break;
+            case "WAITLIST_DECLINE_FAIL":
+                lastWaitlistDeclined     = false;
+                lastWaitlistDeclineError = (String) m.getData();
+                break;
+            case "WAITLIST_LEFT":
+                lastWaitlistLeft       = true;
+                lastWaitlistLeaveError = null;
+                break;
+            case "WAITLIST_LEAVE_FAIL":
+                lastWaitlistLeft       = false;
+                lastWaitlistLeaveError = (String) m.getData();
                 break;
             // ── Guide management ─────────────────────────────────────────────
             case "GUIDE_REGISTER_SUCCESS":

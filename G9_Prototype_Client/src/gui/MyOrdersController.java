@@ -97,6 +97,9 @@ public class MyOrdersController {
                 boolean active = newSel != null
                     && ("PENDING".equals(newSel.getStatus())
                         || "CONFIRMED".equals(newSel.getStatus()));
+                // a still-waiting entry can't be shown as QR or confirmed, but it CAN be left,
+                // so the cancel button (relabelled "Leave Waiting List" at click time) is enabled
+                boolean waiting = newSel != null && "WAITING".equals(newSel.getStatus());
                 // only PENDING orders can be confirmed; once an order is already
                 // CONFIRMED clicking again would be a no-op and confuses the visitor
                 boolean confirmable = newSel != null
@@ -104,10 +107,10 @@ public class MyOrdersController {
                     && newSel.getVisitDate() != null
                     && newSel.getVisitDate().equals(
                         LocalDate.now().plusDays(1).toString());
-                btnCancel.setDisable(!active);
+                btnCancel.setDisable(!(active || waiting));
                 btnShowQR.setDisable(!active);
                 btnConfirmVisit.setDisable(!confirmable);
-                if (newSel != null && !active)
+                if (newSel != null && !active && !waiting)
                     lblMessage.setText("QR codes and cancellation are available for PENDING or CONFIRMED orders only.");
                 else
                     lblMessage.setText("");
@@ -165,6 +168,13 @@ public class MyOrdersController {
         OrderDetail selected = tableOrders.getSelectionModel().getSelectedItem();
         if (selected == null) return;
 
+        // a WAITING row is a waiting-list entry, not an order: leaving the queue is a
+        // different server action (LEAVE_WAITLIST) and a different confirmation message.
+        if ("WAITING".equals(selected.getStatus())) {
+            handleLeaveWaitlist(selected);
+            return;
+        }
+
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
         confirm.setTitle("Cancel Order");
         confirm.setHeaderText("Cancel Order #" + selected.getId() + "?");
@@ -213,6 +223,52 @@ public class MyOrdersController {
             Toast.error(ChatClient.lastCancelError != null
                 ? ChatClient.lastCancelError
                 : "Could not cancel this order. Please try again.");
+        }
+    }
+
+    /**
+     * confirms with the user, then removes a still-waiting waiting-list entry ("leave the
+     * queue"). unlike cancelling a real order this frees no slot, so no waiting-list
+     * promotion is triggered server-side. reloads the table on success.
+     *
+     * @param selected the WAITING entry the visitor chose to leave
+     */
+    private void handleLeaveWaitlist(OrderDetail selected) {
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Leave Waiting List");
+        confirm.setHeaderText("Leave the waiting list for " + selected.getParkName() + "?");
+        confirm.setContentText(
+            "Park: " + selected.getParkName() + "\n" +
+            "Date: " + selected.getVisitDate() + " at " + selected.getVisitTime() + "\n" +
+            "Visitors: " + selected.getNumVisitors() + "\n\n" +
+            "You'll give up your place in line. If a spot opens later you'd have to join again.");
+        ButtonType yesBtn = new ButtonType("Yes, Leave Waiting List", ButtonBar.ButtonData.YES);
+        ButtonType noBtn  = new ButtonType("Stay in Line",            ButtonBar.ButtonData.NO);
+        confirm.getButtonTypes().setAll(yesBtn, noBtn);
+        ThemeManager.styleDialog(confirm);
+        // leaving is a destructive choice, so style it rust like the cancel confirmation
+        javafx.scene.Node yesNode = confirm.getDialogPane().lookupButton(yesBtn);
+        if (yesNode != null) yesNode.getStyleClass().add("btn-dialog-danger");
+        Optional<ButtonType> response = confirm.showAndWait();
+        if (!response.isPresent() || response.get() != yesBtn) return;
+
+        String visitorId = txtVisitorId.getText().trim();
+        ChatClient.lastWaitlistLeft       = null;
+        ChatClient.lastWaitlistLeaveError = null;
+        ClientUI.chat.accept(new Message("LEAVE_WAITLIST",
+            new Object[] { selected.getId(), visitorId }));
+
+        if (Boolean.TRUE.equals(ChatClient.lastWaitlistLeft)) {
+            lblMessage.setText("");
+            NotificationCenter.add("👋",
+                "You left the waiting list for " + selected.getParkName()
+                + " · " + selected.getVisitDate() + " at " + selected.getVisitTime() + ".");
+            loadOrders(visitorId);
+            Toast.success("You've left the waiting list for " + selected.getParkName() + ".");
+        } else {
+            Toast.error(ChatClient.lastWaitlistLeaveError != null
+                ? ChatClient.lastWaitlistLeaveError
+                : "Could not leave the waiting list. Please try again.");
         }
     }
 
