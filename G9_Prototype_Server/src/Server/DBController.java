@@ -1456,6 +1456,10 @@ public class DBController {
     /**
      * looks up today's confirmed/pending booking for a visitor without committing it.
      * used by the FIND_TODAY_BOOKING pre-booked check-in flow.
+     *
+     * @param visitorId the visitor's government ID to look up
+     * @param parkId    the park the visitor is trying to enter
+     * @return the matching {@link OrderDetail} for today, or {@code null} if none exists
      */
     public OrderDetail getTodayBooking(String visitorId, int parkId) {
         if (connection == null) return null;

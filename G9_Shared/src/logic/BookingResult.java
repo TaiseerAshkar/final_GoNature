@@ -52,6 +52,14 @@ public class BookingResult implements Serializable {
      * full constructor that includes the pricing/promotion preview shown on the
      * booking-confirmation screen.
      *
+     * @param id          the generated order ID (or waiting-list ID when {@code status = "WAITING"})
+     * @param status      {@code "CONFIRMED"} for a confirmed booking, {@code "WAITING"} for waiting list
+     * @param parkName    the park name for display
+     * @param visitDate   the visit date in {@code yyyy-MM-dd} format
+     * @param visitTime   the visit time in {@code HH:mm} format
+     * @param numVisitors the number of visitors
+     * @param orderType   the visit type ({@code "SOLO"} or {@code "GROUP"})
+     * @param email       the contact email used for this booking
      * @param basePrice        indicative price before any active promotion
      * @param finalPrice       price after the best active promotion
      * @param promoPercent     active promotion discount percentage ({@code 0} when none)

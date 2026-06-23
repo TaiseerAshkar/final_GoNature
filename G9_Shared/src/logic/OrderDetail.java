@@ -48,6 +48,16 @@ public class OrderDetail implements Serializable {
     /**
      * extended constructor for waitlist-promotion orders that carry a confirmation deadline.
      *
+     * @param id          the database order ID
+     * @param parkName    the park name
+     * @param visitorId   the visitor's government ID
+     * @param visitDate   the planned visit date in {@code yyyy-MM-dd} format
+     * @param visitTime   the planned visit start time in {@code HH:mm} format
+     * @param numVisitors the number of visitors on the order
+     * @param orderType   the visit type in uppercase ({@code "SOLO"} or {@code "GROUP"})
+     * @param status      the order status in uppercase (e.g., {@code "PENDING"}, {@code "CONFIRMED"})
+     * @param email       the contact email address for notifications
+     * @param createdAt   the booking creation timestamp in {@code yyyy-MM-dd HH:mm} format
      * @param confirmationDeadline the deadline by which the visitor must confirm, in
      *                             {@code yyyy-MM-dd HH:mm} format, or {@code null}
      */
