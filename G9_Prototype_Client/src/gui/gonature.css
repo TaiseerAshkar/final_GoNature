@@ -764,11 +764,31 @@
     -fx-background-color: -park-sage;
 }
 
-.table-row-cell:selected {
+/* focused-but-not-selected: prevents Modena's white default from showing
+   when a previously selected row loses selection focus */
+.table-row-cell:filled:focused {
+    -fx-background-color: -park-surface;
+}
+.table-row-cell:filled:odd:focused {
+    -fx-background-color: -park-surface-2;
+}
+.table-row-cell:filled:focused:hover,
+.table-row-cell:filled:odd:focused:hover {
+    -fx-background-color: -park-sage;
+}
+
+/* selected (all focus/hover combos) */
+.table-row-cell:filled:selected,
+.table-row-cell:filled:focused:selected,
+.table-row-cell:filled:selected:hover,
+.table-row-cell:filled:focused:selected:hover {
     -fx-background-color: linear-gradient(to right, -park-sage-2, -park-sage);
 }
 
-.table-row-cell:selected .text {
+.table-row-cell:filled:selected .text,
+.table-row-cell:filled:focused:selected .text,
+.table-row-cell:filled:selected:hover .text,
+.table-row-cell:filled:focused:selected:hover .text {
     -fx-fill: -park-pine-dark;
     -fx-font-weight: bold;
 }

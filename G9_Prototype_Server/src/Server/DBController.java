@@ -2054,16 +2054,20 @@ public class DBController {
     }
 
     /**
-     * usage report: average visitors per hour slot per operating day for the given calendar
-     * month, across all parks.  the client divides by capacity × 100 to get
-     * percentage-of-capacity for the line chart.
+     * usage report: average <b>concurrent occupancy</b> per hour slot (08:00–18:00) for the given
+     * calendar month, per park. the client divides by capacity × 100 to get percentage-of-capacity
+     * for the line chart — i.e. how close the park came to its limit, so an operator can see WHEN it
+     * was under capacity (per the spec's דו"ח שימוש requirement).
      *
-     * <p><b>Denominator note:</b> each hour's monthly visitor total is divided by a
-     * <i>constant</i> per-park operating-day count (the number of distinct dates that park
-     * had a completed visit that month), NOT by the number of days that particular hour
-     * happened to be used.  Dividing per-hour-active-days would inflate rarely-used early/late
-     * hours (small total ÷ few days) and flatten the curve; the constant denominator makes
-     * quiet hours correctly read low so the real morning/midday peak shows.
+     * <p><b>Interval-overlap occupancy:</b> a visitor is counted in every hour H that their stay
+     * spans, not just their arrival hour — a visit with {@code HOUR(entry_time) <= H < HOUR(exit_time)}
+     * is "inside" during H. This is computed by cross-joining each order against an hours list (8–18)
+     * on that overlap condition, so a 4-hour visit contributes to four hour buckets and midday
+     * occupancy correctly accumulates across staggered arrivals.
+     *
+     * <p><b>Denominator:</b> each hour's monthly visitor total is divided by the number of distinct
+     * dates that hour actually had someone present ({@code COUNT(DISTINCT visit_date)} after the
+     * overlap join), giving the average concurrent occupancy on a day that hour was in use.
      *
      * <p>only {@code completed} orders with both {@code entry_time} and {@code exit_time}
      * recorded are counted, so future (confirmed) bookings never appear here.
@@ -2079,26 +2083,21 @@ public class DBController {
         try {
             PreparedStatement st = connection.prepareStatement(
                 "SELECT p.name AS park_name, " +
-                "       TIME_FORMAT(o.visit_time,'%H:00') AS hour_slot, " +
+                "       CONCAT(LPAD(h.hour_slot, 2, '0'), ':00') AS hour_slot, " +
                 "       p.capacity, " +
-                "       ROUND(SUM(o.num_visitors) / d.day_count, 1) AS avg_per_day " +
-                "FROM orders o " +
+                "       ROUND(SUM(o.num_visitors) / COUNT(DISTINCT o.visit_date), 1) AS avg_per_day " +
+                "FROM (SELECT 8 AS hour_slot UNION SELECT 9 UNION SELECT 10 UNION SELECT 11 " +
+                "      UNION SELECT 12 UNION SELECT 13 UNION SELECT 14 UNION SELECT 15 " +
+                "      UNION SELECT 16 UNION SELECT 17 UNION SELECT 18) h " +
+                "JOIN orders o ON HOUR(o.entry_time) <= h.hour_slot AND h.hour_slot < HOUR(o.exit_time) " +
                 "JOIN parks p ON p.id = o.park_id " +
-                "JOIN (SELECT park_id, GREATEST(COUNT(DISTINCT visit_date), 1) AS day_count " +
-                "      FROM orders " +
-                "      WHERE status = 'completed' " +
-                "        AND entry_time IS NOT NULL AND exit_time IS NOT NULL " +
-                "        AND YEAR(visit_date) = ? AND MONTH(visit_date) = ? " +
-                "      GROUP BY park_id) d ON d.park_id = p.id " +
                 "WHERE o.status = 'completed' " +
                 "  AND o.entry_time IS NOT NULL AND o.exit_time IS NOT NULL " +
                 "  AND YEAR(o.visit_date) = ? AND MONTH(o.visit_date) = ? " +
-                "GROUP BY p.id, p.name, p.capacity, TIME_FORMAT(o.visit_time,'%H:00'), d.day_count " +
+                "GROUP BY p.id, p.name, p.capacity, h.hour_slot " +
                 "ORDER BY p.name ASC, hour_slot ASC");
             st.setInt(1, year);
             st.setInt(2, month);
-            st.setInt(3, year);
-            st.setInt(4, month);
             ResultSet rs = st.executeQuery();
             while (rs.next()) {
                 list.add(new ReportUsageRow(

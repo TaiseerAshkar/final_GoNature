@@ -14,9 +14,12 @@ import java.util.concurrent.TimeUnit;
 /**
  * background scheduler for reminder and auto-cancellation simulation.
  *
- * <p>singleton; call {@link #runStartupCheck(DBController)} once at server start.
- * it queries tomorrow's orders, logs a reminder simulation line for each, shows a popup,
- * then schedules auto-cancellation after {@value #CONFIRM_WINDOW_HOURS} hour(s).
+ * <p>singleton; call {@link #runStartupCheck(DBController)} once at server start. it runs the
+ * day-before reminder check immediately, then re-runs it automatically <em>every day</em> at
+ * {@value #DAILY_RUN_HOUR}:{@value #DAILY_RUN_MINUTE} local time — so a server left running for
+ * weeks keeps reminding tomorrow's visitors without ever being restarted. each run queries
+ * tomorrow's orders, logs a reminder simulation line for each, shows a popup, then schedules
+ * auto-cancellation after {@value #CONFIRM_WINDOW_HOURS} hour(s).
  *
  * <p>all UI updates go through {@link Platform#runLater}. the executor thread is a daemon
  * so it doesn't block JVM shutdown.
@@ -25,6 +28,10 @@ public class ReminderService {
 
     /** Hours to wait after sending reminders before auto-cancelling unconfirmed orders. */
     private static final long CONFIRM_WINDOW_HOURS = 2;
+
+    /** Wall-clock time the daily reminder sweep fires (just after midnight, local time). */
+    private static final int DAILY_RUN_HOUR   = 0;
+    private static final int DAILY_RUN_MINUTE  = 5;
 
     private static ReminderService instance;
 
@@ -63,22 +70,52 @@ public class ReminderService {
     }
 
     /**
-     * queries ALL of tomorrow's confirmed/pending orders and logs them on every startup
-     * so the server operator can see who is booked for tomorrow. reminder emails are sent
-     * only once (when {@code reminderSent == false}); subsequent starts skip the email but
-     * still display the order in the log and popup.
+     * arms the reminder service for a server that stays up indefinitely.
+     *
+     * <p>this runs the day-before reminder check <em>immediately</em> (so a server started today
+     * still catches tomorrow's visits), and then schedules the same check to repeat <em>every day</em>
+     * at {@value #DAILY_RUN_HOUR}:{@value #DAILY_RUN_MINUTE} local time. because the underlying query
+     * uses MySQL {@code CURDATE()}, each daily run automatically picks up the new "tomorrow", and the
+     * {@code reminder_sent} flag keeps emails idempotent — so the project no longer needs a restart to
+     * remind visitors. safe to call exactly once from {@code serverStarted()}.
      *
      * @param db the database controller used to query, mark, and later cancel the orders
      */
     public void runStartupCheck(DBController db) {
-        scheduler.execute(() -> {
+        // 1) immediate run — a server brought up today still reminds tomorrow's visitors right away.
+        scheduler.execute(() -> runReminderCheck(db, true));
+
+        // 2) recurring daily run — fires every 24h aligned to just-after-midnight, so the server
+        //    keeps reminding day after day with no restart. an uncaught exception in a fixed-rate
+        //    task would silently kill the schedule, so runReminderCheck swallows/logs its errors.
+        long initialDelay = secondsUntilNextDailyRun();
+        scheduler.scheduleAtFixedRate(() -> runReminderCheck(db, false),
+            initialDelay, TimeUnit.DAYS.toSeconds(1), TimeUnit.SECONDS);
+        log(String.format(
+            "🔁 Daily reminder scheduler armed — next automatic run in %dh %02dm, then every 24h "
+            + "at %02d:%02d.",
+            initialDelay / 3600, (initialDelay % 3600) / 60, DAILY_RUN_HOUR, DAILY_RUN_MINUTE));
+    }
+
+    /**
+     * the day-before reminder check: queries ALL of tomorrow's confirmed/pending orders, logs them
+     * so the operator can see who is booked, sends a reminder email once per order (when
+     * {@code reminderSent == false}), then schedules the auto-cancel window. wrapped in a catch-all
+     * so a transient failure never tears down the recurring daily schedule.
+     *
+     * @param db      the database controller used to query, mark, and later cancel the orders
+     * @param startup {@code true} for the one-shot run at server start, {@code false} for a daily run
+     */
+    private void runReminderCheck(DBController db, boolean startup) {
+        try {
             List<ReminderOrderInfo> orders = db.getTomorrowOrdersForReminder();
             if (orders.isEmpty()) {
                 log("No orders scheduled for tomorrow — no reminders needed.");
                 return;
             }
 
-            log("=== Startup Reminder Check — " + orders.size() + " order(s) for tomorrow ===");
+            log("=== " + (startup ? "Startup" : "Daily") + " Reminder Check — "
+                + orders.size() + " order(s) for tomorrow ===");
             for (ReminderOrderInfo o : orders) remindedOrderIds.add(o.id);
 
             int newlySent  = 0;
@@ -136,7 +173,26 @@ public class ReminderService {
             log("Auto-cancel scheduled in " + CONFIRM_WINDOW_HOURS + " hour(s).");
             scheduler.schedule(() -> runAutoCancelCheck(db, orders),
                 CONFIRM_WINDOW_HOURS, TimeUnit.HOURS);
-        });
+        } catch (Exception ex) {
+            // never let a failure escape a fixed-rate task — that would silently cancel the
+            // daily schedule and the server would stop reminding until the next restart.
+            log("Reminder check error: " + ex.getMessage());
+        }
+    }
+
+    /**
+     * seconds from now until the next daily run boundary
+     * ({@value #DAILY_RUN_HOUR}:{@value #DAILY_RUN_MINUTE} local time). if that moment has
+     * already passed today, the next run lands tomorrow.
+     *
+     * @return delay in seconds until the next scheduled daily reminder run
+     */
+    private static long secondsUntilNextDailyRun() {
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        java.time.LocalDateTime next =
+            now.toLocalDate().atTime(DAILY_RUN_HOUR, DAILY_RUN_MINUTE);
+        if (!next.isAfter(now)) next = next.plusDays(1);
+        return java.time.Duration.between(now, next).getSeconds();
     }
 
     /**

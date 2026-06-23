@@ -184,8 +184,7 @@
                         <CategoryAxis label="Hour of Day"/>
                     </xAxis>
                     <yAxis>
-                        <NumberAxis label="Capacity (%)" lowerBound="0" upperBound="100"
-                                    autoRanging="false" tickUnit="10"/>
+                        <NumberAxis label="Capacity (%)" autoRanging="true"/>
                     </yAxis>
                 </LineChart>
 
