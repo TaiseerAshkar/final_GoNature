@@ -19,6 +19,7 @@ import logic.Promotion;
 import logic.RegisterGuideRequest;
 import logic.RegisterRequest;
 import logic.RegisterResult;
+import logic.PersonDetails;
 import java.io.InputStream;
 import java.sql.*;
 import java.time.LocalTime;
@@ -301,6 +302,64 @@ public class DBController {
             return -1;
         } catch (SQLException e) {
             System.out.println("[getAvailableSpots] SQL ERROR: " + e.getMessage());
+            return -1;
+        }
+    }
+
+    /**
+     * returns how many spots a <em>walk-in</em> may use at the gate right now.
+     *
+     * <p>walk-ins are measured against the park's <b>physical {@code capacity}</b> (e.g. 100), not
+     * the lower pre-booking {@code max_orders} cap (e.g. 90). this is the gap that gives walk-ins
+     * the buffer: reservations can only ever fill up to {@code max_orders}, leaving
+     * {@code capacity − max_orders} physical spots that walk-ins can still claim — on top of any
+     * unused booking spots. so with 86 of 90 reserved, a walk-in sees {@code 100 − 86 = 14} free.
+     *
+     * <p>occupancy counts two disjoint groups so the physical limit is genuinely enforced (and
+     * back-to-back walk-ins can't blow past capacity):
+     * <ul>
+     *   <li>pending/confirmed reservations whose visit-duration window overlaps {@code visitTime}, and</li>
+     *   <li>visitors physically inside right now (status {@code completed}, checked in, not yet exited).</li>
+     * </ul>
+     * an order is in exactly one status, so the two branches never double-count the same row.
+     *
+     * @param parkId    the park's primary-key ID
+     * @param visitDate the date (today, {@code yyyy-MM-dd})
+     * @param visitTime the walk-in arrival time in {@code HH:mm} format
+     * @return free physical spots for a walk-in, or {@code -1} on DB error or unknown park
+     */
+    public int getWalkInAvailableSpots(int parkId, String visitDate, String visitTime) {
+        if (connection == null) return -1;
+        try (PreparedStatement st = connection.prepareStatement(
+                "SELECT p.capacity - COALESCE(SUM(occ.num_visitors), 0) AS available " +
+                "FROM parks p " +
+                "LEFT JOIN orders occ " +
+                "       ON  occ.park_id = p.id " +
+                "       AND occ.visit_date = ? " +
+                "       AND ( " +
+                "             ( occ.status IN ('confirmed','pending') " +
+                "               AND TIME(occ.visit_time) < ADDTIME(TIME(?), SEC_TO_TIME(p.visit_duration_hours * 3600)) " +
+                "               AND ADDTIME(TIME(occ.visit_time), SEC_TO_TIME(p.visit_duration_hours * 3600)) > TIME(?) ) " +
+                "          OR ( occ.status = 'completed' AND occ.entry_time IS NOT NULL AND occ.exit_time IS NULL ) " +
+                "       ) " +
+                "WHERE p.id = ? " +
+                "GROUP BY p.id, p.capacity")) {
+            st.setString(1, visitDate);
+            st.setString(2, visitTime);
+            st.setString(3, visitTime);
+            st.setInt(4, parkId);
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next()) {
+                    int result = rs.getInt("available");
+                    if (result < 0) result = 0;   // overbooked clamps to 0, not the -1 error sentinel
+                    System.out.printf("[getWalkInAvailableSpots] parkId=%d time=%s result=%d%n",
+                        parkId, visitTime, result);
+                    return result;
+                }
+            }
+            return -1;   // no row → park not found
+        } catch (SQLException e) {
+            System.out.println("[getWalkInAvailableSpots] SQL ERROR: " + e.getMessage());
             return -1;
         }
     }
@@ -1540,6 +1599,51 @@ public class DBController {
     }
 
     /**
+     * finds today's pending/confirmed booking by its order number (the "ORDER-xxx" reference shown
+     * on the entry QR pass), scoped to the given park. lets the gate look a visitor up by the short
+     * booking reference instead of the 9-digit government ID. mirrors {@link #getTodayBooking}.
+     *
+     * @param orderId the booking's order number
+     * @param parkId  the park the employee is stationed at
+     * @return the matching {@link OrderDetail}, or {@code null} if none today at this park
+     */
+    public OrderDetail getTodayBookingByOrderId(int orderId, int parkId) {
+        if (connection == null) return null;
+        try {
+            PreparedStatement st = connection.prepareStatement(
+                "SELECT o.id, o.visitor_id, o.num_visitors, o.order_type, " +
+                "       o.visit_date, o.visit_time, o.status, " +
+                "       " + ORDER_EMAIL_SUBQUERY + " AS email, o.created_at, " +
+                "       p.name AS park_name " +
+                "FROM orders o JOIN parks p ON p.id = o.park_id " +
+                "WHERE o.id=? AND o.park_id=? AND o.visit_date=CURDATE() " +
+                "  AND o.status IN ('pending','confirmed') " +
+                "LIMIT 1");
+            st.setInt(1, orderId);
+            st.setInt(2, parkId);
+            ResultSet rs = st.executeQuery();
+            if (!rs.next()) return null;
+            String rawOT = rs.getString("order_type");
+            String raw   = (rawOT != null) ? rawOT.toUpperCase() : "INDIVIDUAL";
+            String oType = "INDIVIDUAL".equals(raw) ? "SOLO" : raw;
+            return new OrderDetail(
+                rs.getInt("id"),
+                rs.getString("park_name"),
+                rs.getString("visitor_id"),
+                rs.getString("visit_date"),
+                rs.getString("visit_time"),
+                rs.getInt("num_visitors"),
+                oType,
+                rs.getString("status").toUpperCase(),
+                rs.getString("email"),
+                rs.getString("created_at"));
+        } catch (SQLException e) {
+            System.out.println("getTodayBookingByOrderId error: " + e.getMessage());
+            return null;
+        }
+    }
+
+    /**
      * checks a visitor in at the gate. tries in order: already-inside guard, pre-booked match,
      * then walk-in capacity check. pricing is delegated to {@link #calculateEntryPrice}.
      *
@@ -1644,7 +1748,9 @@ public class DBController {
 
         String curTime  = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm"));
         String today    = java.time.LocalDate.now().toString();
-        int    available = getAvailableSpots(parkId, today, curTime);
+        // walk-ins are bounded by the park's PHYSICAL capacity, not the lower booking cap, so they
+        // can use the capacity − max_orders buffer that reservations are never allowed to fill.
+        int    available = getWalkInAvailableSpots(parkId, today, curTime);
 
         if (available < 0)
             return new EntryResult(false, false, -1, parkName, visitorId, numVis,
@@ -1889,6 +1995,31 @@ public class DBController {
             return st.executeUpdate() > 0;
         } catch (SQLException e) {
             System.out.println("registerExit error: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * registers a group's exit by its order number (the "ORDER-xxx" reference on the entry pass),
+     * scoped to the given park. stamps {@code exit_time} on the checked-in order. mirrors
+     * {@link #registerExit(String, int)} but keyed on the booking reference instead of the ID.
+     *
+     * @param orderId the booking's order number
+     * @param parkId  the park the employee is stationed at
+     * @return {@code true} if an active (checked-in, not-yet-exited) order was stamped out
+     */
+    public boolean registerExitByOrderId(int orderId, int parkId) {
+        if (connection == null) return false;
+        try (PreparedStatement st = connection.prepareStatement(
+                "UPDATE orders SET exit_time=NOW() " +
+                "WHERE id=? AND park_id=? AND visit_date=CURDATE() " +
+                "  AND status='completed' AND entry_time IS NOT NULL AND exit_time IS NULL " +
+                "LIMIT 1")) {
+            st.setInt(1, orderId);
+            st.setInt(2, parkId);
+            return st.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.out.println("registerExitByOrderId error: " + e.getMessage());
             return false;
         }
     }
@@ -2372,6 +2503,124 @@ public class DBController {
         }
 
         return new RegisterResult(true, "Account created! Welcome to GoNature.", null);
+    }
+
+    /**
+     * loads a person's editable personal details by ID for the "My Details" view and the
+     * Service Rep's view/edit panel. resolves the richest profile available: subscriber first
+     * (carries credit card + family size), then guide, then plain visitor.
+     *
+     * @param idNumber the person's government ID
+     * @return a {@link PersonDetails}, or {@code null} if the ID isn't registered or on DB error
+     */
+    public PersonDetails getPersonDetails(String idNumber) {
+        if (connection == null || idNumber == null) return null;
+        // Subscriber — richest profile (unique member number + credit card + family size)
+        try (PreparedStatement st = connection.prepareStatement(
+                "SELECT subscriber_id, first_name, last_name, email, phone, " +
+                "       COALESCE(credit_card,'') AS credit_card, family_size " +
+                "FROM subscribers WHERE id_number = ?")) {
+            st.setString(1, idNumber);
+            ResultSet rs = st.executeQuery();
+            if (rs.next())
+                return new PersonDetails(idNumber, rs.getString("first_name"),
+                    rs.getString("last_name"), rs.getString("email"), rs.getString("phone"),
+                    rs.getString("credit_card"), rs.getInt("family_size"), "SUBSCRIBER", true,
+                    rs.getInt("subscriber_id"));
+        } catch (SQLException e) {
+            System.out.println("getPersonDetails (subscriber) error: " + e.getMessage());
+        }
+        // Guide
+        try (PreparedStatement st = connection.prepareStatement(
+                "SELECT first_name, last_name, email, phone FROM guides WHERE id_number = ?")) {
+            st.setString(1, idNumber);
+            ResultSet rs = st.executeQuery();
+            if (rs.next())
+                return new PersonDetails(idNumber, rs.getString("first_name"),
+                    rs.getString("last_name"), rs.getString("email"), rs.getString("phone"),
+                    "", 0, "GUIDE", false, 0);
+        } catch (SQLException e) {
+            System.out.println("getPersonDetails (guide) error: " + e.getMessage());
+        }
+        // Plain visitor
+        try (PreparedStatement st = connection.prepareStatement(
+                "SELECT first_name, last_name, email, phone FROM visitors WHERE id_number = ?")) {
+            st.setString(1, idNumber);
+            ResultSet rs = st.executeQuery();
+            if (rs.next())
+                return new PersonDetails(idNumber, rs.getString("first_name"),
+                    rs.getString("last_name"), rs.getString("email"), rs.getString("phone"),
+                    "", 0, "VISITOR", false, 0);
+        } catch (SQLException e) {
+            System.out.println("getPersonDetails (visitor) error: " + e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * updates a person's personal details across every table that holds a copy. the base
+     * {@code visitors} row is updated for all registered people; the {@code subscribers} and
+     * {@code guides} rows are updated too when the ID exists there (the schema denormalizes
+     * name/email/phone into those tables). all updates run in one transaction so a failure rolls
+     * back together. the ID number itself is never changed — it is the immutable key.
+     *
+     * @param d the new details (ID identifies the row; credit card / family size apply to subscribers)
+     * @return {@code true} if at least the base visitor/subscriber row was updated; {@code false}
+     *         if the ID wasn't found anywhere or on DB error
+     */
+    public synchronized boolean updatePersonDetails(PersonDetails d) {
+        if (connection == null || d == null || d.getIdNumber() == null) return false;
+        boolean oldAuto;
+        try { oldAuto = connection.getAutoCommit(); }
+        catch (SQLException e) { return false; }
+        try {
+            connection.setAutoCommit(false);
+            boolean any = false;
+
+            // Base visitors row (exists for every registered person)
+            try (PreparedStatement st = connection.prepareStatement(
+                    "UPDATE visitors SET first_name=?, last_name=?, email=?, phone=? " +
+                    "WHERE id_number=?")) {
+                st.setString(1, d.getFirstName()); st.setString(2, d.getLastName());
+                st.setString(3, d.getEmail());     st.setString(4, d.getPhone());
+                st.setString(5, d.getIdNumber());
+                any |= st.executeUpdate() > 0;
+            }
+
+            // Subscriber row (richer profile: credit card + family size)
+            try (PreparedStatement st = connection.prepareStatement(
+                    "UPDATE subscribers SET first_name=?, last_name=?, email=?, phone=?, " +
+                    "credit_card=?, family_size=? WHERE id_number=?")) {
+                st.setString(1, d.getFirstName()); st.setString(2, d.getLastName());
+                st.setString(3, d.getEmail());     st.setString(4, d.getPhone());
+                if (d.getCreditCard() != null && !d.getCreditCard().isEmpty())
+                    st.setString(5, d.getCreditCard());
+                else
+                    st.setNull(5, java.sql.Types.VARCHAR);
+                st.setInt(6, d.getFamilySize() > 0 ? d.getFamilySize() : 1);
+                st.setString(7, d.getIdNumber());
+                any |= st.executeUpdate() > 0;
+            }
+
+            // Guide row (name/email/phone copy)
+            try (PreparedStatement st = connection.prepareStatement(
+                    "UPDATE guides SET first_name=?, last_name=?, email=?, phone=? " +
+                    "WHERE id_number=?")) {
+                st.setString(1, d.getFirstName()); st.setString(2, d.getLastName());
+                st.setString(3, d.getEmail());     st.setString(4, d.getPhone());
+                st.setString(5, d.getIdNumber());
+                st.executeUpdate();
+            }
+
+            connection.commit();
+            return any;
+        } catch (SQLException e) {
+            System.out.println("updatePersonDetails error: " + e.getMessage());
+            try { connection.rollback(); } catch (SQLException ignored) {}
+            return false;
+        } finally {
+            try { connection.setAutoCommit(oldAuto); } catch (SQLException ignored) {}
+        }
     }
 
     /**

@@ -50,10 +50,10 @@
                         <!-- Shared: Visitor ID + QR scan -->
                         <HBox spacing="8" alignment="CENTER_LEFT">
                             <VBox spacing="6">
-                                <Label text="Visitor ID *" styleClass="field-label"/>
+                                <Label text="Visitor ID or Order # *" styleClass="field-label"/>
                                 <HBox spacing="8" alignment="CENTER_LEFT">
                                     <TextField fx:id="txtVisitorId" prefWidth="200"
-                                               promptText="Government ID"
+                                               promptText="9-digit ID or Order #"
                                                styleClass="text-field"/>
                                     <Button text="📷  Scan QR" onAction="#handleScanQRCode"
                                             styleClass="btn-secondary"
@@ -67,7 +67,7 @@
                             <Button fx:id="btnFindBooking" text="🔍  Find Booking"
                                     onAction="#handleFindBooking" styleClass="btn-primary"
                                     style="-fx-padding:9 24;"/>
-                            <Label text="Enter the visitor's ID and click 'Find Booking' to locate today's confirmed reservation."
+                            <Label text="Enter the visitor's 9-digit ID or their booking Order # (from the QR pass), then click 'Find Booking' to locate today's confirmed reservation."
                                    styleClass="lbl-hint" wrapText="true"/>
                         </VBox>
 
@@ -253,9 +253,9 @@
 
                     <HBox spacing="14" alignment="BOTTOM_LEFT">
                         <VBox spacing="6">
-                            <Label text="Visitor ID *" styleClass="field-label"/>
+                            <Label text="Visitor ID or Order # *" styleClass="field-label"/>
                             <TextField fx:id="txtExitVisitorId" prefWidth="200"
-                                       promptText="Government ID"
+                                       promptText="9-digit ID or Order #"
                                        styleClass="text-field"/>
                         </VBox>
                         <VBox spacing="6">

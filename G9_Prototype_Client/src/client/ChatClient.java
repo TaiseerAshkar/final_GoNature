@@ -11,6 +11,7 @@ import logic.LoginResult;
 import logic.Message;
 import logic.OrderDetail;
 import logic.Park;
+import logic.PersonDetails;
 import logic.RegisterResult;
 import logic.ReportCancelRow;
 import logic.ReportCancelDistribution;
@@ -105,6 +106,12 @@ public class ChatClient extends AbstractClient {
     // ── Waitlist leave (voluntary, while still WAITING) ───────────────────────
     public static Boolean lastWaitlistLeft       = null;
     public static String  lastWaitlistLeaveError = null;
+
+    // ── Personal details (My Details view / Service Rep edit) ─────────────────
+    public static PersonDetails lastPersonDetails      = null;
+    public static String        lastPersonDetailsError = null;
+    public static Boolean       lastPersonUpdateOk     = null;
+    public static String        lastPersonUpdateError  = null;
 
     // ── Park settings ─────────────────────────────────────────────────────────
     public static Park   lastParkSettings      = null;
@@ -304,6 +311,22 @@ public class ChatClient extends AbstractClient {
             case "WAITLIST_LEAVE_FAIL":
                 lastWaitlistLeft       = false;
                 lastWaitlistLeaveError = (String) m.getData();
+                break;
+            case "PERSON_DETAILS_DATA":
+                lastPersonDetails      = (PersonDetails) m.getData();
+                lastPersonDetailsError = null;
+                break;
+            case "PERSON_DETAILS_FAIL":
+                lastPersonDetails      = null;
+                lastPersonDetailsError = (String) m.getData();
+                break;
+            case "PERSON_UPDATE_OK":
+                lastPersonUpdateOk    = true;
+                lastPersonUpdateError = null;
+                break;
+            case "PERSON_UPDATE_FAIL":
+                lastPersonUpdateOk    = false;
+                lastPersonUpdateError = (String) m.getData();
                 break;
             // ── Guide management ─────────────────────────────────────────────
             case "GUIDE_REGISTER_SUCCESS":

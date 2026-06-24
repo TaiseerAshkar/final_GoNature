@@ -172,18 +172,29 @@ public class EntryControlController {
         paneResult.setManaged(false);
         lblCheckInMessage.setText("");
 
-        String visitorId = txtVisitorId.getText().trim();
-        if (visitorId.isEmpty())             { setCheckInError("Please enter a Visitor ID."); return; }
-        if (!visitorId.matches("\\d+"))      { setCheckInError("ID must contain numbers only."); return; }
-        if (visitorId.length() != 9)         { setCheckInError("ID must be exactly 9 digits."); return; }
+        String input = txtVisitorId.getText().trim();
+        if (input.isEmpty())            { setCheckInError("Please enter a Visitor ID or Order #."); return; }
+        if (!input.matches("\\d+"))     { setCheckInError("Enter digits only — a 9-digit Visitor ID or a booking Order #."); return; }
         if (selectedPark == null) {
             setCheckInError("No park assigned to your account."); return;
         }
 
         ChatClient.lastFoundBooking     = null;
         ChatClient.lastFindBookingError = null;
-        ClientUI.chat.accept(new Message("FIND_TODAY_BOOKING",
-            new EntryCheckRequest(visitorId, selectedPark.getId(), 0, "")));
+        // a 9-digit number is a government ID; anything shorter is a booking order reference
+        // (the "ORDER-xxx" number printed on the entry QR pass)
+        if (input.length() == 9) {
+            ClientUI.chat.accept(new Message("FIND_TODAY_BOOKING",
+                new EntryCheckRequest(input, selectedPark.getId(), 0, "")));
+        } else {
+            int orderId;
+            try { orderId = Integer.parseInt(input); }
+            catch (NumberFormatException e) {
+                setCheckInError("That order number is too large — check the booking reference."); return;
+            }
+            ClientUI.chat.accept(new Message("FIND_TODAY_BOOKING_BY_ORDER",
+                new Object[] { orderId, selectedPark.getId() }));
+        }
 
         if (ChatClient.lastFoundBooking != null) {
             showBookingDetails(ChatClient.lastFoundBooking);
@@ -331,27 +342,37 @@ public class EntryControlController {
     public void handleRegisterExit(ActionEvent event) {
         lblExitMessage.setText("");
 
-        String visitorId = txtExitVisitorId.getText().trim();
-        if (visitorId.isEmpty())        { setExitMessage("Please enter a Visitor ID.", false); return; }
-        if (!visitorId.matches("\\d+")) { setExitMessage("ID must contain numbers only.", false); return; }
-        if (visitorId.length() != 9)    { setExitMessage("ID must be exactly 9 digits.", false); return; }
+        String input = txtExitVisitorId.getText().trim();
+        if (input.isEmpty())        { setExitMessage("Please enter a Visitor ID or Order #.", false); return; }
+        if (!input.matches("\\d+")) { setExitMessage("Enter digits only — a 9-digit Visitor ID or a booking Order #.", false); return; }
 
         Park exitPark = cboExitPark.getValue();
         if (exitPark == null) { setExitMessage("Please select a park.", false); return; }
 
         ChatClient.lastExitSuccess = false;
         ChatClient.lastExitError   = null;
-        ClientUI.chat.accept(new Message("REGISTER_EXIT",
-            new ExitRequest(visitorId, exitPark.getId())));
+        // 9-digit number = government ID; anything shorter = booking order reference
+        if (input.length() == 9) {
+            ClientUI.chat.accept(new Message("REGISTER_EXIT",
+                new ExitRequest(input, exitPark.getId())));
+        } else {
+            int orderId;
+            try { orderId = Integer.parseInt(input); }
+            catch (NumberFormatException e) {
+                setExitMessage("That order number is too large — check the booking reference.", false); return;
+            }
+            ClientUI.chat.accept(new Message("REGISTER_EXIT_BY_ORDER",
+                new Object[] { orderId, exitPark.getId() }));
+        }
 
         if (ChatClient.lastExitSuccess) {
-            setExitMessage("Exit registered for visitor " + visitorId
+            setExitMessage("Exit registered for " + input
                 + " at " + exitPark.getName() + ". Have a great day!", true);
             txtExitVisitorId.clear();
         } else {
             setExitMessage(ChatClient.lastExitError != null
                 ? ChatClient.lastExitError
-                : "No active entry found for visitor " + visitorId
+                : "No active entry found for " + input
                   + " at " + exitPark.getName() + " today.", false);
         }
     }
@@ -364,13 +385,13 @@ public class EntryControlController {
         dlg.setTitle("QR Code Scanner");
         dlg.setHeaderText("📷  Scan Visitor Entry QR Code");
         dlg.setContentText(
-            "Enter the value from the visitor's QR code\n" +
-            "or type their government ID directly:");
+            "Enter the value from the visitor's QR code,\n" +
+            "or type the booking Order # or 9-digit ID directly:");
         ThemeManager.styleDialog(dlg);
         dlg.showAndWait().ifPresent(raw -> {
-            String visitorId = QRCodeUtil.parseVisitorId(raw);
-            if (!visitorId.isEmpty()) {
-                txtVisitorId.setText(visitorId);
+            String entryValue = QRCodeUtil.parseEntryValue(raw);
+            if (!entryValue.isEmpty()) {
+                txtVisitorId.setText(entryValue);
                 lblCheckInMessage.setText("");
                 paneBookingDetails.setVisible(false);
                 paneBookingDetails.setManaged(false);

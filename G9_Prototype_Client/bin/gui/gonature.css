@@ -785,6 +785,14 @@
     -fx-background-color: linear-gradient(to right, -park-sage-2, -park-sage);
 }
 
+/* default cell text colour — without this, a row that is selected and then
+   deselected keeps Modena's light selection text fill and turns unreadable
+   (white-on-parchment). the :selected rule below is more specific, so the
+   selected row still gets the dark bold text. mirrors the .dark-mode pair. */
+.table-row-cell .text {
+    -fx-fill: -park-text;
+}
+
 .table-row-cell:filled:selected .text,
 .table-row-cell:filled:focused:selected .text,
 .table-row-cell:filled:selected:hover .text,

@@ -131,6 +131,27 @@ class QRCodeUtil {
         return raw; // assume the user typed the visitor ID directly
     }
 
+    /**
+     * extracts the most useful entry token from a scanned QR payload for the gate screen: the
+     * booking {@code ORDER} number if present (the short reference printed on the pass), otherwise
+     * the {@code VISITOR} id, otherwise the raw input. the entry screen accepts either a 9-digit
+     * visitor ID or a short order number, so returning the order number lets a scan "just work".
+     *
+     * @param raw the raw string from the scan dialog text field
+     * @return the order number, the visitor ID, or the original string if neither token is present
+     */
+    static String parseEntryValue(String raw) {
+        if (raw == null) return "";
+        raw = raw.trim();
+        if (raw.contains("ORDER=")) {
+            try {
+                String after = raw.split("ORDER=")[1];
+                return after.contains(":") ? after.split(":")[0].trim() : after.trim();
+            } catch (Exception ignored) {}
+        }
+        return parseVisitorId(raw);
+    }
+
     // ── private helpers ───────────────────────────────────────────────────────
 
     private static boolean[][] buildGrid(String payload) {

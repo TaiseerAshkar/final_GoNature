@@ -22,7 +22,7 @@ CREATE TABLE parks (
     name                  VARCHAR(100)   NOT NULL,
     capacity              INT            NOT NULL,
     max_orders            INT            NOT NULL,
-    visit_duration_hours  INT            NOT NULL DEFAULT 2,
+    visit_duration_hours  INT            NOT NULL DEFAULT 4,
     full_price            DECIMAL(10, 2) NOT NULL,
     created_at            TIMESTAMP      DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT chk_parks_capacity   CHECK (capacity > 0),
@@ -174,7 +174,7 @@ CREATE TABLE park_settings_requests (
 INSERT INTO parks (name, capacity, max_orders, visit_duration_hours, full_price) VALUES
     ('Yosemite National Park',     100,  90, 4, 50.00),   -- id 1
     ('Grand Canyon National Park', 150, 135, 4, 45.00),   -- id 2
-    ('Yellowstone National Park',  120, 108, 2, 40.00);   -- id 3
+    ('Yellowstone National Park',  120, 108, 4, 40.00);   -- id 3 (default 4h; manager3 has a pending request to shorten to 2h)
 
 -- ============================================================
 --  USERS  (roles mapped to the lowercase ENUM)
@@ -1569,7 +1569,9 @@ INSERT INTO promotions (park_id, description, discount_percent, start_date, end_
 -- ============================================================
 INSERT INTO park_settings_requests
     (park_id, requested_by, capacity, max_orders, visit_duration_hours, full_price, status, reviewed_at) VALUES
-    (3, 'manager3', 120, 108, 2, 42.00, 'pending', NULL),
+    -- Yellowstone: same capacity/orders/price, ONLY the visit duration is shortened 4h -> 2h.
+    -- Approving this in the demo applies it to the parks row, turning Yellowstone into a 2h park.
+    (3, 'manager3', 120, 108, 2, 40.00, 'pending', NULL),
     (1, 'manager1', 110,  99, 4, 52.00, 'pending', NULL);
 
 -- ============================================================

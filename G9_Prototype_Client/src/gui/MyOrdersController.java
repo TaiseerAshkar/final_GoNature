@@ -17,7 +17,7 @@ import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
-import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -51,6 +51,13 @@ public class MyOrdersController {
     @FXML private VBox                              paneCancelConfirm;
     @FXML private Label                             lblCancelTitle;
     @FXML private Label                             lblCancelDetail;
+
+    /**
+     * when {@code true} the screen is opened from the "Cancel a Reservation" tile: the table
+     * shows only cancellable (PENDING / CONFIRMED) bookings and a banner prompts the visitor to
+     * pick one to cancel. set by {@link #start(Stage, boolean)} via {@link #enterCancelMode()}.
+     */
+    private boolean cancelMode = false;
 
     /**
      * pre-fills the visitor ID (read-only when logged in), wires column factories,
@@ -90,29 +97,27 @@ public class MyOrdersController {
             "No reservations yet",
             "Load your orders above, or book a new park visit."));
 
-        // only active orders can be cancelled or shown as QR;
-        // only tomorrow's active orders can be confirmed
+        // default (My Reservations) is view-only: the only action is "Show QR Code".
+        // cancelling lives on the dedicated "Cancel a Reservation" tile (cancel mode), and
+        // confirming lives on the dashboard's own "Confirm My Visit" tile.
+        applyModeButtons();
+
+        // QR is available only for active (PENDING/CONFIRMED) bookings; cancel/leave is enabled
+        // for active bookings and still-waiting waiting-list entries (only relevant in cancel mode)
         tableOrders.getSelectionModel().selectedItemProperty().addListener(
             (obs, oldSel, newSel) -> {
                 boolean active = newSel != null
                     && ("PENDING".equals(newSel.getStatus())
                         || "CONFIRMED".equals(newSel.getStatus()));
-                // a still-waiting entry can't be shown as QR or confirmed, but it CAN be left,
-                // so the cancel button (relabelled "Leave Waiting List" at click time) is enabled
                 boolean waiting = newSel != null && "WAITING".equals(newSel.getStatus());
-                // only PENDING orders can be confirmed; once an order is already
-                // CONFIRMED clicking again would be a no-op and confuses the visitor
-                boolean confirmable = newSel != null
-                    && "PENDING".equals(newSel.getStatus())
-                    && newSel.getVisitDate() != null
-                    && newSel.getVisitDate().equals(
-                        LocalDate.now().plusDays(1).toString());
-                btnCancel.setDisable(!(active || waiting));
                 btnShowQR.setDisable(!active);
-                btnConfirmVisit.setDisable(!confirmable);
-                if (newSel != null && !active && !waiting)
-                    lblMessage.setText("QR codes and cancellation are available for PENDING or CONFIRMED orders only.");
-                else
+                btnCancel.setDisable(!(active || waiting));
+                // leaving the waiting list and cancelling a booking are different actions,
+                // so the one cancel-mode button relabels itself to match the selected row
+                btnCancel.setText(waiting ? "👋  Leave Waiting List" : "❌  Cancel Selected Order");
+                if (!cancelMode && newSel != null && !active)
+                    lblMessage.setText("QR codes are available for PENDING or CONFIRMED reservations only.");
+                else if (!cancelMode)
                     lblMessage.setText("");
             });
 
@@ -150,10 +155,30 @@ public class MyOrdersController {
             lblMessage.setText("The server didn't respond. Please check your connection and try again.");
             return;
         }
+        // in cancel mode only show things that can actually be cancelled/left: active
+        // (PENDING/CONFIRMED) bookings and still-waiting waiting-list entries. completed and
+        // already-cancelled history is hidden so the visitor isn't distracted.
+        if (cancelMode) {
+            List<OrderDetail> cancellable = new ArrayList<>();
+            for (OrderDetail o : orders) {
+                if ("PENDING".equals(o.getStatus()) || "CONFIRMED".equals(o.getStatus())
+                        || "WAITING".equals(o.getStatus()))
+                    cancellable.add(o);
+            }
+            orders = cancellable;
+        }
+
         tableOrders.getItems().addAll(orders);
         int count = orders.size();
-        lblOrderCount.setText(count == 0 ? "No orders found." :
-            count + " order" + (count == 1 ? "" : "s") + " found.");
+        if (cancelMode) {
+            lblOrderCount.setText(count == 0 ? "No upcoming reservations to cancel." :
+                count + " cancellable reservation" + (count == 1 ? "" : "s") + ".");
+            // pre-select the first one so "Cancel Selected Order" is immediately usable
+            if (count > 0) tableOrders.getSelectionModel().selectFirst();
+        } else {
+            lblOrderCount.setText(count == 0 ? "No orders found." :
+                count + " order" + (count == 1 ? "" : "s") + " found.");
+        }
     }
 
     /**
@@ -332,16 +357,62 @@ public class MyOrdersController {
     }
 
     /**
+     * switches the already-loaded screen into cancel-focused mode: filters the table to only
+     * cancellable bookings, shows a guiding banner, and pre-selects the first row.
+     * called by {@link #start(Stage, boolean)} after the FXML controller has initialised.
+     */
+    private void enterCancelMode() {
+        cancelMode = true;
+        applyModeButtons();
+        lblMessage.setText("Select a reservation below and click \"Cancel Selected Order\".");
+        // re-run the load so the cancel-mode filter and pre-selection are applied
+        if (txtVisitorId.getText() != null && !txtVisitorId.getText().trim().isEmpty())
+            loadOrders(txtVisitorId.getText().trim());
+    }
+
+    /**
+     * shows exactly the one action button that matches the current mode and hides the rest:
+     * view-only "My Reservations" exposes only "Show QR Code"; cancel mode exposes only
+     * "Cancel Selected Order". "Confirm My Visit" is never shown here — it has its own tile
+     * on the visitor dashboard.
+     */
+    private void applyModeButtons() {
+        btnShowQR.setVisible(!cancelMode);
+        btnShowQR.setManaged(!cancelMode);
+        btnCancel.setVisible(cancelMode);
+        btnCancel.setManaged(cancelMode);
+        btnConfirmVisit.setVisible(false);
+        btnConfirmVisit.setManaged(false);
+    }
+
+    /**
+     * opens the screen in normal "My Reservations" mode.
+     *
      * @param stage the stage in which to show the screen
      * @throws Exception if the FXML file cannot be loaded
      */
     public void start(Stage stage) throws Exception {
-        Parent root = FXMLLoader.load(getClass().getResource("/gui/MyOrdersFrame.fxml"));
-        stage.setTitle("GoNature — My Orders");
+        start(stage, false);
+    }
+
+    /**
+     * opens the screen, optionally in cancel-focused mode (used by the "Cancel a Reservation"
+     * tile so it does something distinct from "My Reservations").
+     *
+     * @param stage      the stage in which to show the screen
+     * @param cancelMode {@code true} to open the cancel-focused view
+     * @throws Exception if the FXML file cannot be loaded
+     */
+    public void start(Stage stage, boolean cancelMode) throws Exception {
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/MyOrdersFrame.fxml"));
+        Parent root = loader.load();
+        MyOrdersController controller = loader.getController();
+        stage.setTitle(cancelMode ? "GoNature — Cancel a Reservation" : "GoNature — My Orders");
         Scene scene = new Scene(root);
         ThemeManager.register(scene);
         stage.setScene(scene);
         stage.centerOnScreen();
+        if (cancelMode) controller.enterCancelMode();
         stage.show();
     }
 }

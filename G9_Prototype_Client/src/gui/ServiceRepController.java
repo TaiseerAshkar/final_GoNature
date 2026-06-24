@@ -515,6 +515,27 @@ public class ServiceRepController {
     }
 
     /**
+     * prompts for a user's ID number, then opens the shared personal-details dialog so the
+     * service rep can view and edit that user's info (name, email, phone, and — for
+     * subscribers — family size and credit card). the ID itself stays read-only.
+     *
+     * @param event the button-click event
+     */
+    @FXML
+    public void handleViewEditUser(ActionEvent event) {
+        TextInputDialog dlg = new TextInputDialog();
+        dlg.setTitle("View / Edit User");
+        dlg.setHeaderText("Enter the user's ID number to view or edit their details");
+        dlg.setContentText("ID number:");
+        dlg.initOwner(lblUserName.getScene().getWindow());
+        ThemeManager.styleDialog(dlg);
+        dlg.showAndWait().ifPresent(id -> {
+            if (id != null && !id.trim().isEmpty())
+                PersonDetailsDialog.show(id.trim(), lblUserName.getScene().getWindow(), true);
+        });
+    }
+
+    /**
      * opens the Reports Dashboard as a modal.
      *
      * @param event the button-click event

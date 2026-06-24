@@ -17,6 +17,7 @@ import logic.Promotion;
 import logic.RegisterGuideRequest;
 import logic.RegisterRequest;
 import logic.RegisterResult;
+import logic.PersonDetails;
 import logic.ReportCancelRow;
 import logic.ReportCancelDistribution;
 import logic.ReportDurationRow;
@@ -474,6 +475,52 @@ public class EchoServer extends AbstractServer {
                     break;
                 }
 
+                case "FIND_TODAY_BOOKING_BY_ORDER": {
+                    // payload: Object[] { orderId(Integer), parkId(Integer) }
+                    if (!(incoming.getData() instanceof Object[])
+                            || ((Object[]) incoming.getData()).length < 2) {
+                        client.sendToClient(new Message("BOOKING_NOT_FOUND", "Invalid request."));
+                        break;
+                    }
+                    Object[] fb = (Object[]) incoming.getData();
+                    int fbOrderId = (fb[0] instanceof Integer) ? (Integer) fb[0] : -1;
+                    int fbParkId  = (fb[1] instanceof Integer) ? (Integer) fb[1] : -1;
+                    OrderDetail foundByOrder = DBController.getInstance()
+                        .getTodayBookingByOrderId(fbOrderId, fbParkId);
+                    if (foundByOrder != null) {
+                        client.sendToClient(new Message("BOOKING_FOUND", foundByOrder));
+                    } else {
+                        client.sendToClient(new Message("BOOKING_NOT_FOUND",
+                            "No confirmed booking found for order #" + fbOrderId
+                            + " at this park today."));
+                    }
+                    break;
+                }
+
+                case "REGISTER_EXIT_BY_ORDER": {
+                    // payload: Object[] { orderId(Integer), parkId(Integer) }
+                    if (!(incoming.getData() instanceof Object[])
+                            || ((Object[]) incoming.getData()).length < 2) {
+                        client.sendToClient(new Message("EXIT_FAIL",
+                            "We couldn't read that exit request. Please try again."));
+                        break;
+                    }
+                    Object[] xo = (Object[]) incoming.getData();
+                    int xoOrderId = (xo[0] instanceof Integer) ? (Integer) xo[0] : -1;
+                    int xoParkId  = (xo[1] instanceof Integer) ? (Integer) xo[1] : -1;
+                    boolean exitedByOrder = DBController.getInstance()
+                        .registerExitByOrderId(xoOrderId, xoParkId);
+                    if (exitedByOrder) {
+                        client.sendToClient(new Message("EXIT_SUCCESS",
+                            "Exit registered for order #" + xoOrderId + "."));
+                    } else {
+                        client.sendToClient(new Message("EXIT_FAIL",
+                            "No active entry found for order #" + xoOrderId
+                            + " at this park today."));
+                    }
+                    break;
+                }
+
                 case "REGISTER_EXIT": {
                     if (!(incoming.getData() instanceof ExitRequest)) {
                         client.sendToClient(new Message("EXIT_FAIL",
@@ -860,6 +907,46 @@ public class EchoServer extends AbstractServer {
                     } else {
                         client.sendToClient(new Message("WAITLIST_DECLINE_FAIL",
                             "This offer is no longer active — it may already be confirmed or expired."));
+                    }
+                    break;
+                }
+
+                case "GET_PERSON_DETAILS": {
+                    // payload: idNumber (String) — used by "My Details" and the Service Rep lookup
+                    String pdId = (incoming.getData() instanceof String)
+                        ? ((String) incoming.getData()).trim() : null;
+                    if (pdId == null || pdId.isEmpty()) {
+                        client.sendToClient(new Message("PERSON_DETAILS_FAIL",
+                            "Please provide an ID number."));
+                        break;
+                    }
+                    PersonDetails details = DBController.getInstance().getPersonDetails(pdId);
+                    if (details != null) {
+                        client.sendToClient(new Message("PERSON_DETAILS_DATA", details));
+                    } else {
+                        client.sendToClient(new Message("PERSON_DETAILS_FAIL",
+                            "No registered user found with ID " + pdId + "."));
+                    }
+                    break;
+                }
+
+                case "UPDATE_PERSON_DETAILS": {
+                    // payload: PersonDetails (subscriber edits own, or Service Rep edits anyone)
+                    if (!(incoming.getData() instanceof PersonDetails)) {
+                        client.sendToClient(new Message("PERSON_UPDATE_FAIL",
+                            "We couldn't read those details. Please try again."));
+                        break;
+                    }
+                    PersonDetails toUpdate = (PersonDetails) incoming.getData();
+                    boolean updated = DBController.getInstance().updatePersonDetails(toUpdate);
+                    if (updated) {
+                        ServerPortFrameController.logSimulation(
+                            "✏️ Personal details updated → ID " + toUpdate.getIdNumber()
+                            + " (" + toUpdate.getRole() + ").");
+                        client.sendToClient(new Message("PERSON_UPDATE_OK", toUpdate.getIdNumber()));
+                    } else {
+                        client.sendToClient(new Message("PERSON_UPDATE_FAIL",
+                            "Could not update details — the ID may not be registered."));
                     }
                     break;
                 }

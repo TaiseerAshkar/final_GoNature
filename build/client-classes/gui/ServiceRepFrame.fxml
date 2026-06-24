@@ -7,7 +7,7 @@
       fx:controller="gui.ServiceRepController"
       styleClass="screen-bg"
       spacing="0"
-      prefWidth="1040">
+      prefWidth="1180">
 
     <stylesheets>
         <URL value="@gonature.css"/>
@@ -33,8 +33,8 @@
 
             <Label text="Service Representative Dashboard" styleClass="screen-title"/>
 
-            <!-- Quick-action bar -->
-            <HBox spacing="12">
+            <!-- Quick-action bar (FlowPane wraps to a second row instead of clipping buttons) -->
+            <FlowPane hgap="12" vgap="12">
                 <Button text="🔄  Load All Orders"        onAction="#loadOrders"
                         styleClass="btn-blue" style="-fx-padding:9 18;"/>
                 <Button text="👤  Register New Visitor"   onAction="#handleRegisterVisitor"
@@ -43,9 +43,11 @@
                         styleClass="btn-marker" style="-fx-padding:9 18;"/>
                 <Button text="⭐  Register Subscriber"    onAction="#handleRegisterSubscriber"
                         styleClass="btn-blue" style="-fx-padding:9 18;"/>
+                <Button text="✏️  View / Edit User"       onAction="#handleViewEditUser"
+                        styleClass="btn-primary" style="-fx-padding:9 18;"/>
                 <Button text="📊  View Reports Dashboard" onAction="#handleViewReports"
                         styleClass="btn-teal" style="-fx-padding:9 18;"/>
-            </HBox>
+            </FlowPane>
 
             <!-- Orders table -->
             <TableView fx:id="tableOrders" prefHeight="260" styleClass="table-view">

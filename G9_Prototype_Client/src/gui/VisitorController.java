@@ -200,16 +200,20 @@ public class VisitorController {
             Icons.exit(20, "ikon-gold"), "tile-chip-gold", this::handleRegisterExit);
         exit.getStyleClass().add("action-tile-gold");
 
-        Button cancel = tile("Cancel a Reservation", "Cancel an upcoming booking",
-            Icons.xCircle(20, "ikon-rust"), "tile-chip-rust", this::handleViewOrders);
+        Button cancel = tile("Cancel a Reservation", "Cancel a booking or leave the waiting list",
+            Icons.xCircle(20, "ikon-rust"), "tile-chip-rust", this::handleCancelReservation);
         cancel.getStyleClass().add("action-tile-rust");
+
+        Button myDetails = tile("My Details", "View and edit your personal info",
+            Icons.clipboard(20, "ikon-lake"), "tile-chip-lake", this::handleMyDetails);
+        myDetails.getStyleClass().add("action-tile-lake");
 
         actionGrid.add(book,            0, 0);
         actionGrid.add(view,            1, 0);
         actionGrid.add(btnConfirmVisit, 0, 1);
         actionGrid.add(exit,            1, 1);
         actionGrid.add(cancel,          0, 2);
-        GridPane.setColumnSpan(cancel, 2);
+        actionGrid.add(myDetails,       1, 2);
     }
 
     /** builds a compact action tile (chip + title + short description). */
@@ -639,6 +643,40 @@ public class VisitorController {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    /**
+     * opens My Orders in cancel-focused mode (from the "Cancel a Reservation" tile): the screen
+     * shows only cancellable bookings and prompts the visitor to pick one. distinct from
+     * {@link #handleViewOrders(ActionEvent)}, which opens the full read/manage view.
+     *
+     * @param event the button-click event
+     */
+    @FXML
+    public void handleCancelReservation(ActionEvent event) {
+        try {
+            Stage ordersStage = new Stage();
+            ordersStage.initModality(Modality.WINDOW_MODAL);
+            ordersStage.initOwner(lblWelcome.getScene().getWindow());
+            ordersStage.setOnHidden(e -> refreshNotifications());
+            new MyOrdersController().start(ordersStage, true);   // cancel-focused
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * opens the "My Details" dialog so the logged-in user can view and edit their own
+     * personal information (name, email, phone, and — for subscribers — family size and
+     * credit card). the ID number is shown read-only.
+     *
+     * @param event the button-click event
+     */
+    @FXML
+    public void handleMyDetails(ActionEvent event) {
+        UserSession s = UserSession.getInstance();
+        String id = (s != null) ? s.getUserId() : null;
+        PersonDetailsDialog.show(id, lblWelcome.getScene().getWindow(), true);
     }
 
     /**
