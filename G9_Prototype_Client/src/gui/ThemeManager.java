@@ -141,9 +141,11 @@ public final class ThemeManager {
      * applies the shared topographic theme to a popup dialog. works for {@link javafx.scene.control.Alert},
      * {@link javafx.scene.control.TextInputDialog}, {@link javafx.scene.control.ChoiceDialog}, and any
      * custom {@link Dialog}. attaches {@code gonature.css} to the dialog pane (so the looked-up colour
-     * tokens and {@code .dark-mode} rules resolve), tags it with the {@code help-dialog} style class for the
-     * pine/gold header strip and themed buttons, and registers its scene so it follows the active
-     * light/dark theme. call once, right after creating the dialog and before {@code showAndWait()}.
+     * tokens and {@code .dark-mode} rules resolve), tags it with the {@code help-dialog} +
+     * {@code help-adaptive} style classes (pine/gold header strip, themed buttons, and — via
+     * {@code help-adaptive} — the dark palette in dark mode rather than forced parchment), and
+     * registers its scene so it follows the active light/dark theme. call once, right after creating
+     * the dialog and before {@code showAndWait()}.
      *
      * @param dialog the dialog to theme; ignored if {@code null}
      */
@@ -158,6 +160,9 @@ public final class ThemeManager {
             if (!pane.getStylesheets().contains(href)) pane.getStylesheets().add(href);
         }
         if (!pane.getStyleClass().contains("help-dialog")) pane.getStyleClass().add("help-dialog");
+        // help-adaptive opts the popup INTO the active theme, so every themed dialog renders dark
+        // in dark mode (not forced parchment). matches the in-app Help popup's behaviour.
+        if (!pane.getStyleClass().contains("help-adaptive")) pane.getStyleClass().add("help-adaptive");
 
         // modern baseline for every themed popup: wide enough that no button text truncates,
         // and without the legacy blue Alert icon (the pine header strip carries the look)

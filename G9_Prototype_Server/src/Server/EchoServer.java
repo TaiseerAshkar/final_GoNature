@@ -313,6 +313,10 @@ public class EchoServer extends AbstractServer {
                         new BookingResult(waitId, "WAITING", req.getParkName(),
                             req.getVisitDate(), req.getVisitTime(),
                             req.getNumVisitors(), req.getOrderType(), req.getEmail())));
+                    ServerPortFrameController.logSimulation(
+                        "📧 Waiting-list confirmation → " + req.getEmail()
+                        + "  |  " + req.getParkName()
+                        + "  |  " + req.getVisitDate() + " at " + req.getVisitTime());
                     EmailService.sendEmail(req.getEmail(),
                         "GoNature — Added to Waiting List",
                         "Hello,\n\n" +
@@ -691,6 +695,10 @@ public class EchoServer extends AbstractServer {
                             + "  to=" + req.getEmail()
                             + "  visitor=" + visitorFullName
                             + "  subscriber=" + req.isSubscriber());
+                        ServerPortFrameController.logSimulation(
+                            "📧 Welcome email → " + req.getEmail()
+                            + "  |  " + visitorFullName
+                            + (req.isSubscriber() ? "  |  new subscriber" : "  |  new visitor"));
                         EmailService.sendEmail(
                             req.getEmail(),
                             "Welcome to GoNature! 🌿",
@@ -780,6 +788,11 @@ public class EchoServer extends AbstractServer {
                         subBody.append("\nSee you in the parks!\n\n— The GoNature Team 🌿");
                         System.out.println("[EchoServer] Sending subscriber welcome email"
                             + "  to=" + req.getEmail() + "  subscriber=" + subFullName);
+                        ServerPortFrameController.logSimulation(
+                            "📧 Welcome email → " + req.getEmail()
+                            + "  |  " + subFullName + "  |  new subscriber"
+                            + (subResult.getSubscriberId() != null
+                                ? "  |  Subscriber #" + subResult.getSubscriberId() : ""));
                         EmailService.sendEmail(req.getEmail(),
                             "Welcome to the GoNature Family Member Club! ⭐", subBody.toString());
                     } else {

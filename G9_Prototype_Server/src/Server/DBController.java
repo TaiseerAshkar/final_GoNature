@@ -2637,15 +2637,25 @@ public class DBController {
     public String updateOrder(int orderId, String newDate, int newVisitors, String orderType) {
         if (connection == null) return "We can't reach the database right now. Please try again in a moment.";
         try {
-            // Fetch the order's current status and visitor_id so we can validate before updating.
+            // Fetch the order's current status, visitor, park, time, and the park's capacity/
+            // duration so we can validate the reschedule before applying it. The visit TIME and
+            // PARK are not changed by a reschedule — only the date and visitor count — so the
+            // booking window stays [visit_time, visit_time + duration).
             PreparedStatement chk = connection.prepareStatement(
-                "SELECT status, visitor_id FROM orders WHERE id=?");
+                "SELECT o.status, o.visitor_id, o.park_id, " +
+                "       TIME_FORMAT(o.visit_time, '%H:%i') AS visit_time, " +
+                "       p.max_orders, p.visit_duration_hours " +
+                "FROM orders o JOIN parks p ON p.id = o.park_id WHERE o.id=?");
             chk.setInt(1, orderId);
             ResultSet rs = chk.executeQuery();
             if (!rs.next())
                 return "We couldn't find order #" + orderId + ". Please check the number and try again.";
             String currentStatus = rs.getString("status");
             String visitorId     = rs.getString("visitor_id");
+            int    parkId        = rs.getInt("park_id");
+            String visitTime     = rs.getString("visit_time");
+            int    maxOrders     = rs.getInt("max_orders");
+            int    durationHours = rs.getInt("visit_duration_hours");
 
             if ("completed".equalsIgnoreCase(currentStatus) ||
                 "cancelled".equalsIgnoreCase(currentStatus) ||
@@ -2662,6 +2672,52 @@ public class DBController {
                 if (!guideChk.executeQuery().next())
                     return "This order can't be changed to GROUP because visitor " + visitorId +
                            " isn't a registered, approved guide.";
+            }
+
+            // ── Capacity check on the NEW date ──────────────────────────────────────────
+            // Sum visitors of overlapping pending/confirmed orders on the new date at this park,
+            // EXCLUDING this order itself (so moving within the same date doesn't block itself).
+            try (PreparedStatement cap = connection.prepareStatement(
+                    "SELECT COALESCE(SUM(num_visitors), 0) AS occupied FROM orders " +
+                    "WHERE park_id = ? AND visit_date = ? AND status IN ('confirmed','pending') " +
+                    "  AND id <> ? " +
+                    "  AND TIME(visit_time) < ADDTIME(TIME(?), SEC_TO_TIME(? * 3600)) " +
+                    "  AND ADDTIME(TIME(visit_time), SEC_TO_TIME(? * 3600)) > TIME(?)")) {
+                cap.setInt(1, parkId);
+                cap.setString(2, newDate);
+                cap.setInt(3, orderId);
+                cap.setString(4, visitTime);
+                cap.setInt(5, durationHours);
+                cap.setInt(6, durationHours);
+                cap.setString(7, visitTime);
+                ResultSet capRs = cap.executeQuery();
+                int occupied = capRs.next() ? capRs.getInt("occupied") : 0;
+                if (occupied + newVisitors > maxOrders) {
+                    int free = Math.max(0, maxOrders - occupied);
+                    return "That date is full at " + visitTime + " — only " + free
+                         + " spot(s) left, but this booking needs " + newVisitors + ".";
+                }
+            }
+
+            // ── Overlap check ───────────────────────────────────────────────────────────
+            // The visitor can't hold two overlapping bookings (can't be in two places at once);
+            // check their OTHER active orders on the new date, excluding this one.
+            try (PreparedStatement ov = connection.prepareStatement(
+                    "SELECT COUNT(*) AS cnt FROM orders o JOIN parks p ON p.id = o.park_id " +
+                    "WHERE o.visitor_id = ? AND o.visit_date = ? AND o.status IN ('confirmed','pending') " +
+                    "  AND o.id <> ? " +
+                    "  AND TIME(o.visit_time) < ADDTIME(TIME(?), SEC_TO_TIME(? * 3600)) " +
+                    "  AND ADDTIME(TIME(o.visit_time), SEC_TO_TIME(p.visit_duration_hours * 3600)) > TIME(?)")) {
+                ov.setString(1, visitorId);
+                ov.setString(2, newDate);
+                ov.setInt(3, orderId);
+                ov.setString(4, visitTime);
+                ov.setInt(5, durationHours);
+                ov.setString(6, visitTime);
+                ResultSet ovRs = ov.executeQuery();
+                if (ovRs.next() && ovRs.getInt("cnt") > 0)
+                    return "Visitor " + visitorId + " already has another booking that overlaps "
+                         + newDate + " at " + visitTime + ". A visitor can only be in one place at a time.";
             }
 
             PreparedStatement st;

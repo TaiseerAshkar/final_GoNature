@@ -87,6 +87,13 @@ public class VisitorController {
     /** ticks once a second to refresh the logged-in-duration label in the header. */
     private Timeline sessionTimeline;
 
+    /** background poll (every 30s) so a freed waitlist spot pops up without a manual Refresh or re-login. */
+    private Timeline waitlistPollTimeline;
+    /** guards the auto-poll from firing a second promotion check while a dialog (modal) is already open. */
+    private boolean promotionCheckRunning = false;
+    /** order IDs whose promotion dialog already auto-popped this session, so it pops once — not every 30s. */
+    private final java.util.Set<Integer> promotionShown = new java.util.HashSet<>();
+
     private static final DateTimeFormatter DATE_FMT =
         DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
@@ -166,6 +173,7 @@ public class VisitorController {
         // (b) have a null scene owner, breaking dark-mode styling.  Platform.runLater()
         // queues the call for the next JavaFX pulse after show() completes.
         Platform.runLater(this::checkWaitlistPromotion);
+        startWaitlistPoll();
     }
 
     // ── Action-tile grid ──────────────────────────────────────────────────────
@@ -290,11 +298,28 @@ public class VisitorController {
             lblSessionTimer.setText("Session: " + s.getSessionDuration());
     }
 
-    /** stops and releases the session-timer ticker if it's running. */
+    /**
+     * starts a 30-second background poll that checks for waitlist promotions, so a spot that
+     * opens up pops the "Good News!" dialog on its own — no manual Refresh or re-login needed.
+     * runs on the JavaFX thread (same as the manual refresh) and is guarded against re-entrancy
+     * and per-order duplicate popups inside {@link #checkWaitlistPromotion()}.
+     */
+    private void startWaitlistPoll() {
+        waitlistPollTimeline = new Timeline(
+            new KeyFrame(Duration.seconds(30), e -> checkWaitlistPromotion()));
+        waitlistPollTimeline.setCycleCount(Timeline.INDEFINITE);
+        waitlistPollTimeline.play();
+    }
+
+    /** stops and releases the session-timer ticker and the waitlist auto-poll if running. */
     private void stopSessionTimer() {
         if (sessionTimeline != null) {
             sessionTimeline.stop();
             sessionTimeline = null;
+        }
+        if (waitlistPollTimeline != null) {
+            waitlistPollTimeline.stop();
+            waitlistPollTimeline = null;
         }
     }
 
@@ -384,7 +409,12 @@ public class VisitorController {
     private void checkWaitlistPromotion() {
         UserSession s = UserSession.getInstance();
         if (s == null || s.getUserId() == null) return;
-
+        // Re-entrancy guard: the 30-second auto-poll must NOT start a second check while a
+        // promotion dialog is open (showAndWait runs a nested event loop, so the Timeline can
+        // otherwise fire mid-dialog and stack popups).
+        if (promotionCheckRunning) return;
+        promotionCheckRunning = true;
+        try {
         ChatClient.lastPendingWaitlistOrders = null;
         ClientUI.chat.accept(new Message("GET_PENDING_WAITLIST_ORDERS", s.getUserId()));
         List<OrderDetail> pending = ChatClient.lastPendingWaitlistOrders;
@@ -405,8 +435,13 @@ public class VisitorController {
                     + " at " + o.getVisitTime()
                     + " (" + marker + ") is waiting. Please confirm before " + deadline + ".");
             }
-            // show the "Good News!" styled dialog and confirm inline if the visitor chooses
-            if (showWaitlistPromotionDialog(o)) anyConfirmedNow = true;
+            // pop the "Good News!" dialog only ONCE per order this session; afterwards the inbox
+            // entry and the "Confirm Waitlist Spot" tile carry it, so the 30s poll never re-spams
+            // the same modal (e.g. after the visitor clicked "Later").
+            if (!promotionShown.contains(o.getId())) {
+                promotionShown.add(o.getId());
+                if (showWaitlistPromotionDialog(o)) anyConfirmedNow = true;
+            }
         }
 
         // update the Confirm tile from the TRUE current state — re-fetch so confirmations,
@@ -431,6 +466,9 @@ public class VisitorController {
                 if (lblConfirmDesc != null)
                     lblConfirmDesc.setText(anyConfirmedNow ? "Your booking is locked in" : "You're all set");
             }
+        }
+        } finally {
+            promotionCheckRunning = false;
         }
     }
 
