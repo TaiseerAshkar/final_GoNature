@@ -896,58 +896,84 @@ public class DBController {
     }
 
     /**
-     * offers a freed slot to the earliest waiting-list entry for the same park, date, and
-     * time. on a match it creates a confirmed order for that visitor, removes them from the
-     * waiting list, emails them a real notification, and writes a server simulation log line.
+     * re-evaluates the waiting list after capacity frees up at a park on a date, and promotes
+     * EVERY waiting party (in FIFO arrival order) whose OWN requested slot now fits within the
+     * park's {@code max_orders}. a freed booking widens capacity across an overlapping time
+     * window, so a waiter at a different — but overlapping — time can become bookable; this
+     * offers the spot to anyone for whom a real booking is now possible, not only exact-time
+     * matches. each promotion creates a held (pending) order, so capacity is re-checked after
+     * every promotion.
      *
-     * @param parkId    the park whose slot opened up
-     * @param visitDate the freed slot's date
-     * @param visitTime the freed slot's time
-     * @return the promoted visitor's email address, or {@code null} if nobody was waiting
+     * @param parkId    the park whose capacity changed
+     * @param visitDate the date on which capacity freed up
+     * @param visitTime retained for caller compatibility; matching is now decided per waiter
+     *                  against their own requested time, not this value
+     * @return the first promoted visitor's email, or {@code null} if nobody could be promoted
      */
     private synchronized String promoteFromWaitingList(int parkId, Date visitDate, Time visitTime) {
         if (connection == null) return null;
 
+        final String dateStr = new java.text.SimpleDateFormat("yyyy-MM-dd").format(visitDate);
+        final java.text.SimpleDateFormat hhmm = new java.text.SimpleDateFormat("HH:mm");
+        String firstEmail = null;
+        java.util.Set<Integer> attempted = new java.util.HashSet<>();
+
+        // Promote in arrival order; after each promotion the held order consumes capacity, so
+        // re-scan. A candidate is promoted only when a booking is genuinely possible for THEIR
+        // slot (their party size fits the free spots at their requested time without exceeding
+        // max_orders).
+        while (true) {
+            int    wlId = -1, wlNum = 0;
+            String wlVisitorId = null, wlOrderType = null;
+            Time   wlTime = null;
+            try {
+                PreparedStatement st = connection.prepareStatement(
+                    "SELECT id, visitor_id, num_visitors, order_type, visit_time " +
+                    "FROM waiting_list " +
+                    "WHERE park_id = ? AND visit_date = ? AND COALESCE(status, 'WAITING') = 'WAITING' " +
+                    "ORDER BY created_at ASC, id ASC");
+                st.setInt(1, parkId);
+                st.setDate(2, visitDate);
+                ResultSet rs = st.executeQuery();
+                while (rs.next()) {
+                    int cId = rs.getInt("id");
+                    if (attempted.contains(cId)) continue;        // already handled this pass
+                    int  cNum  = rs.getInt("num_visitors");
+                    Time cTime = rs.getTime("visit_time");
+                    int  avail = getAvailableSpots(parkId, dateStr, hhmm.format(cTime));
+                    if (cNum <= avail) {                           // a booking is genuinely possible
+                        wlId = cId; wlNum = cNum; wlTime = cTime;
+                        wlVisitorId = rs.getString("visitor_id");
+                        wlOrderType = rs.getString("order_type");
+                        break;                                    // first fitting entry, FIFO
+                    }
+                }
+            } catch (SQLException e) {
+                System.out.println("promoteFromWaitingList (scan) error: " + e.getMessage());
+                break;
+            }
+            if (wlId == -1) break;                                // nobody (else) fits
+
+            attempted.add(wlId);                                  // guard against re-picking on error
+            String email = promoteOneEntry(wlId, wlVisitorId, wlNum, wlOrderType,
+                                           parkId, visitDate, wlTime);
+            if (email != null && !email.isEmpty() && firstEmail == null) firstEmail = email;
+        }
+        return firstEmail;
+    }
+
+    /**
+     * promotes a single waiting-list entry at the waiter's own requested time: creates a held
+     * (pending) order, marks the row NOTIFIED with a 1-hour confirmation deadline, starts the
+     * release timer, logs a simulation line, shows the server popup, and emails the visitor.
+     *
+     * @return the visitor's email ("" if none on file — still a successful promotion), or
+     *         {@code null} if the held order could not be created
+     */
+    private String promoteOneEntry(int wlId, String visitorId, int numVisitors, String dbOrderType,
+                                   int parkId, Date visitDate, Time visitTime) {
         String dateStr = new java.text.SimpleDateFormat("yyyy-MM-dd").format(visitDate);
         String timeStr = new java.text.SimpleDateFormat("HH:mm").format(visitTime);
-
-        // Check available capacity once; it is the same for every candidate in this queue.
-        // getAvailableSpots already excludes the just-cancelled order because cancelOrder()
-        // changed its status to 'cancelled' before calling us.
-        int available = getAvailableSpots(parkId, dateStr, timeStr);
-        if (available <= 0) return null;   // park is still full after the cancellation
-
-        // Walk the queue in arrival order and pick the first entry that fits.
-        String visitorId  = null;
-        String dbOrderType = null;
-        int    wlId        = -1;
-        int    numVisitors = 0;
-        try {
-            PreparedStatement st = connection.prepareStatement(
-                "SELECT id, visitor_id, num_visitors, order_type " +
-                "FROM waiting_list " +
-                "WHERE park_id = ? AND visit_date = ? AND visit_time = ? " +
-                "  AND COALESCE(status, 'WAITING') = 'WAITING' " +
-                "ORDER BY created_at ASC, id ASC");
-            st.setInt(1, parkId);
-            st.setDate(2, visitDate);
-            st.setTime(3, visitTime);
-            ResultSet rs = st.executeQuery();
-            while (rs.next()) {
-                int candidateSize = rs.getInt("num_visitors");
-                if (candidateSize <= available) {
-                    wlId        = rs.getInt("id");
-                    visitorId   = rs.getString("visitor_id");
-                    numVisitors = candidateSize;
-                    dbOrderType = rs.getString("order_type");
-                    break;   // first fitting entry found
-                }
-            }
-        } catch (SQLException e) {
-            System.out.println("promoteFromWaitingList (lookup) error: " + e.getMessage());
-            return null;
-        }
-        if (wlId == -1) return null;   // no entry in the queue fits within available capacity
 
         String email = getVisitorEmail(visitorId);
 

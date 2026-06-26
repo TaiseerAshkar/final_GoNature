@@ -2,17 +2,20 @@ package gui;
 
 import logic.BookingResult;
 import client.UserSession;
+import javafx.animation.PauseTransition;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
 /**
  * controller for the booking confirmation screen ({@code BookingConfirmationFrame.fxml}).
@@ -98,6 +101,17 @@ public class BookingConfirmationController {
         lblType.setText(r.getOrderType());
         lblEmail.setText(r.getEmail());
 
+        // Tomorrow reminder popup — fires 1.5s after the confirmation screen appears
+        if (!isWaiting) {
+            String tomorrow = java.time.LocalDate.now().plusDays(1)
+                .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+            if (r.getVisitDate().equals(tomorrow)) {
+                PauseTransition pause = new PauseTransition(Duration.seconds(1.5));
+                pause.setOnFinished(ev -> showTomorrowReminder(r));
+                pause.play();
+            }
+        }
+
         // Promotion price card, only for confirmed bookings that carry an active promotion.
         if (!isWaiting && r.hasPromotion()) {
             lblPromoTag.setText(String.format("Promotion Applied: %.0f%% off", r.getPromoPercent()));
@@ -142,6 +156,20 @@ public class BookingConfirmationController {
 
         paneEntryPass.setVisible(true);
         paneEntryPass.setManaged(true);
+    }
+
+    private void showTomorrowReminder(BookingResult r) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Visit Reminder");
+        alert.setHeaderText("⏰ Your visit is TOMORROW!");
+        alert.setContentText(
+            "Park:     " + r.getParkName() + "\n" +
+            "Date:     " + r.getVisitDate() + " at " + r.getVisitTime() + "\n" +
+            "Order #:  " + r.getId() + "\n\n" +
+            "Please confirm your booking from your dashboard within 2 hours,\n" +
+            "or it will be automatically cancelled.");
+        ThemeManager.styleDialog(alert);
+        alert.show();
     }
 
     /** @param event the button-click event */

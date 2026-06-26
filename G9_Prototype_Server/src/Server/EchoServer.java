@@ -314,7 +314,7 @@ public class EchoServer extends AbstractServer {
                             req.getVisitDate(), req.getVisitTime(),
                             req.getNumVisitors(), req.getOrderType(), req.getEmail())));
                     ServerPortFrameController.logSimulation(
-                        "📧 Waiting-list confirmation → " + req.getEmail()
+                        "📋 Added to waiting list (JOINED, not yet promoted) → " + req.getEmail()
                         + "  |  " + req.getParkName()
                         + "  |  " + req.getVisitDate() + " at " + req.getVisitTime());
                     EmailService.sendEmail(req.getEmail(),
